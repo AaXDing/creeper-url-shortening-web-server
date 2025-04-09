@@ -34,12 +34,13 @@ message(STATUS "Boost version: ${Boost_VERSION}")
 
 include_directories(include)
 
-# TODO(!): Update name and srcs
-# add_library(example_lib src/example_lib.cc)
+# add libraries
+add_library(server_lib src/server.cc)
+add_library(session_lib src/session.cc)
 
-# TODO(!): Update executable name, srcs, and deps
+# add main executable
 add_executable(server src/server_main.cc)
-target_link_libraries(server Boost::system)
+target_link_libraries(server server_lib session_lib Boost::system)
 
 # TODO(!): Update test executable name, srcs, and deps
 # add_executable(example_lib_test tests/example_lib_test.cc)

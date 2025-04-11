@@ -13,6 +13,8 @@
 #include "session.h"
 #include <boost/asio.hpp>
 #include <boost/bind/bind.hpp>
+#include "request_parser.h"
+#include "http_header.h"
 
 using boost::asio::ip::tcp;
 
@@ -39,8 +41,57 @@ void session::handle_read(const boost::system::error_code &error,
 {
     if (!error)
     {
+        std::string request_msg(data_, bytes_transferred);
+        request_parser p;
+        request req;
+        auto res = p.parse(req, data_, data_ + bytes_transferred);
+        if (std::get<0>(res) == request_parser::valid)
+        {
+            req.valid = true;
+        }
+        else
+        {
+            req.valid = false;
+        }
+        std::string response_msg;
+        if (req.valid)
+        {
+            response res;
+            res.version = req.version;
+            res.status_code = 200;
+            res.status_message = "OK";
+            res.content_type = "text/html";
+            res.body = request_msg; // echo back the request (might change based on future needs)
+            response_msg = res.version + " " +
+                           std::to_string(res.status_code) + " " +
+                           res.status_message + "\r\n" +
+                           "Content-Type: " + res.content_type + "\r\n" +
+                           "Content-Length: " + std::to_string(res.body.size()) + "\r\n" +
+                           "\r\n" +
+                           res.body;
+        }
+        else
+        {
+            response res;
+            res.version = HTTP_VERSION;
+            res.status_code = 400;
+            res.status_message = "Bad Request";
+            res.content_type = "text/plain";
+            res.body = "400 Bad Request";
+            response_msg = res.version + " " +
+                           std::to_string(res.status_code) + " " +
+                           res.status_message + "\r\n" +
+                           "Content-Type: " + res.content_type + "\r\n" +
+                           "Content-Length: " + std::to_string(res.body.size()) + "\r\n" +
+                           "\r\n" +
+                           res.body;
+        }
+        // move response_msg to data_
+        std::copy(response_msg.begin(), response_msg.end(), data_);
+        size_t response_length = response_msg.size();
+        // send response and continue reading loop
         boost::asio::async_write(socket_,
-                                 boost::asio::buffer(data_, bytes_transferred),
+                                 boost::asio::buffer(data_, response_length),
                                  boost::bind(&session::handle_write, this,
                                              boost::asio::placeholders::error));
     }

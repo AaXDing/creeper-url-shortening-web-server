@@ -10,6 +10,14 @@
 #include "http_header.h"
 #include "request_parser.h"
 #include <string>
+#include <unordered_set>
+
+const static std::unordered_set<std::string> allowed_methods = {
+    "GET" // only GET method is allowed for now
+    /* future methods to be added:
+    , "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "PATCH", "TRACE", "CONNECT"
+    */
+};
 
 request_parser::request_parser()
     : state_(method_start) {}
@@ -37,6 +45,10 @@ request_parser::result_type request_parser::consume(request &req, char input)
     case method:
         if (input == ' ')
         {
+            if (!req.method.empty() && allowed_methods.find(req.method) == allowed_methods.end())
+            {
+                return invalid;
+            }
             state_ = uri;
             return indeterminate;
         }
@@ -136,6 +148,10 @@ request_parser::result_type request_parser::consume(request &req, char input)
         else if (is_digit(input))
         {
             req.version.push_back(input);
+            if (req.version != "HTTP/1.1") // Restrict to HTTP/1.1
+            {
+                return invalid;
+            }
             state_ = http_version_end;
             return indeterminate;
         }

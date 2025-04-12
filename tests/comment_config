@@ -1,0 +1,11 @@
+foo "bar";
+
+# this is a comment, this test case should work.
+
+server {
+  listen   80;
+  server_name foo.com;
+  root /home/ubuntu/sites/foo/;
+}
+
+## hello world # hello world

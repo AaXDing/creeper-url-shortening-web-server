@@ -1,0 +1,12 @@
+foo "bar";
+
+# should be valid
+
+server {
+  listen   80;
+  server_name foo.com;
+  root /home/ubuntu/sites/foo/;
+  location / {
+    root /data/www;
+  }
+}

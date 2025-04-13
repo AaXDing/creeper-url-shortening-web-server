@@ -44,8 +44,10 @@ void session::handle_read(const boost::system::error_code &error,
         std::string request_msg(data_, bytes_transferred);
         request_parser p;
         request req;
-        auto res = p.parse(req, data_, data_ + bytes_transferred);
-        if (std::get<0>(res) == request_parser::valid)
+
+        p.parse(req, request_msg);
+        
+        if (req.valid)
         {
             req.valid = true;
         }

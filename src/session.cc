@@ -15,6 +15,7 @@
 #include <boost/bind/bind.hpp>
 #include "request_parser.h"
 #include "http_header.h"
+#include "echo_response.h"
 
 using boost::asio::ip::tcp;
 
@@ -46,7 +47,7 @@ void session::handle_read(const boost::system::error_code &error,
         request req;
 
         p.parse(req, request_msg);
-        
+
         if (req.valid)
         {
             req.valid = true;
@@ -55,39 +56,11 @@ void session::handle_read(const boost::system::error_code &error,
         {
             req.valid = false;
         }
-        std::string response_msg;
-        if (req.valid)
-        {
-            response res;
-            res.version = req.version;
-            res.status_code = 200;
-            res.status_message = "OK";
-            res.content_type = "text/plain";
-            res.body = request_msg; // echo back the request (might change based on future needs)
-            response_msg = res.version + " " +
-                           std::to_string(res.status_code) + " " +
-                           res.status_message + "\r\n" +
-                           "Content-Type: " + res.content_type + "\r\n" +
-                           "Content-Length: " + std::to_string(res.body.size()) + "\r\n" +
-                           "\r\n" +
-                           res.body;
-        }
-        else
-        {
-            response res;
-            res.version = HTTP_VERSION;
-            res.status_code = 400;
-            res.status_message = "Bad Request";
-            res.content_type = "text/plain";
-            res.body = "400 Bad Request";
-            response_msg = res.version + " " +
-                           std::to_string(res.status_code) + " " +
-                           res.status_message + "\r\n" +
-                           "Content-Type: " + res.content_type + "\r\n" +
-                           "Content-Length: " + std::to_string(res.body.size()) + "\r\n" +
-                           "\r\n" +
-                           res.body;
-        }
+        
+        bool valid = req.valid;                  
+        std::string version = req.valid ? req.version : HTTP_VERSION;
+        std::string response_msg = make_echo_response(version, request_msg, valid);
+
         // move response_msg to data_
         std::copy(response_msg.begin(), response_msg.end(), data_);
         size_t response_length = response_msg.size();

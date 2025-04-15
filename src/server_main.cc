@@ -1,4 +1,4 @@
-// Usage: ./server <port>
+// Usage: ./server config_file
 //
 // Adopted from the Boost Asio example: async_tcp_echo_server.cpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~

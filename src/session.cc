@@ -62,7 +62,7 @@ void session::handle_read(const boost::system::error_code &error,
             res.version = req.version;
             res.status_code = 200;
             res.status_message = "OK";
-            res.content_type = "text/html";
+            res.content_type = "text/plain";
             res.body = request_msg; // echo back the request (might change based on future needs)
             response_msg = res.version + " " +
                            std::to_string(res.status_code) + " " +

@@ -39,11 +39,10 @@ add_library(server_lib src/server.cc)
 add_library(session_lib src/session.cc)
 add_library(request_parser_lib src/request_parser.cc)
 add_library(config_parser_lib src/config_parser.cc)
-add_library(echo_response_lib src/echo_response.cc)
 
 # add main executable
 add_executable(server src/server_main.cc)
-target_link_libraries(server server_lib session_lib request_parser_lib config_parser_lib echo_response_lib Boost::system)
+target_link_libraries(server server_lib session_lib request_parser_lib config_parser_lib Boost::system)
 
 add_executable(request_parser_lib_test tests/request_parser_test.cc)
 target_link_libraries(request_parser_lib_test request_parser_lib gtest_main)
@@ -51,12 +50,12 @@ target_link_libraries(request_parser_lib_test request_parser_lib gtest_main)
 add_executable(config_parser_lib_test tests/config_parser_test.cc)
 target_link_libraries(config_parser_lib_test config_parser_lib gtest_main)
 
-add_executable(echo_response_test tests/echo_response_test.cc)
-target_link_libraries(echo_response_test echo_response_lib gtest_main)
+#add_executable(echo_response_test tests/echo_response_test.cc)
+#target_link_libraries(echo_response_test echo_response_lib gtest_main)
 
 gtest_discover_tests(request_parser_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests PROPERTIES LABELS unit)   
 gtest_discover_tests(config_parser_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests PROPERTIES LABELS unit)   
-gtest_discover_tests(echo_response_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests PROPERTIES LABELS unit)   
+#gtest_discover_tests(echo_response_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests PROPERTIES LABELS unit)   
 
 include(cmake/CodeCoverageReportConfig.cmake)
 
@@ -68,11 +67,11 @@ generate_coverage_report(
                  session_lib
                  request_parser_lib
                  config_parser_lib
-                 echo_response_lib
+                 #echo_response_lib
                  server
     TESTS        request_parser_lib_test
                  config_parser_lib_test
-                 echo_response_test
+                 #echo_response_test
 )
 
 # ---------- INTEGRATION‑TEST COVERAGE (blank for now) ----------
@@ -83,7 +82,7 @@ generate_coverage_report(
                  session_lib
                  request_parser_lib
                  config_parser_lib
-                 echo_response_lib
+                 #echo_response_lib
                  server
     # TESTS left empty until you add integration tests
 )

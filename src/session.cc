@@ -15,7 +15,6 @@
 #include <boost/bind/bind.hpp>
 #include "request_parser.h"
 #include "http_header.h"
-#include "echo_response.h"
 
 using boost::asio::ip::tcp;
 
@@ -59,7 +58,7 @@ void session::handle_read(const boost::system::error_code &error,
         
         bool valid = req.valid;                  
         std::string version = req.valid ? req.version : HTTP_VERSION;
-        std::string response_msg = make_echo_response(version, request_msg, valid);
+        std::string response_msg = handle_echo_response(version, request_msg, valid);
 
         // move response_msg to data_
         std::copy(response_msg.begin(), response_msg.end(), data_);
@@ -89,4 +88,37 @@ void session::handle_write(const boost::system::error_code &error)
     {
         delete this;
     }
+}
+
+// Constructs an HTTP response that echoes the provided request_msg.
+// If valid is true, returns a 200 OK response echoing the original request;
+// otherwise, returns a 400 Bad Request response.
+std::string session::handle_echo_response(const std::string &http_version,
+                        const std::string &request_msg,
+                        bool valid)
+{
+    // Create an output string stream for assembling the HTTP response.
+    std::ostringstream oss;
+    int status_code;
+    std::string status_message;
+    std::string body;
+    
+    if (valid) {
+        // If the request is valid, prepare a 200 OK response.
+        status_code = 200;
+        status_message = "OK";
+        body = request_msg;
+    } else {
+        // If the request is invalid, prepare a 400 Bad Request response.
+        status_code = 400;
+        status_message = "Bad Request";
+        body = "400 Bad Request";       // Define the body for invalid requests.
+    }
+    std::string content_type = "text/plain"; // Content type is text/plain
+    // Final response
+    oss << http_version << " " << status_code << " " << status_message << "\r\n"
+        << "Content-Type: " << content_type << "\r\n"
+        << "Content-Length: " << body.size() << "\r\n"
+        << "\r\n" << body;
+    return oss.str();
 }

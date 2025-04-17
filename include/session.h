@@ -17,6 +17,10 @@ private:
     void handle_read(const boost::system::error_code &error,
                      size_t bytes_transferred);
     void handle_write(const boost::system::error_code &error);
+    std::string handle_echo_response(const std::string &http_version,
+                              const std::string &request_msg,
+                              bool valid);
+
     boost::asio::ip::tcp::socket socket_;
     enum
     {

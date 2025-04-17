@@ -6,15 +6,7 @@
 
 std::string get_version(unsigned int version)
 {
-    switch (version)
-    {
-    case 10:
-        return "HTTP/1.0";
-    case 11:
-        return "HTTP/1.1";
-    default:
-        return "HTTP/1.1";
-    }
+    return "HTTP/" + std::to_string(version / 10) + "." + std::to_string(version % 10);
 }
 
 const std::unordered_set<std::string> allowed_methods = {

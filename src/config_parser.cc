@@ -29,7 +29,13 @@ int NginxConfig::getPort() const {
   for (const auto& statement : statements_) {
     // Check if the statement is a "listen" directive
     if (statement->tokens_.size() == 2 && statement->tokens_[0] == "listen") {
-      return std::stoi(statement->tokens_[1]);
+      try {
+        return std::stoi(statement->tokens_[1]);
+      } 
+      catch (std::exception& e) {
+        // If the conversion fails, return -1
+        return -1;
+      }
     }
     // Check if the statement has a child block
     // and recursively check for "listen" directive in the child block
@@ -67,6 +73,8 @@ std::string NginxConfigStatement::ToString(int depth) {
   serialized_statement.append("\n");
   return serialized_statement;
 }
+
+NginxConfigParser::NginxConfigParser() {}
 
 const char* NginxConfigParser::TokenTypeAsString(TokenType type) {
   switch (type) {

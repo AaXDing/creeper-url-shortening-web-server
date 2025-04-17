@@ -1,14 +1,6 @@
 #include "gtest/gtest.h"
 #include "config_parser.h"
 
-TEST(NginxConfigParserTest, SimpleConfig) {
-  NginxConfigParser parser;
-  NginxConfig out_config;
-
-  bool success = parser.Parse("example_config", &out_config);
-
-  EXPECT_TRUE(success);
-}
 
 // below are tests added using test fixture
 class NginxConfigParserTestFixture : public testing::Test {
@@ -19,35 +11,79 @@ class NginxConfigParserTestFixture : public testing::Test {
 
 // provided test using fixture syntax
 TEST_F(NginxConfigParserTestFixture, SimpleConfig) {
-  bool success = parser.Parse("example_config", &config);
+  bool success = parser.Parse("config_testcases/simple_config", &config);
   EXPECT_TRUE(success);
 }
 
 TEST_F(NginxConfigParserTestFixture, CommentConfig) {
-  bool success = parser.Parse("comment_config", &config);
+  bool success = parser.Parse("config_testcases/comment_config", &config);
   EXPECT_TRUE(success);
 }
 
 // test with nested blocks
 TEST_F(NginxConfigParserTestFixture, NestedBlockConfig) {
-  bool success = parser.Parse("nested_block_config", &config);
+  bool success = parser.Parse("config_testcases/nested_block_config", &config);
   EXPECT_TRUE(success);
 }
 
 // test unclosed start bracket
 TEST_F(NginxConfigParserTestFixture, UnclosedBlockConfig) {
-  bool success = parser.Parse("unclosed_block_config", &config);
+  bool success = parser.Parse("config_testcases/unclosed_block_config", &config);
   EXPECT_FALSE(success);
 }
 
 // test unclosed end bracket
 TEST_F(NginxConfigParserTestFixture, UnclosedBlockConfig2) {
-  bool success = parser.Parse("unclosed_block_config2", &config);
+  bool success = parser.Parse("config_testcases/unclosed_block_config2", &config);
   EXPECT_FALSE(success);
 }
 
 // test block with no statements
 TEST_F(NginxConfigParserTestFixture, EmptyBlockConfig) {
-  bool success = parser.Parse("empty_block_config", &config);
+  bool success = parser.Parse("config_testcases/empty_block_config", &config);
   EXPECT_TRUE(success);
+}
+
+TEST_F(NginxConfigParserTestFixture, TestToStringMethod) {
+  bool success = parser.Parse("config_testcases/nested_block_config", &config);
+  EXPECT_TRUE(success);
+  std::string expected_output = 
+    "foo \"bar\";\n"
+    "server {\n"
+    "  listen 80;\n"
+    "  server_name foo.com;\n"
+    "  root /home/ubuntu/sites/foo/;\n"
+    "  location / {\n"
+    "    root /data/www;\n"
+    "  }\n"
+    "}\n";
+  std::string actual_output = config.ToString();
+  std::cout << actual_output << std::endl;
+  EXPECT_EQ(expected_output, actual_output);
+}
+
+TEST_F(NginxConfigParserTestFixture, TestGetValidPort) {
+  bool success = parser.Parse("config_testcases/nested_block_config", &config);
+  EXPECT_TRUE(success);
+  int port = config.getPort();
+  EXPECT_EQ(port, 80);
+}
+
+TEST_F(NginxConfigParserTestFixture, TestGetInvalidPort) {
+  bool success = parser.Parse("config_testcases/invalid_port_config", &config);
+  EXPECT_TRUE(success);
+  int port = config.getPort();
+  EXPECT_EQ(port, -1);
+}
+
+TEST_F(NginxConfigParserTestFixture, TestGetPortWithNoPort) {
+  bool success = parser.Parse("config_testcases/no_port_config", &config);
+  EXPECT_TRUE(success);
+  int port = config.getPort();
+  EXPECT_EQ(port, -1);
+}
+
+TEST_F(NginxConfigParserTestFixture, TestConfigNotFound) {
+  bool success = parser.Parse("config_testcases/no_such_config", &config);
+  EXPECT_FALSE(success);
 }

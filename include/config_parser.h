@@ -26,7 +26,7 @@ class NginxConfig {
 // The driver that parses a config file and generates an NginxConfig.
 class NginxConfigParser {
  public:
-  NginxConfigParser() {}
+  NginxConfigParser();
 
   // Take a opened config file or file name (respectively) and store the
   // parsed config in the provided NginxConfig out-param.  Returns true

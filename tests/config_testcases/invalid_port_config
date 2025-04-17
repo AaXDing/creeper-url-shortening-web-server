@@ -1,9 +1,7 @@
 foo "bar";
 
-this testcase should pass
-
 server {
-  listen   80;
+  listen   aa;
   server_name foo.com;
   root /home/ubuntu/sites/foo/;
 }

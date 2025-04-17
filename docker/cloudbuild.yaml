@@ -23,6 +23,15 @@ steps:
     '-t', 'gcr.io/$PROJECT_ID/creeper:latest',
     '.'
   ]
+# new coverage step
+- name: 'gcr.io/cloud-builders/docker'
+  args:
+    - 'build'
+    - '-f' 
+    - 'docker/coverage.Dockerfile'
+    - '-t'
+    - 'gcr.io/$PROJECT_ID/creeper-coverage'
+    - '.'
 images: ['gcr.io/$PROJECT_ID/creeper:base', 'gcr.io/$PROJECT_ID/creeper:latest']
 
 options:

@@ -24,3 +24,9 @@ steps:
     '.'
   ]
 images: ['gcr.io/$PROJECT_ID/creeper:base', 'gcr.io/$PROJECT_ID/creeper:latest']
+
+options:
+  # code adopted from piazza post: https://piazza.com/class/m8ot69d64vk2ul/post/70
+  # surpress error in Cloud Build Triggers when running with a service account
+  # https://cloud.google.com/build/docs/securing-builds/store-manage-build-logs#store-default
+  logging: CLOUD_LOGGING_ONLY

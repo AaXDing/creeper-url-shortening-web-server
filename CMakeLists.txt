@@ -54,10 +54,42 @@ target_link_libraries(config_parser_lib_test config_parser_lib gtest_main)
 add_executable(echo_response_test tests/echo_response_test.cc)
 target_link_libraries(echo_response_test echo_response_lib gtest_main)
 
-gtest_discover_tests(request_parser_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-gtest_discover_tests(config_parser_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-gtest_discover_tests(echo_response_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+gtest_discover_tests(request_parser_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests PROPERTIES LABELS unit)   
+gtest_discover_tests(config_parser_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests PROPERTIES LABELS unit)   
+gtest_discover_tests(echo_response_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests PROPERTIES LABELS unit)   
 
-# TODO(!): Update with target/test targets
-# include(cmake/CodeCoverageReportConfig.cmake)
-# generate_coverage_report(TARGETS example_server example_lib TESTS example_lib_test)
+include(cmake/CodeCoverageReportConfig.cmake)
+
+# ---------- UNIT‑TEST COVERAGE ----------
+generate_coverage_report(
+    NAME         unit_coverage              # custom target:  unit_coverage
+    LABEL        unit       
+    TARGETS      server_lib
+                 session_lib
+                 request_parser_lib
+                 config_parser_lib
+                 echo_response_lib
+                 server
+    TESTS        request_parser_lib_test
+                 config_parser_lib_test
+                 echo_response_test
+)
+
+# ---------- INTEGRATION‑TEST COVERAGE (blank for now) ----------
+generate_coverage_report(
+    NAME         integration_coverage       # custom target: integration_coverage
+    LABEL        integration
+    TARGETS      server_lib
+                 session_lib
+                 request_parser_lib
+                 config_parser_lib
+                 echo_response_lib
+                 server
+    # TESTS left empty until you add integration tests
+)
+
+# After the two generate_coverage_report() calls
+# ----------------------------------------------
+add_custom_target(coverage
+    DEPENDS unit_coverage integration_coverage
+    COMMENT "Build both unit and integration test coverage reports")

@@ -6,10 +6,7 @@ FROM creeper:base as coverage
 COPY . /usr/src/project
 WORKDIR /usr/src/project/build
 
-# Configure for coverage and build + run tests
+# Configure for coverage
 RUN cmake -DCMAKE_BUILD_TYPE=Coverage ..
-RUN make
-# Run tests for coverage 
-RUN ctest --output-on-failure
 # Generate the summary report
 RUN make coverage   

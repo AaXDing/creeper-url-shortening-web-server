@@ -50,8 +50,8 @@ target_link_libraries(request_parser_lib_test request_parser_lib gtest_main)
 add_executable(config_parser_lib_test tests/config_parser_test.cc)
 target_link_libraries(config_parser_lib_test config_parser_lib gtest_main)
 
-# add_executable(server_lib_test tests/server_test.cc)
-# target_link_libraries(server_lib_test server_lib session_lib gtest_main)
+add_executable(server_lib_test tests/server_test.cc)
+target_link_libraries(server_lib_test server_lib session_lib request_parser_lib gtest_main gmock pthread)
 
 #add_executable(echo_response_test tests/echo_response_test.cc)
 #target_link_libraries(echo_response_test echo_response_lib gtest_main)
@@ -59,7 +59,7 @@ target_link_libraries(config_parser_lib_test config_parser_lib gtest_main)
 gtest_discover_tests(request_parser_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests PROPERTIES LABELS unit)   
 gtest_discover_tests(config_parser_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests PROPERTIES LABELS unit)   
 #gtest_discover_tests(echo_response_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests PROPERTIES LABELS unit)   
-# gtest_discover_tests(server_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests PROPERTIES LABELS unit)
+gtest_discover_tests(server_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests PROPERTIES LABELS unit)
 
 
 include(cmake/CodeCoverageReportConfig.cmake)
@@ -76,6 +76,7 @@ generate_coverage_report(
                  server
     TESTS        request_parser_lib_test
                  config_parser_lib_test
+                 server_lib_test
                  #echo_response_test
 )
 

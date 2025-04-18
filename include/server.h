@@ -5,19 +5,29 @@
 #define SERVER_H
 
 #include <boost/asio.hpp>
-#include "session.h"
+#include <functional>
+#include <memory>
+#include "isession.h"   // Include the interface for session
+
+using boost::asio::ip::tcp;
 
 class server
 {
 public:
-    server(boost::asio::io_service &io_service, short port);
+    /// Factory: returns a heap‑allocated ISession ready to accept().
+    using SessionFactory = std::function<std::unique_ptr<ISession>()>;
+
+    server(boost::asio::io_service& io,
+        short port,
+        SessionFactory fac = nullptr);
 
 private:
     void start_accept();
-    void handle_accept(session *new_session,
-                       const boost::system::error_code &error);
-    boost::asio::io_service &io_service_;
-    boost::asio::ip::tcp::acceptor acceptor_;
+    void handle_accept(ISession* sess, const boost::system::error_code& ec);
+
+    boost::asio::io_service& io_;
+    tcp::acceptor            acceptor_;
+    SessionFactory           make_session_;
 };
 
 #endif // SERVER_H

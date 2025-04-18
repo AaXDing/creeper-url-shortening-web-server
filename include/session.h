@@ -5,13 +5,17 @@
 #define SESSION_H
 
 #include <boost/asio.hpp>
+#include "isession.h" 
 
-class session
+class session : public ISession    // Inherit from ISession Interface
 {
 public:
-    session(boost::asio::io_service &io_service);
-    boost::asio::ip::tcp::socket &socket();
-    void start();
+    explicit session(boost::asio::io_service &io_service);
+
+    // ISession interface -----------------------------------------------
+    boost::asio::ip::tcp::socket &socket() override;
+    void start() override;
+    // -------------------------------------------------------------------
 
 private:
     void handle_read(const boost::system::error_code &error,
@@ -22,10 +26,7 @@ private:
                               bool valid);
 
     boost::asio::ip::tcp::socket socket_;
-    enum
-    {
-        max_length = 1024
-    };
+    enum { max_length = 1024 };
     char data_[max_length];
 };
 

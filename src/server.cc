@@ -8,40 +8,48 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
-#include <iostream>
 #include "server.h"
-#include "session.h"
-#include <boost/asio.hpp>
+#include "session.h" // only for the default factory
 #include <boost/bind/bind.hpp>
 
 using boost::asio::ip::tcp;
 
-server::server(boost::asio::io_service &io_service, short port)
-    : io_service_(io_service),
-      acceptor_(io_service, tcp::endpoint(tcp::v4(), port))
+server::server(boost::asio::io_service &io, short port, SessionFactory factory)
+    : io_(io),
+      acceptor_(io, tcp::endpoint(tcp::v4(), port)),
+      make_session_(factory
+                        ? std::move(factory) // test/mock path
+                        : [&] { 
+                            return std::make_unique<session>(io_); 
+                        }) // default path
 {
     start_accept();
 }
 
 void server::start_accept()
 {
-    session *new_session = new session(io_service_);
-    acceptor_.async_accept(new_session->socket(),
-                           boost::bind(&server::handle_accept, this, new_session,
-                                       boost::asio::placeholders::error));
+    std::unique_ptr<ISession> next = make_session_(); // heap‑allocated
+
+    ISession *raw = next.release(); // we will delete or transfer later
+
+    acceptor_.async_accept(
+        raw->socket(),                      // ISession exposes socket()
+        boost::bind(&server::handle_accept, // completion handler
+                    this,
+                    raw,
+                    boost::asio::placeholders::error));
 }
 
-void server::handle_accept(session *new_session,
-                   const boost::system::error_code &error)
+void server::handle_accept(ISession *sess,
+                           const boost::system::error_code &ec)
 {
-    if (!error)
+    if (!ec)
     {
-        new_session->start();
+        sess->start(); // connection successful – kick off session logic
     }
     else
     {
-        delete new_session;
+        delete sess; // reclaim memory on failure
     }
-
-    start_accept();
+    start_accept(); // immediately wait for the next client
 }

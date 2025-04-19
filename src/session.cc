@@ -41,24 +41,7 @@ void session::handle_read(const boost::system::error_code &error,
 {
     if (!error)
     {
-        std::string request_msg(data_, bytes_transferred);
-        request_parser p;
-        request req;
-
-        p.parse(req, request_msg);
-
-        if (req.valid)
-        {
-            req.valid = true;
-        }
-        else
-        {
-            req.valid = false;
-        }
-        
-        bool valid = req.valid;                  
-        std::string version = req.valid ? req.version : HTTP_VERSION;
-        std::string response_msg = handle_echo_response(version, request_msg, valid);
+        std::string response_msg = handle_echo_response(bytes_transferred);
 
         // move response_msg to data_
         std::copy(response_msg.begin(), response_msg.end(), data_);
@@ -90,20 +73,26 @@ void session::handle_write(const boost::system::error_code &error)
     }
 }
 
+// Parse the request message and determine its validity.
 // Constructs an HTTP response that echoes the provided request_msg.
 // If valid is true, returns a 200 OK response echoing the original request;
 // otherwise, returns a 400 Bad Request response.
-std::string session::handle_echo_response(const std::string &http_version,
-                        const std::string &request_msg,
-                        bool valid)
+std::string session::handle_echo_response(size_t bytes_transferred)
 {
+    std::string request_msg(data_, bytes_transferred);
+    request_parser p;
+    request req;
+
+    p.parse(req, request_msg);
+                      
+    std::string http_version = req.valid ? req.version : HTTP_VERSION;
     // Create an output string stream for assembling the HTTP response.
     std::ostringstream oss;
     int status_code;
     std::string status_message;
     std::string body;
     
-    if (valid) {
+    if (req.valid) {
         // If the request is valid, prepare a 200 OK response.
         status_code = 200;
         status_message = "OK";

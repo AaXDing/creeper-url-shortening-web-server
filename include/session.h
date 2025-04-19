@@ -7,6 +7,8 @@
 #include <boost/asio.hpp>
 #include "isession.h" 
 
+class SessionTest; // forward declaration for test fixture
+
 class session : public ISession    // Inherit from ISession Interface
 {
 public:
@@ -16,14 +18,12 @@ public:
     boost::asio::ip::tcp::socket &socket() override;
     void start() override;
     // -------------------------------------------------------------------
-
+    friend class SessionTest; // allow test fixture to access private members
 private:
     void handle_read(const boost::system::error_code &error,
                      size_t bytes_transferred);
     void handle_write(const boost::system::error_code &error);
-    std::string handle_echo_response(const std::string &http_version,
-                              const std::string &request_msg,
-                              bool valid);
+    std::string handle_echo_response(size_t bytes_transferred);
 
     boost::asio::ip::tcp::socket socket_;
     enum { max_length = 1024 };

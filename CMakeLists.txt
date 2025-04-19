@@ -53,12 +53,12 @@ target_link_libraries(config_parser_lib_test config_parser_lib gtest_main)
 add_executable(server_lib_test tests/server_test.cc)
 target_link_libraries(server_lib_test server_lib session_lib request_parser_lib gtest_main gmock pthread)
 
-#add_executable(echo_response_test tests/echo_response_test.cc)
-#target_link_libraries(echo_response_test echo_response_lib gtest_main)
+add_executable(session_lib_test tests/session_test.cc)
+target_link_libraries(session_lib_test session_lib request_parser_lib gtest_main)
 
 gtest_discover_tests(request_parser_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests PROPERTIES LABELS unit)   
 gtest_discover_tests(config_parser_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests PROPERTIES LABELS unit)   
-#gtest_discover_tests(echo_response_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests PROPERTIES LABELS unit)   
+gtest_discover_tests(session_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests PROPERTIES LABELS unit)   
 gtest_discover_tests(server_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests PROPERTIES LABELS unit)
 
 
@@ -72,12 +72,11 @@ generate_coverage_report(
                  session_lib
                  request_parser_lib
                  config_parser_lib
-                 #echo_response_lib
                  server
     TESTS        request_parser_lib_test
                  config_parser_lib_test
                  server_lib_test
-                 #echo_response_test
+                 session_lib_test
 )
 
 # ---------- INTEGRATION‑TEST COVERAGE (blank for now) ----------
@@ -88,7 +87,6 @@ generate_coverage_report(
                  session_lib
                  request_parser_lib
                  config_parser_lib
-                 #echo_response_lib
                  server
     # TESTS left empty until you add integration tests
 )

@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.10.0)
 project(creeper)
 
+# Enable Python for integration test
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
+
 # Make sure developers do not run cmake in the main project directory, to keep
 # build artifacts from becoming clutter
 if (${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
@@ -90,6 +93,17 @@ generate_coverage_report(
                  server
     # TESTS left empty until you add integration tests
 )
+
+# Integration test using Python script
+add_test(
+    NAME IntegrationTest
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMAND ${Python3_EXECUTABLE} 
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/integration_test.py 
+            ${CMAKE_CURRENT_SOURCE_DIR}/my_config
+)
+# If only wants to call integration
+set_tests_properties(IntegrationTest PROPERTIES LABELS integration)
 
 # After the two generate_coverage_report() calls
 # ----------------------------------------------

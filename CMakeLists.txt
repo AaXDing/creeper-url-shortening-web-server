@@ -59,39 +59,24 @@ target_link_libraries(server_lib_test server_lib session_lib request_parser_lib 
 add_executable(session_lib_test tests/session_test.cc)
 target_link_libraries(session_lib_test session_lib request_parser_lib gtest_main gmock pthread)
 
-gtest_discover_tests(request_parser_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests PROPERTIES LABELS unit)   
-gtest_discover_tests(config_parser_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests PROPERTIES LABELS unit)   
-gtest_discover_tests(session_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests PROPERTIES LABELS unit)   
-gtest_discover_tests(server_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests PROPERTIES LABELS unit)
+gtest_discover_tests(request_parser_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)   
+gtest_discover_tests(config_parser_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)   
+gtest_discover_tests(session_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)   
+gtest_discover_tests(server_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 
 
 include(cmake/CodeCoverageReportConfig.cmake)
 
 # ---------- UNIT‑TEST COVERAGE ----------
 generate_coverage_report(
-    NAME         unit_coverage              # custom target:  unit_coverage
-    LABEL        unit       
     TARGETS      server_lib
                  session_lib
                  request_parser_lib
                  config_parser_lib
-                 server
     TESTS        request_parser_lib_test
                  config_parser_lib_test
                  server_lib_test
                  session_lib_test
-)
-
-# ---------- INTEGRATION‑TEST COVERAGE (blank for now) ----------
-generate_coverage_report(
-    NAME         integration_coverage       # custom target: integration_coverage
-    LABEL        integration
-    TARGETS      server_lib
-                 session_lib
-                 request_parser_lib
-                 config_parser_lib
-                 server
-    # TESTS left empty until you add integration tests
 )
 
 # Integration test using Python script
@@ -102,11 +87,3 @@ add_test(
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/integration_test.py 
             ${CMAKE_CURRENT_SOURCE_DIR}/my_config
 )
-# If only wants to call integration
-set_tests_properties(IntegrationTest PROPERTIES LABELS integration)
-
-# After the two generate_coverage_report() calls
-# ----------------------------------------------
-add_custom_target(coverage
-    DEPENDS unit_coverage integration_coverage
-    COMMENT "Build both unit and integration test coverage reports")

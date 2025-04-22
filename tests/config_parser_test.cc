@@ -26,6 +26,18 @@ TEST_F(NginxConfigParserTestFixture, NestedBlockConfig) {
   EXPECT_TRUE(success);
 }
 
+// test block with no statements
+TEST_F(NginxConfigParserTestFixture, EmptyBlockConfig) {
+  bool success = parser.Parse("config_testcases/empty_block_config", &config);
+  EXPECT_TRUE(success);
+}
+
+// test block with single quote
+TEST_F(NginxConfigParserTestFixture, TestSingleQuoteConfig) {
+  bool success = parser.Parse("config_testcases/single_quote_config", &config);
+  EXPECT_TRUE(success);
+}
+
 // test unclosed start bracket
 TEST_F(NginxConfigParserTestFixture, UnclosedBlockConfig) {
   bool success = parser.Parse("config_testcases/unclosed_block_config", &config);
@@ -38,10 +50,9 @@ TEST_F(NginxConfigParserTestFixture, UnclosedBlockConfig2) {
   EXPECT_FALSE(success);
 }
 
-// test block with no statements
-TEST_F(NginxConfigParserTestFixture, EmptyBlockConfig) {
-  bool success = parser.Parse("config_testcases/empty_block_config", &config);
-  EXPECT_TRUE(success);
+TEST_F(NginxConfigParserTestFixture, TestConfigNotFound) {
+  bool success = parser.Parse("config_testcases/no_such_config", &config);
+  EXPECT_FALSE(success);
 }
 
 TEST_F(NginxConfigParserTestFixture, TestToStringMethod) {
@@ -81,9 +92,4 @@ TEST_F(NginxConfigParserTestFixture, TestGetPortWithNoPort) {
   EXPECT_TRUE(success);
   int port = config.getPort();
   EXPECT_EQ(port, -1);
-}
-
-TEST_F(NginxConfigParserTestFixture, TestConfigNotFound) {
-  bool success = parser.Parse("config_testcases/no_such_config", &config);
-  EXPECT_FALSE(success);
 }

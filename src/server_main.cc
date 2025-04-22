@@ -21,8 +21,7 @@ int main(int argc, char* argv[])
   {
     if (argc != 2)
     {
-      std::cerr << "Usage: async_tcp_echo_server <port>\n";
-      return 1;
+      throw std::runtime_error("Usage: server <config_file>");
     }
 
     boost::asio::io_service io_service;
@@ -32,16 +31,14 @@ int main(int argc, char* argv[])
 
     if (!parser.Parse(argv[1], &config))
     {
-      std::cerr << "Error parsing config file\n";
-      return 1;
+      throw std::runtime_error("Error parsing config file");
     }
 
 
     int port = config.getPort();
     if (port == -1)
     {
-      std::cerr << "Error: No port specified in config file\n";
-      return 1;
+      throw std::runtime_error("No valid port found in config file");
     }
     server s(io_service, port);
 

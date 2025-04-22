@@ -112,6 +112,8 @@ TEST_F(SessionTestFixture, HandleReadSuccessProcessesData) {
     
     EXPECT_EQ(success_ec.value(), 0); // No error
     EXPECT_FALSE(deleted); // Session should still exist
+
+    sess->is_deleted = nullptr; // set to nullptr to avoid dangling pointer
 }
 
 TEST_F(SessionTestFixture, HandleReadErrorDeletesSession) {
@@ -129,13 +131,16 @@ TEST_F(SessionTestFixture, HandleReadErrorDeletesSession) {
 
 TEST_F(SessionTestFixture, HandleWriteSuccessProcessesData) {
     boost::system::error_code success_ec;
-    sess->call_handle_write(success_ec);
-
+    
     bool deleted = false;
     sess->is_deleted = &deleted; // Set the deletion flag
+
+    sess->call_handle_write(success_ec);
     
     EXPECT_EQ(success_ec.value(), 0); // No error
     EXPECT_FALSE(deleted); // Session should still exist
+
+    sess->is_deleted = nullptr; // set to nullptr to avoid dangling pointer
 }
 
 TEST_F(SessionTestFixture, HandleWriteErrorDeletesSession) {
@@ -149,4 +154,14 @@ TEST_F(SessionTestFixture, HandleWriteErrorDeletesSession) {
     
     EXPECT_NE(error_ec.value(), 0); // No error
     EXPECT_TRUE(deleted); // Check if the deletion flag was set
+}
+
+TEST_F(SessionTestFixture, StartSessionNotDeleted) {
+    bool deleted = false;
+    sess->is_deleted = &deleted; // Set the deletion flag
+
+    sess->start();
+    EXPECT_FALSE(deleted); // Session should still exist
+
+    sess->is_deleted = nullptr; // set to nullptr to avoid dangling pointer
 }

@@ -33,7 +33,7 @@ TEST_F(NginxConfigParserTestFixture, EmptyBlockConfig) {
 }
 
 // test block with single quote
-TEST_F(NginxConfigParserTestFixture, TestSingleQuoteConfig) {
+TEST_F(NginxConfigParserTestFixture, SingleQuoteConfig) {
   bool success = parser.Parse("config_testcases/single_quote_config", &config);
   EXPECT_TRUE(success);
 }
@@ -50,12 +50,27 @@ TEST_F(NginxConfigParserTestFixture, UnclosedBlockConfig2) {
   EXPECT_FALSE(success);
 }
 
-TEST_F(NginxConfigParserTestFixture, TestConfigNotFound) {
+TEST_F(NginxConfigParserTestFixture, ConfigNotFound) {
   bool success = parser.Parse("config_testcases/no_such_config", &config);
   EXPECT_FALSE(success);
 }
 
-TEST_F(NginxConfigParserTestFixture, TestToStringMethod) {
+TEST_F(NginxConfigParserTestFixture, UnclosedSingleQuote) {
+  bool success = parser.Parse("config_testcases/unclosed_single_quote_config", &config);
+  EXPECT_FALSE(success);
+}
+
+TEST_F(NginxConfigParserTestFixture, EmptyConfig) {
+  bool success = parser.Parse("config_testcases/empty_config", &config);
+  EXPECT_FALSE(success);
+}
+
+TEST_F(NginxConfigParserTestFixture, MissingSemicolonConfig) {
+  bool success = parser.Parse("config_testcases/missing_semicolon_config", &config);
+  EXPECT_FALSE(success);
+}
+
+TEST_F(NginxConfigParserTestFixture, ToStringMethod) {
   bool success = parser.Parse("config_testcases/nested_block_config", &config);
   EXPECT_TRUE(success);
   std::string expected_output = 
@@ -73,21 +88,21 @@ TEST_F(NginxConfigParserTestFixture, TestToStringMethod) {
   EXPECT_EQ(expected_output, actual_output);
 }
 
-TEST_F(NginxConfigParserTestFixture, TestGetValidPort) {
+TEST_F(NginxConfigParserTestFixture, GetValidPort) {
   bool success = parser.Parse("config_testcases/nested_block_config", &config);
   EXPECT_TRUE(success);
   int port = config.getPort();
   EXPECT_EQ(port, 80);
 }
 
-TEST_F(NginxConfigParserTestFixture, TestGetInvalidPort) {
+TEST_F(NginxConfigParserTestFixture, GetInvalidPort) {
   bool success = parser.Parse("config_testcases/invalid_port_config", &config);
   EXPECT_TRUE(success);
   int port = config.getPort();
   EXPECT_EQ(port, -1);
 }
 
-TEST_F(NginxConfigParserTestFixture, TestGetPortWithNoPort) {
+TEST_F(NginxConfigParserTestFixture, GetPortWithNoPort) {
   bool success = parser.Parse("config_testcases/no_port_config", &config);
   EXPECT_TRUE(success);
   int port = config.getPort();

@@ -74,7 +74,6 @@ generate_coverage_report(
         session_lib
         request_parser_lib
         config_parser_lib
-        server
     TESTS
         request_parser_lib_test
         config_parser_lib_test

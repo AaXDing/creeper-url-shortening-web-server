@@ -1,4 +1,5 @@
-// A server class that accepts incoming connections and starts a session for each client.
+// A Server class that accepts incoming connections and starts a Session for
+// each client.
 //
 // Adopted from the Boost Asio example: async_tcp_echo_server.cpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -9,47 +10,40 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 #include "server.h"
-#include "session.h" // only for the default factory
+
 #include <boost/bind/bind.hpp>
+
+#include "session.h"  // only for the default factory
 
 using boost::asio::ip::tcp;
 
-server::server(boost::asio::io_service &io, short port, SessionFactory factory)
+Server::Server(boost::asio::io_service &io, short port, SessionFactory factory)
     : io_(io),
       acceptor_(io, tcp::endpoint(tcp::v4(), port)),
-      make_session_(factory
-                        ? std::move(factory) // test/mock path
-                        : [&] { 
-                            return std::make_unique<session>(io_); 
-                        }) // default path
-{
-    start_accept();
+      make_session_(factory ? std::move(factory)  // test/mock path
+                            : [&] {
+                                return std::make_unique<Session>(io_);
+                              }) {  // default path
+  start_accept();
 }
 
-void server::start_accept()
-{
-    std::unique_ptr<ISession> next = make_session_(); // heap‑allocated
+void Server::start_accept() {
+  std::unique_ptr<ISession> next = make_session_();  // heap‑allocated
 
-    ISession *raw = next.release(); // we will delete or transfer later
+  ISession *raw = next.release();  // we will delete or transfer later
 
-    acceptor_.async_accept(
-        raw->socket(),                      // ISession exposes socket()
-        boost::bind(&server::handle_accept, // completion handler
-                    this,
-                    raw,
-                    boost::asio::placeholders::error));
+  acceptor_.async_accept(
+      raw->socket(),                       // ISession exposes socket()
+      boost::bind(&Server::handle_accept,  // completion handler
+                  this, raw, boost::asio::placeholders::error));
 }
 
-void server::handle_accept(ISession *sess,
-                           const boost::system::error_code &ec)
-{
-    if (!ec)
-    {
-        sess->start(); // connection successful – kick off session logic
-    }
-    else
-    {
-        delete sess; // reclaim memory on failure
-    }
-    start_accept(); // immediately wait for the next client
+void Server::handle_accept(ISession *sess,
+                           const boost::system::error_code &ec) {
+  if (!ec) {
+    sess->start();  // connection successful – kick off session logic
+  } else {
+    delete sess;  // reclaim memory on failure
+  }
+  start_accept();  // immediately wait for the next client
 }

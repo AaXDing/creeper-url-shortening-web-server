@@ -1,6 +1,6 @@
 ### Base environment container ###
 # Get the base Ubuntu image from Docker Hub
-FROM ubuntu:noble as base
+FROM ubuntu:noble AS base
 
 ARG DEBIAN_FRONTEND=noninteractive
 

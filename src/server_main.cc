@@ -9,18 +9,16 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#include <iostream>
-#include <cstdlib>
 #include <boost/asio.hpp>
-#include "server.h"
-#include "config_parser.h"
+#include <cstdlib>
+#include <iostream>
 
-int main(int argc, char* argv[])
-{
-  try
-  {
-    if (argc != 2)
-    {
+#include "config_parser.h"
+#include "server.h"
+
+int main(int argc, char* argv[]) {
+  try {
+    if (argc != 2) {
       throw std::runtime_error("Usage: server <config_file>");
     }
 
@@ -29,23 +27,18 @@ int main(int argc, char* argv[])
     NginxConfig config;
     NginxConfigParser parser;
 
-    if (!parser.Parse(argv[1], &config))
-    {
+    if (!parser.parse(argv[1], &config)) {
       throw std::runtime_error("Error parsing config file");
     }
 
-
-    int port = config.getPort();
-    if (port == -1)
-    {
+    int port = config.get_port();
+    if (port == -1) {
       throw std::runtime_error("No valid port found in config file");
     }
-    server s(io_service, port);
+    Server s(io_service, port);
 
     io_service.run();
-  }
-  catch (std::exception& e)
-  {
+  } catch (std::exception& e) {
     std::cerr << "Exception: " << e.what() << "\n";
   }
 

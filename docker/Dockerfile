@@ -3,7 +3,7 @@
 #
 ### Build/test container ###
 # Define builder stage
-FROM creeper:base as builder
+FROM creeper:base AS builder
 
 # Share work directory
 COPY . /usr/src/project
@@ -17,7 +17,7 @@ RUN ctest --output-on_failure
 
 ### Deploy container ###
 # Define deploy stage
-FROM ubuntu:noble as deploy
+FROM ubuntu:noble AS deploy
 
 # Copy server output binary to "."
 COPY --from=builder /usr/src/project/build/bin/server .

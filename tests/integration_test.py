@@ -28,6 +28,7 @@ log_file = None
 
 # ------------------- Server Control -------------------
 
+
 def start_server():
     """
     Starts the server as a background subprocess.
@@ -42,6 +43,7 @@ def start_server():
     )
     time.sleep(1)  # Wait a moment for server to start
 
+
 def stop_server():
     """
     Terminates the server process and cleans up the log file.
@@ -54,6 +56,7 @@ def stop_server():
         os.unlink(log_file.name)
 
 # ------------------- Test Execution -------------------
+
 
 def run_nc_test(method: bytes) -> bytes:
     """
@@ -69,6 +72,7 @@ def run_nc_test(method: bytes) -> bytes:
     )
     return proc.stdout
 
+
 def run_curl_test() -> bytes:
     """
     Sends a simple HTTP GET request using curl.
@@ -76,6 +80,7 @@ def run_curl_test() -> bytes:
     return subprocess.check_output([
         "curl", "-sS", f"http://localhost:{TEST_PORT}/"
     ])
+
 
 def compare_output(name, actual, expected):
     """
@@ -96,6 +101,7 @@ def compare_output(name, actual, expected):
         subprocess.run(["diff", "-u", expected_path, actual_path])
         return False
 
+
 def run_test(name, method, expected_bytes, use_nc=False):
     """
     Executes a single test case, using either curl or nc depending on `use_nc`.
@@ -113,6 +119,7 @@ def run_test(name, method, expected_bytes, use_nc=False):
         return False
 
 # ------------------- Test Cases -------------------
+
 
 def define_tests():
     """
@@ -148,6 +155,7 @@ def define_tests():
 
 # ------------------- Main Runner -------------------
 
+
 def main():
     """
     Main entry point: starts the server, runs all tests, exits with appropriate code.
@@ -166,6 +174,7 @@ def main():
         sys.exit(0 if all_passed else 1)
     finally:
         stop_server()
+
 
 if __name__ == "__main__":
     main()

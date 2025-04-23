@@ -1,33 +1,33 @@
 // session.h
-// A header file for the session class, 
+// A header file for the session class,
 // which handles the communication with a single client.
 #ifndef SESSION_H
 #define SESSION_H
 
 #include <boost/asio.hpp>
-#include "isession.h" 
 
-class SessionTest; // forward declaration for test fixture
+#include "isession.h"
 
-class session : public ISession    // Inherit from ISession Interface
-{
-public:
-    explicit session(boost::asio::io_service &io_service);
+class SessionTest;  // forward declaration for test fixture
 
-    // ISession interface -----------------------------------------------
-    boost::asio::ip::tcp::socket &socket() override;
-    void start() override;
-    // -------------------------------------------------------------------
-    friend class SessionTest; // allow test fixture to access private members
-private:
-    void handle_read(const boost::system::error_code &error,
-                     size_t bytes_transferred);
-    void handle_write(const boost::system::error_code &error);
-    std::string handle_echo_response(size_t bytes_transferred);
+class Session : public ISession {  // Inherit from ISession Interface
+ public:
+  explicit Session(boost::asio::io_service &io_service);
 
-    boost::asio::ip::tcp::socket socket_;
-    enum { max_length = 1024 };
-    char data_[max_length];
+  // ISession interface -----------------------------------------------
+  boost::asio::ip::tcp::socket &socket() override;
+  void start() override;
+  // -------------------------------------------------------------------
+  friend class SessionTest;  // allow test fixture to access private members
+ private:
+  void handle_read(const boost::system::error_code &error,
+                   size_t bytes_transferred);
+  void handle_write(const boost::system::error_code &error);
+  std::string handle_echo_response(size_t bytes_transferred);
+
+  boost::asio::ip::tcp::socket socket_;
+  const static int MAX_LENGTH = 1024;
+  char data_[MAX_LENGTH];
 };
 
-#endif // SESSION_H
+#endif  // SESSION_H

@@ -11,13 +11,13 @@
 #define REQUEST_PARSER_H
 
 #include <string>
+
 #include "http_header.h"
 
-class request_parser
-{
-public:
-    // Parse raw HTTP request to versino, method, uri, headers
-    void parse(request &req, const std::string &raw_request);
+class RequestParser {
+ public:
+  // Parse raw HTTP Request to versino, method, uri, headers
+  void parse(Request &req, const std::string &raw_request);
 };
 
-#endif
+#endif  // REQUEST_PARSER_H

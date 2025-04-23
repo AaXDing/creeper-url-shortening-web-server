@@ -1,6 +1,6 @@
 # The following code is modified based on LLM outputs
 # Stage: coverage builder
-FROM creeper:base as coverage
+FROM creeper:base AS coverage
 
 # Copy the full source tree
 COPY . /usr/src/project

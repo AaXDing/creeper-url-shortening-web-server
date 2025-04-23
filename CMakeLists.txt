@@ -63,11 +63,10 @@ target_link_libraries(server_lib_test server_lib session_lib request_handler_ech
 add_executable(session_lib_test tests/session_test.cc)
 target_link_libraries(session_lib_test session_lib request_handler_echo_lib request_parser_lib gtest_main gmock pthread)
 
-gtest_discover_tests(request_parser_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests PROPERTIES LABELS unit)   
-gtest_discover_tests(config_parser_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests PROPERTIES LABELS unit)   
-gtest_discover_tests(session_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests PROPERTIES LABELS unit)   
-gtest_discover_tests(server_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests PROPERTIES LABELS unit)
-gtest_discover_tests(request_handler_echo_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests PROPERTIES LABELS unit)
+gtest_discover_tests(request_parser_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+gtest_discover_tests(config_parser_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+gtest_discover_tests(session_lib_test WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+gtest_discover_tests(server_lib_test WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
 
 # --- Coverage support for unit tests only ---

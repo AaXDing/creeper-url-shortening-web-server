@@ -16,6 +16,7 @@
 #include <iostream>
 
 #include "http_header.h"
+#include "request_handler_echo.h"
 #include "request_parser.h"
 
 using boost::asio::ip::tcp;
@@ -34,7 +35,7 @@ void Session::start() {
 void Session::handle_read(const boost::system::error_code &error,
                           size_t bytes_transferred) {
   if (!error) {
-    std::string response_msg = handle_echo_response(bytes_transferred);
+    std::string response_msg = handle_response(bytes_transferred);
 
     // move response_msg to data_
     std::copy(response_msg.begin(), response_msg.end(), data_);
@@ -65,37 +66,20 @@ void Session::handle_write(const boost::system::error_code &error) {
 // Constructs an HTTP Response that echoes the provided request_msg.
 // If valid is true, returns a 200 OK Response echoing the original Request;
 // otherwise, returns a 400 Bad Request Response.
-std::string Session::handle_echo_response(size_t bytes_transferred) {
+std::string Session::handle_response(size_t bytes_transferred) {
   std::string request_msg(data_, bytes_transferred);
   RequestParser p;
+  RequestHandlerEcho h;
   Request req;
+  Response res;
 
   p.parse(req, request_msg);
 
-  std::string http_version = req.valid ? req.version : HTTP_VERSION;
-  // Create an output string stream for assembling the HTTP Response.
-  std::ostringstream oss;
-  int status_code;
-  std::string status_message;
-  std::string body;
+  // TODO: distinguish between echo and static file req
 
-  if (req.valid) {
-    // If the Request is valid, prepare a 200 OK Response.
-    status_code = 200;
-    status_message = "OK";
-    body = request_msg;
-  } else {
-    // If the Request is invalid, prepare a 400 Bad Request Response.
-    status_code = 400;
-    status_message = "Bad Request";
-    body = "400 Bad Request";  // Define the body for invalid requests.
-  }
-  std::string content_type = "text/plain";  // Content type is text/plain
-  // Final Response
-  oss << http_version << " " << status_code << " " << status_message << "\r\n"
-      << "Content-Type: " << content_type << "\r\n"
-      << "Content-Length: " << body.size() << "\r\n"
-      << "\r\n"
-      << body;
-  return oss.str();
+  h.handle_request(req, res);
+
+  std::string response_str = h.response_to_string(res);
+
+  return response_str;
 }

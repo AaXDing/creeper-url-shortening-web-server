@@ -20,9 +20,9 @@ class SessionTest : public Session {
       *is_deleted = true;  // Set the flag to true when deleted
     }
   }
-  // Expose the private handle_echo_response method for testing.
-  std::string call_handle_echo_response(size_t bytes_transferred) {
-    return Session::handle_echo_response(bytes_transferred);
+  // Expose the private handle_response method for testing.
+  std::string call_handle_response(size_t bytes_transferred) {
+    return Session::handle_response(bytes_transferred);
   }
 
   void call_handle_read(const boost::system::error_code &error,
@@ -70,7 +70,7 @@ TEST_F(SessionTestFixture, ValidRequestReturns200) {
       "Content-Length: " + std::to_string(input.size()) + "\r\n" + "\r\n" +
       input;
 
-  std::string response = sess->call_handle_echo_response(input.size());
+  std::string response = sess->call_handle_response(input.size());
   EXPECT_EQ(response, expected_response);
 }
 
@@ -89,7 +89,7 @@ TEST_F(SessionTestFixture, InvalidRequestReturns400) {
       http_version + " 400 Bad Request\r\n" + "Content-Type: text/plain\r\n" +
       "Content-Length: " + std::to_string(body.size()) + "\r\n" + "\r\n" + body;
 
-  std::string response = sess->call_handle_echo_response(input.size());
+  std::string response = sess->call_handle_response(input.size());
   EXPECT_EQ(response, expected_response);
 }
 

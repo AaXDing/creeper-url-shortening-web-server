@@ -23,7 +23,7 @@ class Session : public ISession {  // Inherit from ISession Interface
   void handle_read(const boost::system::error_code &error,
                    size_t bytes_transferred);
   void handle_write(const boost::system::error_code &error);
-  std::string handle_echo_response(size_t bytes_transferred);
+  std::string handle_response(size_t bytes_transferred);
 
   boost::asio::ip::tcp::socket socket_;
   const static int MAX_LENGTH = 1024;

@@ -14,31 +14,41 @@
 #include <iostream>
 
 #include "config_parser.h"
+#include "logging.h"
 #include "server.h"
 
 int main(int argc, char* argv[]) {
+  logging::init_logging();
   try {
     if (argc != 2) {
+      LOG(error) << "Wrong invocation, need exactly one argument";
       throw std::runtime_error("Usage: server <config_file>");
     }
 
     boost::asio::io_service io_service;
 
+    LOG(info) << "Starting server with config file: " << argv[1];
+
     NginxConfig config;
     NginxConfigParser parser;
 
     if (!parser.parse(argv[1], &config)) {
+      LOG(error) << "Error parsing config file: " << argv[1];
       throw std::runtime_error("Error parsing config file");
     }
 
     int port = config.get_port();
     if (port == -1) {
+      LOG(error) << "No valid port found in config file";
       throw std::runtime_error("No valid port found in config file");
     }
+
+    LOG(info) << "Creating server on port " << port;
     Server s(io_service, port);
 
     io_service.run();
   } catch (std::exception& e) {
+    LOG(fatal) << "Uncaught exception: " << e.what();
     std::cerr << "Exception: " << e.what() << "\n";
     return 1;
   }

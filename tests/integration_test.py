@@ -20,7 +20,7 @@ import sys
 
 CONFIG_FILE = sys.argv[1] if len(sys.argv) > 1 else "my_config"
 TEST_PORT = 80
-SERVER_BIN = "build/bin/server"
+SERVER_BIN = "bin/server"
 
 # Global state for server process
 server_proc = None
@@ -36,8 +36,13 @@ def start_server():
     """
     global server_proc, log_file
     log_file = tempfile.NamedTemporaryFile(delete=False)
+    build_dir = os.path.abspath(os.getcwd())
+    server_path = os.path.join(build_dir, SERVER_BIN)
+    if not os.path.isfile(server_path):
+        raise FileNotFoundError("Can't find server at {server_path}")
     server_proc = subprocess.Popen(
-        [SERVER_BIN, CONFIG_FILE],
+        [server_path, CONFIG_FILE],
+        cwd=build_dir,
         stdout=log_file,
         stderr=subprocess.STDOUT
     )

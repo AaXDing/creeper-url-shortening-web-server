@@ -24,8 +24,7 @@ Server::Server(boost::asio::io_service &io, short port, SessionFactory factory)
       make_session_(
           factory
               ? std::move(factory)  // test/mock path
-              : [&] { return std::make_unique<Session>(io_); })  // default path
-{
+              : [&] { return std::make_unique<Session>(io_); }) { // default path
   LOG(info) << "Server listening on port " << port;
   start_accept();
 }

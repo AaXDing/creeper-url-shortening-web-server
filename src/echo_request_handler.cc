@@ -1,8 +1,8 @@
 // A class that handles HTTP requests
 
-#include "request_handler_echo.h"
+#include "echo_request_handler.h"
 
-void RequestHandlerEcho::handle_request(Request& req, Response& res) const {
+void EchoRequestHandler::handle_request(Request& req, Response& res) const {
   if (req.valid) {  // If the request is valid, echo the request
     res.status_code = 200;
     res.status_message = "OK";
@@ -19,7 +19,7 @@ void RequestHandlerEcho::handle_request(Request& req, Response& res) const {
   }
 }
 
-std::string RequestHandlerEcho::response_to_string(const Response& res) const {
+std::string EchoRequestHandler::response_to_string(const Response& res) const {
   // Construct the HTTP response string from the Response object
   std::string response = "HTTP/1.1 " + std::to_string(res.status_code) + " " +
                          res.status_message + "\r\n";
@@ -30,7 +30,7 @@ std::string RequestHandlerEcho::response_to_string(const Response& res) const {
   return response;
 }
 
-std::string RequestHandlerEcho::request_to_string(const Request& req) const {
+std::string EchoRequestHandler::request_to_string(const Request& req) const {
   // Construct the HTTP request string from the Request object
   std::string request_str =
       req.method + " " + req.uri + " " + req.version + "\r\n";

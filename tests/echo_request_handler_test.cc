@@ -1,9 +1,9 @@
-#include "request_handler_echo.h"
+#include "echo_request_handler.h"
 
 #include "gtest/gtest.h"
 #include "http_header.h"
 
-class RequestHandlerEchoTest : public RequestHandlerEcho {
+class EchoRequestHandlerTest : public EchoRequestHandler {
  public:
   void call_handle_request(Request& req, Response& res) const {
     handle_request(req, res);
@@ -18,14 +18,14 @@ class RequestHandlerEchoTest : public RequestHandlerEcho {
   }
 };
 
-class RequestHandlerEchoTestFixture : public ::testing::Test {
+class EchoRequestHandlerTestFixture : public ::testing::Test {
  protected:
-  RequestHandlerEchoTest handler;
+  EchoRequestHandlerTest handler;
   Request req;
   Response res;
 };
 
-TEST_F(RequestHandlerEchoTestFixture, ValidEchoRequest) {
+TEST_F(EchoRequestHandlerTestFixture, ValidEchoRequest) {
   req.valid = true;
   req.version = "HTTP/1.1";
   req.method = "GET";
@@ -42,7 +42,7 @@ TEST_F(RequestHandlerEchoTestFixture, ValidEchoRequest) {
   EXPECT_EQ(res.content_type, "text/plain");
 }
 
-TEST_F(RequestHandlerEchoTestFixture, InvalidEchoRequest) {
+TEST_F(EchoRequestHandlerTestFixture, InvalidEchoRequest) {
   req.valid = false;
   req.version = "HTTP/1.1";
   req.method = "GET";
@@ -59,7 +59,7 @@ TEST_F(RequestHandlerEchoTestFixture, InvalidEchoRequest) {
   EXPECT_EQ(res.content_type, "text/plain");
 }
 
-TEST_F(RequestHandlerEchoTestFixture, ResponseToString) {
+TEST_F(EchoRequestHandlerTestFixture, ResponseToString) {
   req.valid = true;
   req.version = "HTTP/1.1";
   req.method = "GET";
@@ -82,7 +82,7 @@ TEST_F(RequestHandlerEchoTestFixture, ResponseToString) {
             "Accept: */*\r\n\r\n");
 }
 
-TEST_F(RequestHandlerEchoTestFixture, RequestToString) {
+TEST_F(EchoRequestHandlerTestFixture, RequestToString) {
   req.valid = true;
   req.version = "HTTP/1.1";
   req.method = "GET";

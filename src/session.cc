@@ -16,7 +16,7 @@
 #include <iostream>
 
 #include "http_header.h"
-#include "request_handler_echo.h"
+#include "echo_request_handler.h"
 #include "request_parser.h"
 
 using boost::asio::ip::tcp;
@@ -68,8 +68,9 @@ void Session::handle_write(const boost::system::error_code &error) {
 // otherwise, returns a 400 Bad Request Response.
 std::string Session::handle_response(size_t bytes_transferred) {
   std::string request_msg(data_, bytes_transferred);
+
   RequestParser p;
-  RequestHandlerEcho h;
+  EchoRequestHandler h;
   Request req;
   Response res;
 

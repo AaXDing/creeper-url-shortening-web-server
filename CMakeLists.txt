@@ -50,29 +50,29 @@ target_link_libraries(server_lib PUBLIC Boost::system logging_lib)
 add_library(session_lib src/session.cc)
 add_library(request_parser_lib src/request_parser.cc)
 add_library(config_parser_lib src/config_parser.cc)
-add_library(request_handler_echo_lib src/request_handler_echo.cc)
+add_library(echo_request_handler_lib src/echo_request_handler.cc)
 
 add_library(logging_lib src/logging.cc)
 target_link_libraries(logging_lib PUBLIC Boost::log Boost::log_setup Boost::system Boost::filesystem)
 
 # add main executable
 add_executable(server src/server_main.cc)
-target_link_libraries(server server_lib session_lib request_handler_echo_lib request_parser_lib config_parser_lib Boost::system)
+target_link_libraries(server server_lib session_lib echo_request_handler_lib request_parser_lib config_parser_lib Boost::system)
 
 add_executable(request_parser_lib_test tests/request_parser_test.cc)
 target_link_libraries(request_parser_lib_test request_parser_lib gtest_main)
 
-add_executable(request_handler_echo_lib_test tests/request_handler_echo_test.cc)
-target_link_libraries(request_handler_echo_lib_test request_handler_echo_lib gtest_main)
+add_executable(echo_request_handler_lib_test tests/echo_request_handler_test.cc)
+target_link_libraries(echo_request_handler_lib_test echo_request_handler_lib gtest_main)
 
 add_executable(config_parser_lib_test tests/config_parser_test.cc)
 target_link_libraries(config_parser_lib_test config_parser_lib gtest_main)
 
 add_executable(server_lib_test tests/server_test.cc)
-target_link_libraries(server_lib_test server_lib session_lib request_handler_echo_lib request_parser_lib gtest_main gmock pthread)
+target_link_libraries(server_lib_test server_lib session_lib echo_request_handler_lib request_parser_lib gtest_main gmock pthread)
 
 add_executable(session_lib_test tests/session_test.cc)
-target_link_libraries(session_lib_test session_lib request_handler_echo_lib request_parser_lib gtest_main gmock pthread)
+target_link_libraries(session_lib_test session_lib echo_request_handler_lib request_parser_lib gtest_main gmock pthread)
 
 add_executable(logging_lib_test tests/logging_test.cc)
 target_link_libraries(logging_lib_test logging_lib gtest_main)
@@ -82,7 +82,7 @@ gtest_discover_tests(config_parser_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SO
 gtest_discover_tests(logging_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(session_lib_test WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 gtest_discover_tests(server_lib_test WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
-
+gtest_discover_tests(echo_request_handler_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 
 # --- Coverage support for unit tests only ---
 include(cmake/CodeCoverageReportConfig.cmake)
@@ -92,13 +92,13 @@ generate_coverage_report(
         server_lib
         session_lib
         request_parser_lib
-        request_handler_echo_lib
+        echo_request_handler_lib
         config_parser_lib
         logging_lib
         server
     TESTS
         request_parser_lib_test
-        request_handler_echo_lib_test
+        echo_request_handler_lib_test
         config_parser_lib_test
         server_lib_test
         session_lib_test

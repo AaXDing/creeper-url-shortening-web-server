@@ -101,6 +101,7 @@ generate_coverage_report(
         echo_request_handler_lib
         config_parser_lib
         logging_lib
+        request_handler_dispatcher_lib
         server
     TESTS
         request_parser_lib_test
@@ -109,6 +110,7 @@ generate_coverage_report(
         server_lib_test
         session_lib_test
         logging_lib_test
+        request_handler_dispatcher_lib_test
 )
 
 # Integration test using Python script

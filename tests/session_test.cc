@@ -7,13 +7,21 @@
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "config_parser.h"
+#include "request_handler_dispatcher.h"  // for RequestHandlerDispatcher
 
 using ::testing::AtLeast;
 
 class SessionTest : public Session {
  public:
   explicit SessionTest(boost::asio::io_service &io_service)
-      : Session(io_service), is_deleted(nullptr) {}
+      : Session(io_service,
+                std::make_shared<RequestHandlerDispatcher>(NginxConfig())), is_deleted(nullptr) { // only a placeholder
+    NginxConfigParser parser;
+    NginxConfig config;
+    parser.parse("../my_config" , &config);
+    dispatcher_ = std::make_shared<RequestHandlerDispatcher>(config);
+  }
 
   ~SessionTest() {
     if (is_deleted != nullptr) {
@@ -39,7 +47,6 @@ class SessionTest : public Session {
     std::copy(data.begin(), data.end(), data_);
     data_[data.size()] = '\0';  // null-terminate the string
   }
-
   // This is a flag to check if the Session was deleted
   // If there is an error in the Session, it will delete itself
   // so we can't track if it was deleted or not. The pointer will
@@ -60,11 +67,10 @@ class SessionTestFixture : public ::testing::Test {
 // Assumes the Request parser is well-tested and valid.
 TEST_F(SessionTestFixture, ValidRequestReturns200) {
   input =
-      "GET /index.html HTTP/1.1\r\n"
+      "GET /echo HTTP/1.1\r\n"
       "Host: www.example.com\r\n"
       "\r\n";
   sess->set_data(input);
-
   std::string expected_response =
       http_version + " 200 OK\r\n" + "Content-Type: text/plain\r\n" +
       "Content-Length: " + std::to_string(input.size()) + "\r\n" + "\r\n" +
@@ -87,6 +93,22 @@ TEST_F(SessionTestFixture, InvalidRequestReturns400) {
       "400 Bad Request";  // Define the body for invalid requests.
   std::string expected_response =
       http_version + " 400 Bad Request\r\n" + "Content-Type: text/plain\r\n" +
+      "Content-Length: " + std::to_string(body.size()) + "\r\n" + "\r\n" + body;
+
+  std::string response = sess->call_handle_response(input.size());
+  EXPECT_EQ(response, expected_response);
+}
+
+TEST_F(SessionTestFixture, InvalidLocationReturns404) {
+  input =
+      "GET /nonexistent HTTP/1.1\r\n"
+      "Host: www.example.com\r\n"
+      "\r\n";
+  sess->set_data(input);
+
+  std::string body = "404 Not Found";  // Define the body for invalid requests.
+  std::string expected_response =
+      http_version + " 404 Not Found\r\n" + "Content-Type: text/plain\r\n" +
       "Content-Length: " + std::to_string(body.size()) + "\r\n" + "\r\n" + body;
 
   std::string response = sess->call_handle_response(input.size());

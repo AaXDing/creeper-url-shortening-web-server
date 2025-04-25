@@ -13,18 +13,22 @@
 
 #include <boost/bind/bind.hpp>
 
+#include "config_parser.h"  // for NginxConfig
 #include "logging.h"
 #include "session.h"  // only for the default factory
 
 using boost::asio::ip::tcp;
 
-Server::Server(boost::asio::io_service &io, short port, SessionFactory factory)
+Server::Server(boost::asio::io_service &io, short port,
+               const NginxConfig &config, SessionFactory factory)
     : io_(io),
       acceptor_(io, tcp::endpoint(tcp::v4(), port)),
-      make_session_(factory ? std::move(factory)  // test/mock path
-                            : [&] {
-                                return std::make_unique<Session>(io_);
-                              }) {  // default path
+      dispatcher_(std::make_shared<RequestHandlerDispatcher>(config)),
+      make_session_(factory
+                        ? std::move(factory)  // test/mock path
+                        : [&] {
+                            return std::make_unique<Session>(io_, dispatcher_);
+                          }) {  // default path
   LOG(info) << "Server listening on port " << port;
   start_accept();
 }

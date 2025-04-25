@@ -9,6 +9,7 @@
 #include "gtest/gtest.h"
 #include "isession.h"
 #include "session.h"  // for dynamic_cast<> on real session
+#include "config_parser.h"  // for NginxConfig
 
 using ::testing::_;
 using ::testing::NiceMock;
@@ -68,7 +69,8 @@ TEST(ServerTest, HandleAccept_CallsStartOnSuccess) {
   ServerTest::SessionFactory factory = [mock]() {
       return std::unique_ptr<ISession>( mock.get() );
     };
-  ServerTest srv(ios, /*port=*/0, factory);
+  NginxConfig config;
+  ServerTest srv(ios, /*port=*/0, config, factory);
 
   // Expect start() to be invoked once on success
   EXPECT_CALL(*mock, start()).Times(1);
@@ -96,7 +98,8 @@ TEST(ServerTest, HandleAccept_DeletesOnError_NoCrash) {
     }
   };
 
-  ServerTest srv(ios, /*port=*/0, factory);
+  NginxConfig config;
+  ServerTest srv(ios, /*port=*/0, config, factory);
   error_code ec = asio::error::operation_aborted;
   srv.call_handle_accept(raw1, ec);
 
@@ -110,7 +113,8 @@ TEST(ServerTest, DefaultFactory_DoesNotCrash_StartAccept) {
   asio::io_service ios;
 
   // no factory ⇒ default branch is used
-  ServerTest srv(ios, /*port=*/0);
+  NginxConfig config;
+  ServerTest srv(ios, /*port=*/0, config);
 
   // should run std::make_unique< Session >(io_) once
   EXPECT_NO_THROW(srv.call_start_accept());
@@ -119,7 +123,9 @@ TEST(ServerTest, DefaultFactory_DoesNotCrash_StartAccept) {
 // TEST 3b: directly capture what the default factory makes
 TEST(ServerTest, DefaultFactory_ReturnsRealSession) {
   asio::io_service ios;
-  ServerTest srv(ios, /*port=*/0);
+
+  NginxConfig config;
+  ServerTest srv(ios, /*port=*/0, config);
 
   ISession* raw = srv.capture_session();
   // it really should be our concrete `Session` type:

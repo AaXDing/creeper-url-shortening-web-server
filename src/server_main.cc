@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
     }
 
     LOG(info) << "Creating server on port " << port;
-    Server s(io_service, port);
+    Server s(io_service, port, config);
 
     io_service.run();
   } catch (std::exception& e) {

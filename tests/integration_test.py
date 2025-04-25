@@ -78,12 +78,12 @@ def run_nc_test(method: bytes) -> bytes:
     return proc.stdout
 
 
-def run_curl_test() -> bytes:
+def run_curl_test(uri="") -> bytes:
     """
     Sends a simple HTTP GET request using curl.
     """
     return subprocess.check_output([
-        "curl", "-sS", f"http://localhost:{TEST_PORT}/"
+        "curl", "-sS", f"http://localhost:{TEST_PORT}{uri}"
     ])
 
 
@@ -113,7 +113,7 @@ def run_test(name, method, expected_bytes, use_nc=False):
     """
     print(f"Running test: {name}...")
     try:
-        actual = run_nc_test(method) if use_nc else run_curl_test()
+        actual = run_nc_test(method) if use_nc else run_curl_test(method)
         return compare_output(name, actual, expected_bytes)
     except subprocess.TimeoutExpired:
         print(f"{name}: TIMED OUT")
@@ -134,14 +134,14 @@ def define_tests():
     return [
         {
             "name": "Valid GET",
-            "method": None,
-            "expected": b"".join([
-                b"GET / HTTP/1.1\r\n",
-                b"Host: localhost\r\n",
-                b"User-Agent: curl/8.5.0\r\n",
-                b"Accept: */*\r\n",
-                b"\r\n"
-            ]),
+            "method": b"GET /echo HTTP/1.1\r\nHost: localhost\r\nUser-Agent: curl/8.5.0\r\nAccept: */*\r\n\r\n",
+            "expected": b"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 76\r\n\r\nGET /echo HTTP/1.1\r\nHost: localhost\r\nUser-Agent: curl/8.5.0\r\nAccept: */*\r\n\r\n",
+            "use_nc": True
+        },
+        {
+            "name": "Valid GET with curl",
+            "method": "/echo",
+            "expected": b"GET /echo HTTP/1.1\r\nHost: localhost\r\nUser-Agent: curl/8.5.0\r\nAccept: */*\r\n\r\n",
             "use_nc": False
         },
         {

@@ -5,14 +5,17 @@
 #define SESSION_H
 
 #include <boost/asio.hpp>
+#include <memory>
 
 #include "isession.h"
+#include "request_handler_dispatcher.h"  // for dispatcher
 
 class SessionTest;  // forward declaration for test fixture
 
 class Session : public ISession {  // Inherit from ISession Interface
  public:
-  explicit Session(boost::asio::io_service &io_service);
+  explicit Session(boost::asio::io_service &io_service,
+                   std::shared_ptr<RequestHandlerDispatcher> dispatcher);
 
   // ISession interface -----------------------------------------------
   boost::asio::ip::tcp::socket &socket() override;
@@ -28,6 +31,9 @@ class Session : public ISession {  // Inherit from ISession Interface
   boost::asio::ip::tcp::socket socket_;
   const static int MAX_LENGTH = 1024;
   char data_[MAX_LENGTH];
+
+  std::shared_ptr<RequestHandlerDispatcher>
+      dispatcher_;  // a constant reference to the dispatcher
 };
 
 #endif  // SESSION_H

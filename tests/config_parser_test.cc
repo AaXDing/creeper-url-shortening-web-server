@@ -88,7 +88,6 @@ TEST_F(NginxConfigParserTestFixture, ToStringMethod) {
       "  }\n"
       "}\n";
   std::string actual_output = config.to_string();
-  std::cout << actual_output << std::endl;
   EXPECT_EQ(expected_output, actual_output);
 }
 

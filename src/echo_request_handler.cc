@@ -1,6 +1,7 @@
 // A class that handles HTTP requests
 
 #include "echo_request_handler.h"
+#include "config_parser.h"
 
 void EchoRequestHandler::handle_request(Request& req, Response& res) const {
   if (req.valid) {  // If the request is valid, echo the request

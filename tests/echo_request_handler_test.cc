@@ -29,7 +29,7 @@ TEST_F(EchoRequestHandlerTestFixture, ValidEchoRequest) {
   req.valid = true;
   req.version = "HTTP/1.1";
   req.method = "GET";
-  req.uri = "/index.html";
+  req.uri = "/echo";
   req.headers.push_back({"Host", "www.example.com"});
   req.headers.push_back({"User-Agent", "curl/7.64.1"});
   req.headers.push_back({"Accept", "*/*"});
@@ -46,7 +46,7 @@ TEST_F(EchoRequestHandlerTestFixture, InvalidEchoRequest) {
   req.valid = false;
   req.version = "HTTP/1.1";
   req.method = "GET";
-  req.uri = "/index.html";
+  req.uri = "/echo";
   req.headers.push_back({"Host", "www.example.com"});
   req.headers.push_back({"User-Agent", "curl/7.64.1"});
   req.headers.push_back({"Accept", "*/*"});
@@ -63,7 +63,7 @@ TEST_F(EchoRequestHandlerTestFixture, ResponseToString) {
   req.valid = true;
   req.version = "HTTP/1.1";
   req.method = "GET";
-  req.uri = "/index.html";
+  req.uri = "/echo";
   req.headers.push_back({"Host", "www.example.com"});
   req.headers.push_back({"User-Agent", "curl/7.64.1"});
   req.headers.push_back({"Accept", "*/*"});
@@ -74,9 +74,9 @@ TEST_F(EchoRequestHandlerTestFixture, ResponseToString) {
   EXPECT_EQ(response_str,
             "HTTP/1.1 200 OK\r\n"
             "Content-Type: text/plain\r\n"
-            "Content-Length: 89\r\n"
+            "Content-Length: 83\r\n"
             "\r\n"
-            "GET /index.html HTTP/1.1\r\n"
+            "GET /echo HTTP/1.1\r\n"
             "Host: www.example.com\r\n"
             "User-Agent: curl/7.64.1\r\n"
             "Accept: */*\r\n\r\n");
@@ -86,7 +86,7 @@ TEST_F(EchoRequestHandlerTestFixture, RequestToString) {
   req.valid = true;
   req.version = "HTTP/1.1";
   req.method = "GET";
-  req.uri = "/index.html";
+  req.uri = "/echo";
   req.headers.push_back({"Host", "www.example.com"});
   req.headers.push_back({"User-Agent", "curl/7.64.1"});
   req.headers.push_back({"Accept", "*/*"});
@@ -94,7 +94,7 @@ TEST_F(EchoRequestHandlerTestFixture, RequestToString) {
   std::string request_str = handler.call_request_to_string(req);
 
   EXPECT_EQ(request_str,
-            "GET /index.html HTTP/1.1\r\n"
+            "GET /echo HTTP/1.1\r\n"
             "Host: www.example.com\r\n"
             "User-Agent: curl/7.64.1\r\n"
             "Accept: */*\r\n"

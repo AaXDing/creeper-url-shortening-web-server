@@ -21,10 +21,10 @@ using boost::asio::ip::tcp;
 Server::Server(boost::asio::io_service &io, short port, SessionFactory factory)
     : io_(io),
       acceptor_(io, tcp::endpoint(tcp::v4(), port)),
-      make_session_(
-          factory
-              ? std::move(factory)  // test/mock path
-              : [&] { return std::make_unique<Session>(io_); }) { // default path
+      make_session_(factory ? std::move(factory)  // test/mock path
+                            : [&] {
+                                return std::make_unique<Session>(io_);
+                              }) {  // default path
   LOG(info) << "Server listening on port " << port;
   start_accept();
 }
@@ -43,15 +43,9 @@ void Server::start_accept() {
 void Server::handle_accept(ISession *sess,
                            const boost::system::error_code &ec) {
   if (!ec) {
-    try {
-      // Get the remote endpoint and log the connection
-      // Note: this may throw if the socket is not connected (in the Mock test)
-      auto ep = sess->socket().remote_endpoint();
-      LOG(info) << "Accepted connection from " << ep.address().to_string()
-                << ":" << ep.port();
-    } catch (const std::exception &e) {
-      LOG(warning) << "Could not get remote_endpoint: " << e.what();
-    }
+    auto ep = sess->remote_endpoint();
+    LOG(info) << "Accepted connection from " << ep.address().to_string() << ":"
+              << ep.port();
     sess->start();  // connection successful – kick off session logic
   } else {
     delete sess;  // reclaim memory on failure

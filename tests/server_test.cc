@@ -13,6 +13,7 @@
 using ::testing::_;
 using ::testing::NiceMock;
 using ::testing::ReturnRef;
+using ::testing::Return;
 
 namespace asio = boost::asio;
 namespace sys = boost::system;
@@ -48,26 +49,32 @@ class MockSession : public ISession {
 
   MOCK_METHOD(tcp::socket&, socket, (), (override));
   MOCK_METHOD(void, start, (), (override));
+  MOCK_METHOD(tcp::endpoint, remote_endpoint, (), (override));
 
  private:
   tcp::socket sock_;
 };
 
-// TEST 1: the normal success‐path with a custom factory
+// TEST 1: original “success” path, with a real accept/connect
 TEST(ServerTest, HandleAccept_CallsStartOnSuccess) {
   asio::io_service ios;
   auto mock = std::make_shared<NiceMock<MockSession>>(ios);
 
-  // factory that always returns the same pointer
-  ServerTest::SessionFactory factory = [mock]() {
-    return std::unique_ptr<ISession>(mock.get());
-  };
+  EXPECT_CALL(*mock, remote_endpoint())
+      .WillOnce(
+          Return(tcp::endpoint{ asio::ip::address::from_string("127.0.0.1"), 4242 }));
 
+  // Now factory + server
+  ServerTest::SessionFactory factory = [mock]() {
+      return std::unique_ptr<ISession>( mock.get() );
+    };
   ServerTest srv(ios, /*port=*/0, factory);
 
+  // Expect start() to be invoked once on success
   EXPECT_CALL(*mock, start()).Times(1);
 
-  error_code ec;  // success
+  // Call handle_accept; since remote_endpoint() now works, it won't throw
+  error_code ec;  // ec == success
   srv.call_handle_accept(mock.get(), ec);
 }
 

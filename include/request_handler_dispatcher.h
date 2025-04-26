@@ -1,15 +1,13 @@
 #ifndef HANDLER_DISPATCHER_H
 #define HANDLER_DISPATCHER_H
 
-#include <memory>
-#include <unordered_map>
 #include <string>
+#include <unordered_map>
 
-#include "request_handler.h"
-#include "echo_request_handler.h"
-#include "request_handler.h"
-#include "http_header.h"
 #include "config_parser.h"
+#include "echo_request_handler.h"
+#include "http_header.h"
+#include "request_handler.h"
 
 class RequestHandlerDispatcher {
  public:
@@ -20,9 +18,10 @@ class RequestHandlerDispatcher {
   size_t get_num_handlers();
 
  private:
-  void add_handlers(const NginxConfig& config); 
+  void add_handlers(const NginxConfig& config);
   bool add_handler(std::string uri, std::unique_ptr<NginxConfig>& config);
-  std::unordered_map<std::string, std::shared_ptr<RequestHandler>> handlers_; // map that maps uri to handler
+  std::unordered_map<std::string, std::shared_ptr<RequestHandler>>
+      handlers_;  // map that maps uri to handler
 
   friend class RequestHandlerDispatcherTest;
 };

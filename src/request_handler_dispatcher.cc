@@ -8,6 +8,16 @@
 #include "request_handler.h"
 #include "static_request_handler.h"
 
+namespace {
+// Factory map for URI to handler creation
+const std::unordered_map<std::string,
+                         std::function<std::shared_ptr<RequestHandler>()>>
+    kHandlerFactory = {
+        {"/echo", []() { return std::make_shared<EchoRequestHandler>(); }},
+        {"/static", []() { return std::make_shared<StaticRequestHandler>(); }},
+};
+}  // namespace
+
 RequestHandlerDispatcher::RequestHandlerDispatcher(const NginxConfig& config) {
   add_handlers(config);
 }
@@ -52,16 +62,10 @@ bool RequestHandlerDispatcher::add_handler(
     return false;  // Invalid config
   }
 
-  // Create a new handler based on the config
-  if (uri == "/echo") {
-    // Create an EchoRequestHandler
-    handlers_[uri] = std::make_shared<EchoRequestHandler>();
-    return true;
-  }
-
-  if (uri == "/static") {
-    // Create a StaticRequestHandler
-    handlers_[uri] = std::make_shared<StaticRequestHandler>();
+  // Look up a handler creator in the factory map
+  auto factory_it = kHandlerFactory.find(uri);
+  if (factory_it != kHandlerFactory.end()) {
+    handlers_[uri] = factory_it->second();
     return true;
   }
   return false;  // No handler created for this URI

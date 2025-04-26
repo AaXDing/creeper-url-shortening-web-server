@@ -13,7 +13,9 @@ class RequestHandler {
       processing the request and generating a response.
   */
  public:
-  virtual void handle_request(Request& req, Response& res) const = 0;
+  virtual std::string handle_request(Request& req, Response& res) const = 0;
+
+ protected:
   std::string response_to_string(const Response& res) const;
 };
 

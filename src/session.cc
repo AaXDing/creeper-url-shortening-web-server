@@ -87,33 +87,12 @@ std::string Session::handle_response(size_t bytes_transferred) {
 
   if (!req.valid) {
     // If the request is invalid, return a 400 Bad Request response
-    res.status_code = 400;
-    res.status_message = "Bad Request";
-    res.version = HTTP_VERSION;
-    res.content_type = "text/plain";
-    res.body = "400 Bad Request";
-
-    response_str = res.version + " " + std::to_string(res.status_code) + " " +
-                   res.status_message + "\r\n" +
-                   "Content-Type: " + res.content_type + "\r\n" +
-                   "Content-Length: " + std::to_string(res.body.size()) +
-                   "\r\n" + "\r\n" + res.body;
+    response_str = STOCK_RESPONSE.at(400);
   } else if (h != nullptr) {
-    h->handle_request(req, res);
-    response_str = h->response_to_string(res);
+    response_str = h->handle_request(req, res);
   } else {
     // If no handler is found, return a 404 Not Found response
-    res.status_code = 404;
-    res.status_message = "Not Found";
-    res.version = HTTP_VERSION;
-    res.content_type = "text/plain";
-    res.body = "404 Not Found";
-
-    response_str = res.version + " " + std::to_string(res.status_code) + " " +
-                   res.status_message + "\r\n" +
-                   "Content-Type: " + res.content_type + "\r\n" +
-                   "Content-Length: " + std::to_string(res.body.size()) +
-                   "\r\n" + "\r\n" + res.body;
+    response_str = STOCK_RESPONSE.at(404);
   }
 
   return response_str;

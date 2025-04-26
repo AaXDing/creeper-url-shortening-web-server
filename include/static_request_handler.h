@@ -9,7 +9,7 @@
 class StaticRequestHandler : public RequestHandler {
  public:
   // Handle the Request and return the Response
-  void handle_request(Request& req, Response& res) const override;
+  std::string handle_request(Request& req, Response& res) const override;
 };
 
 #endif  // StaticRequestHandler_H

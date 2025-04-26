@@ -6,6 +6,7 @@
 #include "echo_request_handler.h"
 #include "logging.h"
 #include "request_handler.h"
+#include "static_request_handler.h"
 
 RequestHandlerDispatcher::RequestHandlerDispatcher(const NginxConfig& config) {
   add_handlers(config);
@@ -60,9 +61,7 @@ bool RequestHandlerDispatcher::add_handler(
 
   if (uri == "/static") {
     // Create a StaticRequestHandler
-    // TODO: this is temporary and should be replaced with a real
-    // StaticRequestHandler
-    handlers_[uri] = std::make_shared<EchoRequestHandler>();
+    handlers_[uri] = std::make_shared<StaticRequestHandler>();
     return true;
   }
   return false;  // No handler created for this URI
@@ -81,7 +80,7 @@ std::shared_ptr<RequestHandler> RequestHandlerDispatcher::get_handler(
 
   // longest prefix match
   for (auto it = handlers_.begin(); it != handlers_.end(); ++it) {
-    if (uri.substr(0, it->first.size()) == it->first) {
+    if (uri.substr(0, it->first.size()).compare(it->first) == 0) {
       if (it->first.size() > max_length) {
         max_length = it->first.size();
         handler = it->second;

@@ -5,9 +5,9 @@
 #include <boost/asio.hpp>
 #include <string>
 
+#include "config_parser.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "config_parser.h"
 #include "request_handler_dispatcher.h"  // for RequestHandlerDispatcher
 
 using ::testing::AtLeast;
@@ -16,10 +16,11 @@ class SessionTest : public Session {
  public:
   explicit SessionTest(boost::asio::io_service &io_service)
       : Session(io_service,
-                std::make_shared<RequestHandlerDispatcher>(NginxConfig())), is_deleted(nullptr) { // only a placeholder
+                std::make_shared<RequestHandlerDispatcher>(NginxConfig())),
+        is_deleted(nullptr) {  // only a placeholder
     NginxConfigParser parser;
     NginxConfig config;
-    parser.parse("../my_config" , &config);
+    parser.parse("../my_config", &config);
     dispatcher_ = std::make_shared<RequestHandlerDispatcher>(config);
   }
 

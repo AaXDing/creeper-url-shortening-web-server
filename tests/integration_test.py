@@ -133,16 +133,22 @@ def define_tests():
     """
     return [
         {
-            "name": "Valid GET",
+            "name": "Valid echo request with curl",
+            "method": "/echo",
+            "expected": b"GET /echo HTTP/1.1\r\nHost: localhost\r\nUser-Agent: curl/8.5.0\r\nAccept: */*\r\n\r\n",
+            "use_nc": False
+        },
+        {
+            "name": "Valid echo request",
             "method": b"GET /echo HTTP/1.1\r\nHost: localhost\r\nUser-Agent: curl/8.5.0\r\nAccept: */*\r\n\r\n",
             "expected": b"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 76\r\n\r\nGET /echo HTTP/1.1\r\nHost: localhost\r\nUser-Agent: curl/8.5.0\r\nAccept: */*\r\n\r\n",
             "use_nc": True
         },
         {
-            "name": "Valid GET with curl",
-            "method": "/echo",
-            "expected": b"GET /echo HTTP/1.1\r\nHost: localhost\r\nUser-Agent: curl/8.5.0\r\nAccept: */*\r\n\r\n",
-            "use_nc": False
+            "name": "Valid static file request",
+            "method": b"GET /static/example/test.txt HTTP/1.1\r\nHost: localhost\r\nUser-Agent: curl/8.5.0\r\nAccept: */*\r\n\r\n",
+            "expected": b"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 18\r\n\r\nline1\nline2\n\nline4",
+            "use_nc": True
         },
         {
             "name": "Invalid Method",
@@ -155,7 +161,13 @@ def define_tests():
             "method": b"\r\nConnection: close\r\n\r\n",
             "expected": b"HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\nContent-Length: 15\r\n\r\n400 Bad Request",
             "use_nc": True
-        }
+        },
+        {
+            "name": "Unsupported request",
+            "method": b"GET /video HTTP/1.1\r\nHost: localhost\r\nUser-Agent: curl/8.5.0\r\nAccept: */*\r\n\r\n",
+            "expected": b"HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nContent-Length: 13\r\n\r\n404 Not Found",
+            "use_nc": True
+        },
     ]
 
 # ------------------- Main Runner -------------------

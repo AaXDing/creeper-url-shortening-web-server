@@ -74,6 +74,18 @@ TEST_F(NginxConfigParserTestFixture, MissingSemicolonConfig) {
   EXPECT_FALSE(success);
 }
 
+TEST_F(NginxConfigParserTestFixture, ExtraSemicolonConfig) {
+  bool success =
+      parser.parse("config_testcases/extra_semicolon_config", &config);
+  EXPECT_FALSE(success);
+}
+
+TEST_F(NginxConfigParserTestFixture, BlockAfterSemicolonConfig) {
+  bool success =
+      parser.parse("config_testcases/block_after_semicolon_config", &config);
+  EXPECT_FALSE(success);
+}
+
 TEST_F(NginxConfigParserTestFixture, ToStringMethod) {
   bool success = parser.parse("config_testcases/nested_block_config", &config);
   EXPECT_TRUE(success);

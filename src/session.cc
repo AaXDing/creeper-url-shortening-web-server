@@ -42,12 +42,10 @@ void Session::handle_read(const boost::system::error_code &error,
   if (!error) {
     std::string response_msg = handle_response(bytes_transferred);
 
-    // move response_msg to data_
-    std::copy(response_msg.begin(), response_msg.end(), data_);
     size_t response_length = response_msg.size();
     // send Response and continue reading loop
     boost::asio::async_write(socket_,
-                             boost::asio::buffer(data_, response_length),
+                             boost::asio::buffer(response_msg.c_str(), response_length),
                              boost::bind(&Session::handle_write, this,
                                          boost::asio::placeholders::error));
   } else {

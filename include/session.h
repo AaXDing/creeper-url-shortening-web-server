@@ -29,6 +29,7 @@ class Session : public ISession {  // Inherit from ISession Interface
   std::string handle_response(size_t bytes_transferred);
 
   boost::asio::ip::tcp::socket socket_;
+  // max length of data buffer 1KB
   const static int MAX_LENGTH = 1024;
   char data_[MAX_LENGTH];
 

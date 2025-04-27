@@ -17,6 +17,15 @@ const std::unordered_map<unsigned int, std::string> STOCK_RESPONSE = {
      "13\r\n\r\n404 Not Found"},
 };
 
+const std::unordered_map<std::string, std::string> CONTENT_TYPE = {
+    {"html", "text/html"},
+    {"txt", "text/plain"},
+    {"pdf", "application/pdf"},
+    {"zip", "application/zip"},
+    {"jpeg", "image/jpeg"},
+    {"jpg", "image/jpeg"},
+};
+
 struct Header {
   std::string name;
   std::string value;
@@ -37,7 +46,6 @@ struct Response {
   int status_code;
   std::string status_message;
   std::string content_type;
-  // std::string content_length;
   std::string body;
 };
 

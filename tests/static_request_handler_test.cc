@@ -17,7 +17,7 @@ TEST_F(StaticRequestHandlerTestFixture, ValidStaticRequest) {
   request.valid = true;
   request.version = "HTTP/1.1";
   request.method = "GET";
-  request.uri = "/static/example/test.txt";
+  request.uri = "/static/test1/test.txt";
 
   response_str = handler.handle_request(request, response);
 
@@ -38,7 +38,7 @@ TEST_F(StaticRequestHandlerTestFixture, ValidStaticRequestWithExtraSlashes) {
   request.valid = true;
   request.version = "HTTP/1.1";
   request.method = "GET";
-  request.uri = "/static/example/test.txt///";
+  request.uri = "/static/test1/test.txt///";
 
   response_str = handler.handle_request(request, response);
 
@@ -55,11 +55,97 @@ TEST_F(StaticRequestHandlerTestFixture, ValidStaticRequestWithExtraSlashes) {
             "line1\nline2\n\nline4");
 }
 
+TEST_F(StaticRequestHandlerTestFixture, PdfFileRequest) {
+  request.valid = true;
+  request.version = "HTTP/1.1";
+  request.method = "GET";
+  request.uri = "/static/test2/creeper.pdf";
+
+  response_str = handler.handle_request(request, response);
+
+  EXPECT_EQ(response.status_code, 200);
+  EXPECT_EQ(response.status_message, "OK");
+  EXPECT_EQ(response.version, "HTTP/1.1");
+  EXPECT_EQ(response.content_type, "application/pdf");
+}
+
+TEST_F(StaticRequestHandlerTestFixture, ZipFileRequest) {
+  request.valid = true;
+  request.version = "HTTP/1.1";
+  request.method = "GET";
+  request.uri = "/static/test1/creeper.zip";
+
+  response_str = handler.handle_request(request, response);
+
+  EXPECT_EQ(response.status_code, 200);
+  EXPECT_EQ(response.status_message, "OK");
+  EXPECT_EQ(response.version, "HTTP/1.1");
+  EXPECT_EQ(response.content_type, "application/zip");
+}
+
+TEST_F(StaticRequestHandlerTestFixture, JPEGFileRequest) {
+  request.valid = true;
+  request.version = "HTTP/1.1";
+  request.method = "GET";
+  request.uri = "/static/test1/creeper.jpg";
+
+  response_str = handler.handle_request(request, response);
+
+  EXPECT_EQ(response.status_code, 200);
+  EXPECT_EQ(response.status_message, "OK");
+  EXPECT_EQ(response.version, "HTTP/1.1");
+  EXPECT_EQ(response.content_type, "image/jpeg");
+}
+
+TEST_F(StaticRequestHandlerTestFixture, HTMLFileRequest) {
+  request.valid = true;
+  request.version = "HTTP/1.1";
+  request.method = "GET";
+  request.uri = "/static/test2/test.html";
+
+  response_str = handler.handle_request(request, response);
+
+  EXPECT_EQ(response.status_code, 200);
+  EXPECT_EQ(response.status_message, "OK");
+  EXPECT_EQ(response.version, "HTTP/1.1");
+  EXPECT_EQ(response.content_type, "text/html");
+}
+
+TEST_F(StaticRequestHandlerTestFixture, FileNotSupported) {
+  request.valid = true;
+  request.version = "HTTP/1.1";
+  request.method = "GET";
+  request.uri = "/static/test2/file_not_supported";
+
+  response_str = handler.handle_request(request, response);
+
+  EXPECT_EQ(response.status_code, 200);
+  EXPECT_EQ(response.status_message, "OK");
+  EXPECT_EQ(response.version, "HTTP/1.1");
+  EXPECT_EQ(response.content_type, "application/octet-stream");
+}
+
+TEST_F(StaticRequestHandlerTestFixture, InvalidRequestOnFolder) {
+  request.valid = true;
+  request.version = "HTTP/1.1";
+  request.method = "GET";
+  request.uri = "/static/test2/empty";
+
+  response_str = handler.handle_request(request, response);
+
+  EXPECT_EQ(response_str,
+            "HTTP/1.1 404 Not Found\r\n"
+            "Content-Type: text/plain\r\n"
+            "Content-Length: 13\r\n"
+            "\r\n"
+            "404 Not Found");
+}
+
 TEST_F(StaticRequestHandlerTestFixture, FileDoesNotExist) {
   request.valid = true;
   request.version = "HTTP/1.1";
   request.method = "GET";
-  request.uri = "/static/example/invalid_file.txt";
+  request.uri = "/static/test1/invalid_file.txt";
 
   response_str = handler.handle_request(request, response);
 

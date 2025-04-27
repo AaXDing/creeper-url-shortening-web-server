@@ -146,7 +146,7 @@ def define_tests():
         },
         {
             "name": "Valid static file request",
-            "method": b"GET /static/example/test.txt HTTP/1.1\r\nHost: localhost\r\nUser-Agent: curl/8.5.0\r\nAccept: */*\r\n\r\n",
+            "method": b"GET /static/test1/test.txt HTTP/1.1\r\nHost: localhost\r\nUser-Agent: curl/8.5.0\r\nAccept: */*\r\n\r\n",
             "expected": b"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 18\r\n\r\nline1\nline2\n\nline4",
             "use_nc": True
         },

@@ -1,5 +1,6 @@
 #include "static_request_handler.h"
 
+#include <boost/filesystem.hpp>
 #include <fstream>
 
 std::string StaticRequestHandler::handle_request(Request& req,
@@ -10,15 +11,20 @@ std::string StaticRequestHandler::handle_request(Request& req,
     file_path.pop_back();  // Remove trailing slashes
   }
 
-  // Check if the file exists
-  std::ifstream file(file_path);
   std::string response_str;
 
-  if (file) {
+  // Check if the file exists and is a regular file
+  if (!boost::filesystem::exists(file_path) ||
+      !boost::filesystem::is_regular_file(file_path)) {
+    response_str = STOCK_RESPONSE.at(404);
+  } else {
+    // Open the file in binary mode
+    std::ifstream file(file_path.c_str(), std::ios::in | std::ios::binary);
+
     res.status_code = 200;
     res.status_message = "OK";
     res.version = req.valid ? req.version : HTTP_VERSION;
-    res.content_type = "text/plain";
+    res.content_type = get_file_content_type(file_path);
     // Read the file content into the response body
     std::string body((std::istreambuf_iterator<char>(file)),
                      std::istreambuf_iterator<char>());
@@ -26,9 +32,28 @@ std::string StaticRequestHandler::handle_request(Request& req,
 
     // Convert the Response object to a string
     response_str = RequestHandler::response_to_string(res);
-  } else {
-    response_str = STOCK_RESPONSE.at(404);  // Return a 404 Not Found response
   }
 
   return response_str;
+}
+
+std::string StaticRequestHandler::get_file_content_type(
+    const std::string& file_path) const {
+  std::string file_extension = "";
+
+  // File path without the leading "../"
+  std::string pure_file_path = file_path.substr(3);
+
+  // Extract the file extension from the file path
+  size_t pos = pure_file_path.find_last_of('.');
+  if (pos != std::string::npos) {
+    file_extension = file_path.substr(pos + 1 + 3);  // +3 to skip "../"
+  }
+
+  // Set the content type based on the file extension
+  auto it = CONTENT_TYPE.find(file_extension);
+  if (it != CONTENT_TYPE.end()) {
+    return it->second;
+  }
+  return "application/octet-stream";  // Default content type
 }

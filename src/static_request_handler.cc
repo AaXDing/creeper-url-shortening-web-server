@@ -1,4 +1,5 @@
 #include "static_request_handler.h"
+#include "logging.h"
 
 #include <boost/filesystem.hpp>
 #include <fstream>
@@ -16,10 +17,17 @@ std::string StaticRequestHandler::handle_request(Request& req,
   // Check if the file exists and is a regular file
   if (!boost::filesystem::exists(file_path) ||
       !boost::filesystem::is_regular_file(file_path)) {
+    LOG(warning) << "File not found or not a regular file: " << file_path;
     response_str = STOCK_RESPONSE.at(404);
   } else {
+    LOG(info) << "Serving static file: " << file_path;
+
     // Open the file in binary mode
     std::ifstream file(file_path.c_str(), std::ios::in | std::ios::binary);
+    if (!file) {
+      LOG(error) << "Failed to open file: " << file_path;
+      return STOCK_RESPONSE.at(500);
+    }
 
     res.status_code = 200;
     res.status_message = "OK";
@@ -55,5 +63,7 @@ std::string StaticRequestHandler::get_file_content_type(
   if (it != CONTENT_TYPE.end()) {
     return it->second;
   }
+
+  LOG(warning) << "Unknown extension '" << file_extension << "'; defaulting to application/octet-stream";
   return "application/octet-stream";  // Default content type
 }

@@ -1,4 +1,5 @@
 #include "request_parser.h"
+#include "logging.h"
 
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
@@ -30,7 +31,7 @@ void RequestParser::parse(Request &req, const std::string &raw_request) {
 
   // If error in Request, Request not valid
   if (ec) {
-    std::cout << ec.message() << std::endl;
+    LOG(error) << "HTTP parse error: " << ec.message();
     req.valid = false;
     return;
   }
@@ -41,6 +42,8 @@ void RequestParser::parse(Request &req, const std::string &raw_request) {
   // Check Request version HTTP/1.1 and Request method allowed
   if (res.version() != 11 ||
       allowed_methods.find(res.method_string()) == allowed_methods.end()) {
+    LOG(error) << "Invalid HTTP version or method: " << res.version() << " "
+               << res.method_string();
     req.valid = false;
     return;
   }
@@ -48,6 +51,10 @@ void RequestParser::parse(Request &req, const std::string &raw_request) {
   req.version = get_version(res.version());
   req.uri = res.target();
   req.method = res.method_string();
+
+  LOG(info) << "Valid request: " << req.method << " " << req.uri << " ("
+            << req.version << ")";
+
   for (const auto &field : res) {
     req.headers.push_back(
         Header{std::string(field.name_string()), std::string(field.value())});

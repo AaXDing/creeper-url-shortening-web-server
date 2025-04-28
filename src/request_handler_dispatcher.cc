@@ -1,4 +1,5 @@
 #include "request_handler_dispatcher.h"
+#include "logging.h"
 
 #include <string>
 
@@ -55,10 +56,12 @@ bool RequestHandlerDispatcher::add_handler(
 
   // Check if the URI already exists in the map
   if (handlers_.find(uri) != handlers_.end()) {
+    LOG(warning) << "Handler for URI \"" << uri << "\" already exists";
     return false;  // URI already exists
   }
 
   if (config == nullptr) {
+    LOG(error) << "Null config for URI \"" << uri << "\"";
     return false;  // Invalid config
   }
 
@@ -68,6 +71,7 @@ bool RequestHandlerDispatcher::add_handler(
     handlers_[uri] = factory_it->second();
     return true;
   }
+  LOG(warning) << "No factory entry for URI \"" << uri << "\"";
   return false;  // No handler created for this URI
 }
 

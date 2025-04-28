@@ -8,6 +8,7 @@
 //   http://lxr.nginx.org/source/src/core/ngx_conf_file.c
 
 #include "config_parser.h"
+#include "logging.h"
 
 #include <cstdio>
 #include <fstream>
@@ -30,9 +31,13 @@ int NginxConfig::get_port() const {
     // Check if the statement is a "listen" directive
     if (statement->tokens_.size() == 2 && statement->tokens_[0] == "listen") {
       try {
-        return std::stoi(statement->tokens_[1]);
+        int port = std::stoi(statement->tokens_[1]);
+        LOG(info) << "Found listen directive, port=" << port;
+        return port;
       } catch (std::exception& e) {
         // If the conversion fails, return -1
+        LOG(error) << "Failed to parse port '" << statement->tokens_[1]
+                   << "': " << e.what();
         return -1;
       }
     }
@@ -173,13 +178,16 @@ NginxConfigParser::TokenType NginxConfigParser::parse_token(
 
   // If we get here, we reached the end of the file.
   if (state == TOKEN_STATE_SINGLE_QUOTE || state == TOKEN_STATE_DOUBLE_QUOTE) {
+    LOG(error) << "Unterminated quote in config";
     return TOKEN_TYPE_ERROR;
   }
 
+  LOG(trace) << "Reached EOF in parse_token";
   return TOKEN_TYPE_EOF;
 }
 
 bool NginxConfigParser::parse(std::istream* config_file, NginxConfig* config) {
+  LOG(info) << "Starting parse of nginx config";
   std::stack<NginxConfig*> config_stack;
   config_stack.push(config);
   TokenType last_token_type = TOKEN_TYPE_START;
@@ -189,6 +197,7 @@ bool NginxConfigParser::parse(std::istream* config_file, NginxConfig* config) {
     token_type = parse_token(config_file, &token);
     // printf ("%s: %s\n", token_type_as_string(token_type), token.c_str());
     if (token_type == TOKEN_TYPE_ERROR) {
+      LOG(error) << "Parse error after token type " << token_type_as_string(last_token_type);
       break;
     }
 
@@ -209,17 +218,17 @@ bool NginxConfigParser::parse(std::istream* config_file, NginxConfig* config) {
         }
         config_stack.top()->statements_.back().get()->tokens_.push_back(token);
       } else {
-        // Error.
+        LOG(error) << "Unexpected NORMAL after " << token_type_as_string(last_token_type);
         break;
       }
     } else if (token_type == TOKEN_TYPE_STATEMENT_END) {
       if (last_token_type != TOKEN_TYPE_NORMAL) {
-        // Error.
+        LOG(error) << "Unexpected STATEMENT_END after " << token_type_as_string(last_token_type);
         break;
       }
     } else if (token_type == TOKEN_TYPE_START_BLOCK) {
       if (last_token_type != TOKEN_TYPE_NORMAL) {
-        // Error.
+        LOG(error) << "Unexpected START_BLOCK after " << token_type_as_string(last_token_type);
         break;
       }
       NginxConfig* const new_config = new NginxConfig;
@@ -231,38 +240,42 @@ bool NginxConfigParser::parse(std::istream* config_file, NginxConfig* config) {
           last_token_type != TOKEN_TYPE_END_BLOCK &&
           last_token_type != TOKEN_TYPE_START_BLOCK) {
         // handle cases }} and {}
-        // Error.
+        LOG(error) << "Unexpected END_BLOCK after " << token_type_as_string(last_token_type);
         break;
       }
       config_stack.pop();
     } else if (token_type == TOKEN_TYPE_EOF) {
       if (last_token_type != TOKEN_TYPE_STATEMENT_END &&
           last_token_type != TOKEN_TYPE_END_BLOCK) {
-        // Error.
+        LOG(error) << "EOF in invalid state: last=" << token_type_as_string(last_token_type)
+            << ", stack_size=" << config_stack.size();
         break;
       } else if (config_stack.size() != 1) {
-        // handle unclosed block
+        LOG(error) << "EOF with unclosed blocks: last=" << token_type_as_string(last_token_type)
+            << ", stack_size=" << config_stack.size();
         break;
       }
+      LOG(info) << "Finished parsing nginx config successfully";
       return true;
     } else {
-      // Error. Unknown token.
+      LOG(error) << "Unexpected token type: " << token_type_as_string(token_type);
       break;
     }
     last_token_type = token_type;
   }
 
-  printf("Bad transition from %s to %s\n",
-         token_type_as_string(last_token_type),
-         token_type_as_string(token_type));
+  LOG(error) << "Parsing failed; bad transition from "
+             << token_type_as_string(last_token_type) << " to "
+             << token_type_as_string(token_type);
   return false;
 }
 
 bool NginxConfigParser::parse(const char* file_name, NginxConfig* config) {
+  LOG(info) << "Opening config file: " << file_name;
   std::ifstream config_file;
   config_file.open(file_name);
   if (!config_file.good()) {
-    printf("Failed to open config file: %s\n", file_name);
+    LOG(error) << "Failed to open config file: " << file_name;
     return false;
   }
 

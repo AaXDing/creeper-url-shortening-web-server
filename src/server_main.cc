@@ -10,6 +10,7 @@
 //
 
 #include <boost/asio.hpp>
+#include <boost/asio/signal_set.hpp>
 #include <cstdlib>
 #include <iostream>
 
@@ -46,7 +47,20 @@ int main(int argc, char* argv[]) {
     LOG(info) << "Creating server on port " << port;
     Server s(io_service, port, config);
 
+    boost::asio::signal_set signals(io_service, SIGINT, SIGTERM);
+    signals.async_wait(
+      [&](const boost::system::error_code& ec, int signal_number) {
+        if (!ec) {
+          LOG(info) << "Signal " << signal_number
+                    << " received, shutting down server";
+          io_service.stop();
+        }
+      }
+    );
+
     io_service.run();
+
+    LOG(info) << "Server terminated cleanly";
   } catch (std::exception& e) {
     LOG(fatal) << "Uncaught exception: " << e.what();
     std::cerr << "Exception: " << e.what() << "\n";

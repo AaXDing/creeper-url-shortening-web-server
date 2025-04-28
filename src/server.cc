@@ -34,6 +34,8 @@ Server::Server(boost::asio::io_service &io, short port,
 }
 
 void Server::start_accept() {
+  LOG(info) << "Waiting for new connection...";
+
   std::unique_ptr<ISession> next = make_session_();  // heap‑allocated
 
   ISession *raw = next.release();  // we will delete or transfer later

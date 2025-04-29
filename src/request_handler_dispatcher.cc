@@ -65,16 +65,21 @@ bool RequestHandlerDispatcher::add_handler(
       } else if (handler_type == "static") {
         if (config->statements_.size() >= 2) {
           std::string root_path = config->statements_[1]->tokens_[1];
-          handlers_[uri] = std::make_shared<StaticRequestHandler>(uri, root_path);
+          auto handler = StaticRequestHandler::create(uri, root_path);
+          if (handler == nullptr) {
+            LOG(error) << "Failed to create StaticRequestHandler for URI \""
+                       << uri << "\"";
+            return false;  // Failed to create handler
+          }
+          handlers_[uri] = std::shared_ptr<RequestHandler>(handler);
           LOG(info) << "Added StaticRequestHandler for URI \"" << uri
                     << "\" with root path \"" << root_path << "\"";
           return true;
-         }
-         else {
-          LOG(error) << "Missing root path for static handler for URI \""
-                     << uri << "\"";
+        } else {
+          LOG(error) << "Missing root path for static handler for URI \"" << uri
+                     << "\"";
           return false;  // Missing root path
-         }
+        }
 
       } else {
         LOG(error) << "Invalid handler type \"" << handler_type
@@ -82,8 +87,8 @@ bool RequestHandlerDispatcher::add_handler(
         return false;  // Invalid handler type
       }
     } else {
-      LOG(error) << "Invalid config for URI \"" << uri << "\". " << 
-                    "Expected \"handler <type>\"";
+      LOG(error) << "Invalid config for URI \"" << uri << "\". "
+                 << "Expected \"handler <type>\"";
       return false;  // Invalid config
     }
   } else {

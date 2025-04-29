@@ -2,6 +2,32 @@
 
 A simple asynchronous TCP server built with Boost.Asio.
 
+## Config Setup
+You can use the `my_config` file as a template for your configuration.
+The configuration file is adopted and modified from nginx format.
+
+- You have to set the `listen` field to the port you want to listen on.
+
+- You can set the `location` field to the path you want to handle.
+
+  - If you want to use the `echo` handler, you have to set the `handler` field to `echo`.
+
+  - If you want to use the `static` handler, you have to set the `handler` field to `static` and specify the root directory for static files (the directory must end with exactly one '/' e.g. / or /example/).
+
+The default configuration is as follows:
+```yaml
+server {
+  listen   80;
+  location /echo {
+    handler echo;
+  }
+  location /static {
+    handler static;
+    root /;
+  }
+}
+```
+
 ## Coverage Build
 
 ```bash
@@ -30,12 +56,13 @@ bin/server ../my_config
 
 ### Sample Client Request
 
-Echo request to server
+#### Echo request to server
 ```bash
 printf "GET /echo HTTP/1.1\r\nHost: host:port\r\nConnection: close\r\n\r\n" | nc localhost 80
 ```
 
-Static file request to server
+#### Static file request to server
+
 To test static file request, you need to create a `data` directory and put your static files in it.
 ```bash
 printf "GET /static/test.html HTTP/1.1\r\nHost: host:port\r\nConnection: close\r\n\r\n" | nc localhost 80

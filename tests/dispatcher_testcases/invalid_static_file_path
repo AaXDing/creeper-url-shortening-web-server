@@ -1,10 +1,7 @@
 server {
   listen   80;
-  location /echo {
-    handler echo;
-  }
   location /static {
     handler static;
-    root /test1;
+    root /static;
   }
 }

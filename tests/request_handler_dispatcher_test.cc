@@ -38,7 +38,8 @@ TEST_F(RequestHandlerDispatcherTestFixtrue, StaticHandler) {
 
 TEST_F(RequestHandlerDispatcherTestFixtrue, EchoHandlerWithTrailingSlash) {
   req.uri = "/echo";
-  parser.parse("dispatcher_testcases/echo_with_trailing_slashes_handler", &config);
+  parser.parse("dispatcher_testcases/echo_with_trailing_slashes_handler",
+               &config);
   dispatcher = std::make_shared<RequestHandlerDispatcher>(config);
   EXPECT_EQ(dispatcher->get_num_handlers(), 1);
   EXPECT_NE(dispatcher->get_handler(req), nullptr);
@@ -66,4 +67,12 @@ TEST_F(RequestHandlerDispatcherTestFixtrue, GetEchoHandlerWithTrailingSlash) {
   dispatcher = std::make_shared<RequestHandlerDispatcher>(config);
   EXPECT_EQ(dispatcher->get_num_handlers(), 1);
   EXPECT_NE(dispatcher->get_handler(req), nullptr);
+}
+
+TEST_F(RequestHandlerDispatcherTestFixtrue, InvalidStaticHandlerFilePath) {
+  req.uri = "/static";
+  parser.parse("dispatcher_testcases/invalid_static_file_path", &config);
+  dispatcher = std::make_shared<RequestHandlerDispatcher>(config);
+  EXPECT_EQ(dispatcher->get_num_handlers(), 0);
+  EXPECT_EQ(dispatcher->get_handler(req), nullptr);
 }

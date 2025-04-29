@@ -6,11 +6,34 @@
 
 #include "logging.h"
 
+StaticRequestHandler* StaticRequestHandler::create(std::string base_uri,
+                                                   std::string root_path) {
+  // path must start and end with a slash or be a single slash
+  bool valid = (root_path == "/") ||
+               (root_path.size() >= 2 && root_path.front() == '/' &&
+                root_path.back() == '/');
+  if (valid && root_path != "/") {  // Check for consecutive slashes
+    for (size_t i = 1; i < root_path.size(); ++i) {
+      if (root_path[i] == '/' && root_path[i - 1] == '/') {
+        valid = false;
+        break;
+      }
+    }
+  }
+  if (!valid) {
+    LOG(error) << "Invalid root path \"" << root_path << "\" for URI \""
+               << base_uri << "\"";
+    LOG(error) << "Root path must start and end with a slash and cannot "
+                  "contain consecutive slashes, or be a single slash";
+    return nullptr;
+  }
+
+  return new StaticRequestHandler(std::move(base_uri), std::move(root_path));
+}
+
 StaticRequestHandler::StaticRequestHandler(std::string base_uri,
                                            std::string root_path)
-    : base_uri_(std::move(base_uri)), root_path_(std::move(root_path)) {
-  // Ensure the root path is valid
-}
+    : base_uri_(std::move(base_uri)), root_path_(std::move(root_path)) {}
 
 std::string StaticRequestHandler::handle_request(Request& req,
                                                  Response& res) const {

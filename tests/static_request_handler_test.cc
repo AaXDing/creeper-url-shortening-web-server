@@ -6,7 +6,7 @@
 #include "http_header.h"
 
 class StaticRequestHandlerTest : public StaticRequestHandler {
-  public:
+ public:
   StaticRequestHandlerTest(std::string base_uri, std::string root_path)
       : StaticRequestHandler(base_uri, root_path) {}
 
@@ -31,7 +31,8 @@ class StaticRequestHandlerTestFixture : public ::testing::Test {
  protected:
   std::string base_uri = "/static";
   std::string root_path = "/";
-  StaticRequestHandlerTest handler = StaticRequestHandlerTest(base_uri, root_path);
+  StaticRequestHandlerTest handler =
+      StaticRequestHandlerTest(base_uri, root_path);
   Request request;
   Response response;
   std::string response_str;
@@ -181,12 +182,25 @@ TEST_F(StaticRequestHandlerTestFixture, FileDoesNotExist) {
             "404 Not Found");
 }
 
-TEST_F(StaticRequestHandlerTestFixture, FilePath) {
+TEST_F(StaticRequestHandlerTestFixture, FilePathTextFile) {
   std::string file_path = handler.generate_file_path("/static/test1/test.txt");
+  std::string extension = handler.get_file_content_type(file_path);
   EXPECT_EQ(file_path, "../data/test1/test.txt");
+  EXPECT_EQ(extension, "text/plain");
 }
 
-TEST_F(StaticRequestHandlerTestFixture, FilePathWithTrailingSlash) {
-  std::string file_path = handler.generate_file_path("/static/test1/test.txt//");
+TEST_F(StaticRequestHandlerTestFixture, FilePathTextFileWithTrailingSlash) {
+  std::string file_path =
+      handler.generate_file_path("/static/test1/test.txt//");
+  std::string extension = handler.get_file_content_type(file_path);
   EXPECT_EQ(file_path, "../data/test1/test.txt");
+  EXPECT_EQ(extension, "text/plain");
+}
+
+TEST_F(StaticRequestHandlerTestFixture, FilePathPdfFile) {
+  std::string file_path =
+      handler.generate_file_path("/static/test2/creeper.pdf");
+  std::string extension = handler.get_file_content_type(file_path);
+  EXPECT_EQ(file_path, "../data/test2/creeper.pdf");
+  EXPECT_EQ(extension, "application/pdf");
 }

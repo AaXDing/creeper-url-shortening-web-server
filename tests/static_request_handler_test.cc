@@ -5,12 +5,33 @@
 #include "gtest/gtest.h"
 #include "http_header.h"
 
+class StaticRequestHandlerTest : public StaticRequestHandler {
+  public:
+  StaticRequestHandlerTest(std::string base_uri, std::string root_path)
+      : StaticRequestHandler(base_uri, root_path) {}
 
+  std::string handle_request(Request& req, Response& res) const {
+    return StaticRequestHandler::handle_request(req, res);
+  }
+
+  std::string response_to_string(const Response& res) const {
+    return StaticRequestHandler::response_to_string(res);
+  }
+
+  std::string get_file_content_type(const std::string& file_path) const {
+    return StaticRequestHandler::get_file_content_type(file_path);
+  }
+
+  std::string generate_file_path(const std::string& file_path) const {
+    return StaticRequestHandler::generate_file_path(file_path);
+  }
+};
 
 class StaticRequestHandlerTestFixture : public ::testing::Test {
  protected:
-  std::string root_path = "/static";
-  StaticRequestHandler handler = StaticRequestHandler(root_path);
+  std::string base_uri = "/static";
+  std::string root_path = "/";
+  StaticRequestHandlerTest handler = StaticRequestHandlerTest(base_uri, root_path);
   Request request;
   Response response;
   std::string response_str;
@@ -158,4 +179,14 @@ TEST_F(StaticRequestHandlerTestFixture, FileDoesNotExist) {
             "Content-Length: 13\r\n"
             "\r\n"
             "404 Not Found");
+}
+
+TEST_F(StaticRequestHandlerTestFixture, FilePath) {
+  std::string file_path = handler.generate_file_path("/static/test1/test.txt");
+  EXPECT_EQ(file_path, "../data/test1/test.txt");
+}
+
+TEST_F(StaticRequestHandlerTestFixture, FilePathWithTrailingSlash) {
+  std::string file_path = handler.generate_file_path("/static/test1/test.txt//");
+  EXPECT_EQ(file_path, "../data/test1/test.txt");
 }

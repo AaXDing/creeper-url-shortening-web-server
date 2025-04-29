@@ -1,12 +1,14 @@
 #include "static_request_handler.h"
-#include "logging.h"
 
 #include <boost/filesystem.hpp>
 #include <fstream>
 #include <memory>
 
-StaticRequestHandler::StaticRequestHandler(std::string root_path)
-    : root_path_(std::move(root_path)) {
+#include "logging.h"
+
+StaticRequestHandler::StaticRequestHandler(std::string base_uri,
+                                           std::string root_path)
+    : base_uri_(std::move(base_uri)), root_path_(std::move(root_path)) {
   // Ensure the root path is valid
 }
 
@@ -17,22 +19,8 @@ std::string StaticRequestHandler::handle_request(Request& req,
   // to the file path
 
   // e.g. if root /var/www}
-  // e.g. /static/test1/test.txt -> ../var/www/test1/test.txt
-  std::string file_path = "";
-  if (req.uri.size() > 1) {
-    int pos = req.uri.substr(1).find_first_of('/');
-    if (pos != std::string::npos) {
-      file_path = req.uri.substr(pos + 1);
-    } else {
-      file_path = req.uri;
-    }
-  }
-
-  file_path = ".." + root_path_ + file_path;
-  // Remove trailing slashes from the URI
-  while (file_path.size() > 0 && file_path[file_path.size() - 1] == '/') {
-    file_path.pop_back();  // Remove trailing slashes
-  }
+  // e.g. /static/test1/test.txt -> ../data/var/www/test1/test.txt
+  std::string file_path = generate_file_path(req.uri);
 
   std::string response_str;
 
@@ -67,6 +55,31 @@ std::string StaticRequestHandler::handle_request(Request& req,
   return response_str;
 }
 
+std::string StaticRequestHandler::generate_file_path(
+    const std::string& uri) const {
+  std::string file_path = "";
+
+  // Remove base URI from the request URI
+  file_path = uri.substr(base_uri_.size());
+  // Remove leading slashes from the URI
+  if (file_path.size() > 1) {
+    int pos = file_path.find_first_of('/');
+    if (pos != std::string::npos) {
+      file_path = file_path.substr(pos + 1);
+    }
+  }
+
+  // // Add root path in front of the file path
+  file_path = "../data" + root_path_ + file_path;
+
+  // Remove trailing slashes from the URI
+  while (file_path.size() > 0 && file_path[file_path.size() - 1] == '/') {
+    file_path.pop_back();  // Remove trailing slashes
+  }
+
+  return file_path;
+}
+
 std::string StaticRequestHandler::get_file_content_type(
     const std::string& file_path) const {
   std::string file_extension = "";
@@ -86,6 +99,7 @@ std::string StaticRequestHandler::get_file_content_type(
     return it->second;
   }
 
-  LOG(warning) << "Unknown extension '" << file_extension << "'; defaulting to application/octet-stream";
+  LOG(warning) << "Unknown extension '" << file_extension
+               << "'; defaulting to application/octet-stream";
   return "application/octet-stream";  // Default content type
 }

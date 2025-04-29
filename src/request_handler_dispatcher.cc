@@ -40,6 +40,7 @@ bool RequestHandlerDispatcher::add_handler(
   }
 
   // Check if the URI already exists in the map
+  // Only the first handler for a URI is added
   if (handlers_.find(uri) != handlers_.end()) {
     LOG(warning) << "Handler for URI \"" << uri << "\" already exists";
     return false;  // URI already exists
@@ -64,7 +65,7 @@ bool RequestHandlerDispatcher::add_handler(
       } else if (handler_type == "static") {
         if (config->statements_.size() >= 2) {
           std::string root_path = config->statements_[1]->tokens_[1];
-          handlers_[uri] = std::make_shared<StaticRequestHandler>(root_path);
+          handlers_[uri] = std::make_shared<StaticRequestHandler>(uri, root_path);
           LOG(info) << "Added StaticRequestHandler for URI \"" << uri
                     << "\" with root path \"" << root_path << "\"";
           return true;

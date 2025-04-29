@@ -19,10 +19,17 @@ RUN ctest --output-on_failure
 # Define deploy stage
 FROM ubuntu:noble AS deploy
 
-# Copy server output binary to "."
-COPY --from=builder /usr/src/project/build/bin/server .
+# Make directory for app and static
+RUN mkdir -p /app
+RUN mkdir -p /data
+# Copy server output binary to "/app"
+COPY --from=builder /usr/src/project/build/bin/server /app/
 # Copy config file as well
-COPY --from=builder /usr/src/project/my_config .
+COPY --from=builder /usr/src/project/my_config /app/
+# Copy static files to "."
+COPY --from=builder /usr/src/project/data /data
+# Set working directory
+WORKDIR /app
 
 # Expose some port(s)
 # EXPOSE 8080

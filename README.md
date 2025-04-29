@@ -46,3 +46,9 @@ docker build -f docker/coverage.Dockerfile -t creeper-coverage .
 ```bash
 gcloud builds submit --config docker/cloudbuild.yaml .
 ```
+
+## GCloud SSH Docker 
+```bash
+docker ps
+docker exec -it <container_id> /bin/bash
+```

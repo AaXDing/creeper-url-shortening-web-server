@@ -12,7 +12,7 @@ The configuration file is adopted and modified from nginx format.
 
   - If you want to use the `echo` handler, you have to set the `handler` field to `echo`.
 
-  - If you want to use the `static` handler, you have to set the `handler` field to `static` and specify the root directory for static files (the directory must end with exactly one '/' e.g. / or /example/).
+  - If you want to use the `static` handler, you have to set the `handler` field to `static` and specify the root directory for static files (e.g. root directory "/" or "/var/www").
 
 The default configuration is as follows:
 ```yaml

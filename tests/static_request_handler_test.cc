@@ -8,7 +8,7 @@
 class StaticRequestHandlerTest : public StaticRequestHandler {
  public:
   StaticRequestHandlerTest(std::string base_uri, std::string root_path)
-      : StaticRequestHandler(base_uri, root_path) {}
+      : StaticRequestHandler(std::move(base_uri), std::move(root_path)) {}
 
   std::string handle_request(Request& req, Response& res) const {
     return StaticRequestHandler::handle_request(req, res);
@@ -31,12 +31,34 @@ class StaticRequestHandlerTestFixture : public ::testing::Test {
  protected:
   std::string base_uri = "/static";
   std::string root_path = "/";
-  StaticRequestHandlerTest handler =
-      StaticRequestHandlerTest(base_uri, root_path);
+  StaticRequestHandler* handler;
+  StaticRequestHandlerTest test_handler = StaticRequestHandlerTest(base_uri, root_path);
   Request request;
   Response response;
   std::string response_str;
 };
+
+TEST_F(StaticRequestHandlerTestFixture, CreateHandlerSingleSlash) {
+  handler = StaticRequestHandler::create("/static", "/");
+  EXPECT_NE(handler, nullptr);
+  delete handler;
+}
+
+TEST_F(StaticRequestHandlerTestFixture, CreateHandlerValidPath) {
+  handler = StaticRequestHandler::create("/static", "/var/www");
+  EXPECT_NE(handler, nullptr);
+  delete handler;
+}
+
+TEST_F(StaticRequestHandlerTestFixture, CreateHandlerEndsWithSlash) {
+  handler = StaticRequestHandler::create("/static", "/var/www/");
+  EXPECT_EQ(handler, nullptr);
+}
+
+TEST_F(StaticRequestHandlerTestFixture, CreateHandlerDuplicateSlashs) {
+  handler = StaticRequestHandler::create("/static", "/var//www");
+  EXPECT_EQ(handler, nullptr);
+}
 
 TEST_F(StaticRequestHandlerTestFixture, ValidStaticRequest) {
   request.valid = true;
@@ -44,7 +66,7 @@ TEST_F(StaticRequestHandlerTestFixture, ValidStaticRequest) {
   request.method = "GET";
   request.uri = "/static/test1/test.txt";
 
-  response_str = handler.handle_request(request, response);
+  response_str = test_handler.handle_request(request, response);
 
   EXPECT_EQ(response.status_code, 200);
   EXPECT_EQ(response.status_message, "OK");
@@ -65,7 +87,7 @@ TEST_F(StaticRequestHandlerTestFixture, ValidStaticRequestWithExtraSlashes) {
   request.method = "GET";
   request.uri = "/static/test1/test.txt///";
 
-  response_str = handler.handle_request(request, response);
+  response_str = test_handler.handle_request(request, response);
 
   EXPECT_EQ(response.status_code, 200);
   EXPECT_EQ(response.status_message, "OK");
@@ -86,7 +108,7 @@ TEST_F(StaticRequestHandlerTestFixture, PdfFileRequest) {
   request.method = "GET";
   request.uri = "/static/test2/creeper.pdf";
 
-  response_str = handler.handle_request(request, response);
+  response_str = test_handler.handle_request(request, response);
 
   EXPECT_EQ(response.status_code, 200);
   EXPECT_EQ(response.status_message, "OK");
@@ -100,7 +122,7 @@ TEST_F(StaticRequestHandlerTestFixture, ZipFileRequest) {
   request.method = "GET";
   request.uri = "/static/test1/creeper.zip";
 
-  response_str = handler.handle_request(request, response);
+  response_str = test_handler.handle_request(request, response);
 
   EXPECT_EQ(response.status_code, 200);
   EXPECT_EQ(response.status_message, "OK");
@@ -114,7 +136,7 @@ TEST_F(StaticRequestHandlerTestFixture, JPEGFileRequest) {
   request.method = "GET";
   request.uri = "/static/test1/creeper.jpg";
 
-  response_str = handler.handle_request(request, response);
+  response_str = test_handler.handle_request(request, response);
 
   EXPECT_EQ(response.status_code, 200);
   EXPECT_EQ(response.status_message, "OK");
@@ -128,7 +150,7 @@ TEST_F(StaticRequestHandlerTestFixture, HTMLFileRequest) {
   request.method = "GET";
   request.uri = "/static/test2/test.html";
 
-  response_str = handler.handle_request(request, response);
+  response_str = test_handler.handle_request(request, response);
 
   EXPECT_EQ(response.status_code, 200);
   EXPECT_EQ(response.status_message, "OK");
@@ -142,7 +164,7 @@ TEST_F(StaticRequestHandlerTestFixture, FileNotSupported) {
   request.method = "GET";
   request.uri = "/static/test2/file_not_supported";
 
-  response_str = handler.handle_request(request, response);
+  response_str = test_handler.handle_request(request, response);
 
   EXPECT_EQ(response.status_code, 200);
   EXPECT_EQ(response.status_message, "OK");
@@ -156,7 +178,7 @@ TEST_F(StaticRequestHandlerTestFixture, InvalidRequestOnFolder) {
   request.method = "GET";
   request.uri = "/static/test2/empty";
 
-  response_str = handler.handle_request(request, response);
+  response_str = test_handler.handle_request(request, response);
 
   EXPECT_EQ(response_str,
             "HTTP/1.1 404 Not Found\r\n"
@@ -172,7 +194,7 @@ TEST_F(StaticRequestHandlerTestFixture, FileDoesNotExist) {
   request.method = "GET";
   request.uri = "/static/test1/invalid_file.txt";
 
-  response_str = handler.handle_request(request, response);
+  response_str = test_handler.handle_request(request, response);
 
   EXPECT_EQ(response_str,
             "HTTP/1.1 404 Not Found\r\n"
@@ -183,24 +205,24 @@ TEST_F(StaticRequestHandlerTestFixture, FileDoesNotExist) {
 }
 
 TEST_F(StaticRequestHandlerTestFixture, FilePathTextFile) {
-  std::string file_path = handler.generate_file_path("/static/test1/test.txt");
-  std::string extension = handler.get_file_content_type(file_path);
+  std::string file_path = test_handler.generate_file_path("/static/test1/test.txt");
+  std::string extension = test_handler.get_file_content_type(file_path);
   EXPECT_EQ(file_path, "../data/test1/test.txt");
   EXPECT_EQ(extension, "text/plain");
 }
 
 TEST_F(StaticRequestHandlerTestFixture, FilePathTextFileWithTrailingSlash) {
   std::string file_path =
-      handler.generate_file_path("/static/test1/test.txt//");
-  std::string extension = handler.get_file_content_type(file_path);
+      test_handler.generate_file_path("/static/test1/test.txt//");
+  std::string extension = test_handler.get_file_content_type(file_path);
   EXPECT_EQ(file_path, "../data/test1/test.txt");
   EXPECT_EQ(extension, "text/plain");
 }
 
 TEST_F(StaticRequestHandlerTestFixture, FilePathPdfFile) {
   std::string file_path =
-      handler.generate_file_path("/static/test2/creeper.pdf");
-  std::string extension = handler.get_file_content_type(file_path);
+      test_handler.generate_file_path("/static/test2/creeper.pdf");
+  std::string extension = test_handler.get_file_content_type(file_path);
   EXPECT_EQ(file_path, "../data/test2/creeper.pdf");
   EXPECT_EQ(extension, "application/pdf");
 }

@@ -2,6 +2,6 @@ server {
   listen   80;
   location /static {
     handler static;
-    root /static;
+    root /static/;
   }
 }

@@ -3,10 +3,10 @@ server {
   server_name foo.com;
   location /static {
     handler static;
-    root /static/;
+    root /static;
   }
   location /static {
     handler static;
-    root /static/;
+    root /static;
   }
 }

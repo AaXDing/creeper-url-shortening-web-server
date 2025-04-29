@@ -9,14 +9,14 @@ server {
   }
   location /static {
     handler static;
-    root /static/;
+    root /static;
   }
   location /static1 {
     handler static;
-    root /var/;
+    root /var;
   }
   location /static3 {
     handler static;
-    root /www/;
+    root /www;
   }
 }

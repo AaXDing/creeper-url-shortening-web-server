@@ -8,11 +8,11 @@
 
 StaticRequestHandler* StaticRequestHandler::create(std::string base_uri,
                                                    std::string root_path) {
-  // path must start and end with a slash or be a single slash
-  bool valid = (root_path == "/") ||
-               (root_path.size() >= 2 && root_path.front() == '/' &&
-                root_path.back() == '/');
-  if (valid && root_path != "/") {  // Check for consecutive slashes
+  // path must start with a slash or be a single slash
+  bool valid = root_path.size() >= 1 && root_path[0] == '/' &&
+               (root_path == "/" || root_path.back() != '/');
+
+  if (valid && root_path != "/") {
     for (size_t i = 1; i < root_path.size(); ++i) {
       if (root_path[i] == '/' && root_path[i - 1] == '/') {
         valid = false;
@@ -20,11 +20,13 @@ StaticRequestHandler* StaticRequestHandler::create(std::string base_uri,
       }
     }
   }
+
   if (!valid) {
     LOG(error) << "Invalid root path \"" << root_path << "\" for URI \""
                << base_uri << "\"";
-    LOG(error) << "Root path must start and end with a slash and cannot "
-                  "contain consecutive slashes, or be a single slash";
+    LOG(error)
+        << "Root path must start with a slash, not end with one (unless it's a "
+           "single slash), and must not contain consecutive slashes.";
     return nullptr;
   }
 
@@ -81,19 +83,23 @@ std::string StaticRequestHandler::handle_request(Request& req,
 std::string StaticRequestHandler::generate_file_path(
     const std::string& uri) const {
   std::string file_path = "";
+  std::string root_path = root_path_;
 
   // Remove base URI from the request URI
+  // e.g. Base URI /static
+  // /static/test1/test.txt -> /test1/test.txt
   file_path = uri.substr(base_uri_.size());
-  // Remove leading slashes from the URI
-  if (file_path.size() > 1) {
-    int pos = file_path.find_first_of('/');
-    if (pos != std::string::npos) {
-      file_path = file_path.substr(pos + 1);
-    }
+
+  // Remove slash if the root path is a single slash
+  if (root_path_ == "/") {
+    root_path = "";
   }
 
-  // // Add root path in front of the file path
-  file_path = "../data" + root_path_ + file_path;
+  // Add root path in front of the file path
+  // e.g. root_path_ /var/www
+  // e.g. /test1/test.txt -> ../data/var/www/test1/test.txt
+  file_path =
+      "../data" + root_path + file_path;
 
   // Remove trailing slashes from the URI
   while (file_path.size() > 0 && file_path[file_path.size() - 1] == '/') {

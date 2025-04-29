@@ -21,7 +21,9 @@ import sys
 # ------------------- Configuration -------------------
 TEST_PORT = 80
 SERVER_BIN = "bin/server"
-CONFIG_FILE_BASE_PATH = "../tests/integration_testcases/"
+CONFIG_FILE_BASE_PATH = "../"
+CONFIG_FILE_INTEGRATION_PATH = "../tests/integration_testcases/"
+
 
 # Global state for server process
 server_proc = None
@@ -30,7 +32,7 @@ log_file = None
 # ------------------- Server Control -------------------
 
 
-def start_server(config_file):
+def start_server(config_file, integration_test_folder):
     """
     Starts the server as a background subprocess.
     Output is written to a temporary log file.
@@ -39,7 +41,10 @@ def start_server(config_file):
     log_file = tempfile.NamedTemporaryFile(delete=False)
     build_dir = os.path.abspath(os.getcwd())
     server_path = os.path.join(build_dir, SERVER_BIN)
-    config_file = os.path.join(CONFIG_FILE_BASE_PATH, config_file)
+    if integration_test_folder:
+        config_file = os.path.join(CONFIG_FILE_INTEGRATION_PATH, config_file)
+    else:
+        config_file = os.path.join(CONFIG_FILE_BASE_PATH, config_file)
     if not os.path.isfile(server_path):
         raise FileNotFoundError("Can't find server at {server_path}")
     server_proc = subprocess.Popen(
@@ -135,6 +140,7 @@ def define_tests():
     """
     return [
         {"config": "simple_config",
+         "integration_test_folder": True,
          "tests": [
              {
                  "name": "Valid echo request with curl",
@@ -169,6 +175,7 @@ def define_tests():
              },
          ]},
         {"config": "static_config",
+         "integration_test_folder": True,
          "tests": [
              {
                  "name": "Valid static file request with alt file path",
@@ -176,7 +183,23 @@ def define_tests():
                  "expected": b"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 18\r\n\r\nline1\nline2\n\nline4",
                  "use_nc": True
              },
-         ]}
+         ]},
+        {"config": "my_config",
+         "integration_test_folder": False,
+         "tests": [
+             {
+                 "name": "Valid echo request on deploy config",
+                 "method": b"GET /echo HTTP/1.1\r\nHost: localhost\r\nUser-Agent: curl/8.5.0\r\nAccept: */*\r\n\r\n",
+                 "expected": b"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 76\r\n\r\nGET /echo HTTP/1.1\r\nHost: localhost\r\nUser-Agent: curl/8.5.0\r\nAccept: */*\r\n\r\n",
+                 "use_nc": True
+             },
+             {
+                 "name": "Valid static file request on on deploy config",
+                 "method": b"GET /static/test1/test.txt HTTP/1.1\r\nHost: localhost\r\nUser-Agent: curl/8.5.0\r\nAccept: */*\r\n\r\n",
+                 "expected": b"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 18\r\n\r\nline1\nline2\n\nline4",
+                 "use_nc": True
+             }
+         ]},
     ]
 
 # ------------------- Main Runner -------------------
@@ -191,11 +214,12 @@ def main():
 
     for test in tests:
         config_file = test["config"]
+        integration_test_folder = test["integration_test_folder"]
         if not os.path.isfile(os.path.join(CONFIG_FILE_BASE_PATH, config_file)):
             print(f"Config file {config_file} not found.")
             continue
         print(f"Running tests for config: {config_file}")
-        start_server(config_file)
+        start_server(config_file, integration_test_folder)
         try:
             for test_case in test["tests"]:
                 all_passed &= run_test(

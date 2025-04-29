@@ -5,9 +5,12 @@
 #include "gtest/gtest.h"
 #include "http_header.h"
 
+
+
 class StaticRequestHandlerTestFixture : public ::testing::Test {
  protected:
-  StaticRequestHandler handler;
+  std::string root_path = "/static";
+  StaticRequestHandler handler = StaticRequestHandler(root_path);
   Request request;
   Response response;
   std::string response_str;

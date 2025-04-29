@@ -1,6 +1,22 @@
 server {
   listen   80;
   server_name foo.com;
-  location /echo {}
-  location /static {}
+  location /echo {
+    handler echo;
+  }
+  location /hahaha {
+    handler echo;
+  }
+  location /static {
+    handler static;
+    root /static;
+  }
+  location /static1 {
+    handler static;
+    root /var;
+  }
+  location /static3 {
+    handler static;
+    root /www;
+  }
 }

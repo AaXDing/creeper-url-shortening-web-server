@@ -1,5 +1,4 @@
 #include "request_handler_dispatcher.h"
-#include "logging.h"
 
 #include <string>
 
@@ -8,16 +7,6 @@
 #include "logging.h"
 #include "request_handler.h"
 #include "static_request_handler.h"
-
-namespace {
-// Factory map for URI to handler creation
-const std::unordered_map<std::string,
-                         std::function<std::shared_ptr<RequestHandler>()>>
-    kHandlerFactory = {
-        {"/echo", []() { return std::make_shared<EchoRequestHandler>(); }},
-        {"/static", []() { return std::make_shared<StaticRequestHandler>(); }},
-};
-}  // namespace
 
 RequestHandlerDispatcher::RequestHandlerDispatcher(const NginxConfig& config) {
   add_handlers(config);
@@ -36,10 +25,6 @@ void RequestHandlerDispatcher::add_handlers(const NginxConfig& config) {
             child_statement->tokens_[0] == "location") {
           if (!add_handler(child_statement->tokens_[1],
                            child_statement->child_block_)) {
-            LOG(warning) << "Failed to add URI: "
-                         << child_statement->tokens_[1];
-          } else {
-            LOG(info) << "Added URI: " << child_statement->tokens_[1];
           }
         }
       }
@@ -65,13 +50,45 @@ bool RequestHandlerDispatcher::add_handler(
     return false;  // Invalid config
   }
 
-  // Look up a handler creator in the factory map
-  auto factory_it = kHandlerFactory.find(uri);
-  if (factory_it != kHandlerFactory.end()) {
-    handlers_[uri] = factory_it->second();
-    return true;
+  std::string handler_type;
+
+  if (config->statements_.size() >= 1) {
+    // for echo handler
+    if (config->statements_[0]->tokens_.size() == 2 &&
+        config->statements_[0]->tokens_[0] == "handler") {
+      handler_type = config->statements_[0]->tokens_[1];
+      if (handler_type == "echo") {
+        handlers_[uri] = std::make_shared<EchoRequestHandler>();
+        LOG(info) << "Added EchoRequestHandler for URI \"" << uri << "\"";
+        return true;
+      } else if (handler_type == "static") {
+        if (config->statements_.size() >= 2) {
+          std::string root_path = config->statements_[1]->tokens_[1];
+          handlers_[uri] = std::make_shared<StaticRequestHandler>(root_path);
+          LOG(info) << "Added StaticRequestHandler for URI \"" << uri
+                    << "\" with root path \"" << root_path << "\"";
+          return true;
+         }
+         else {
+          LOG(error) << "Missing root path for static handler for URI \""
+                     << uri << "\"";
+          return false;  // Missing root path
+         }
+
+      } else {
+        LOG(error) << "Invalid handler type \"" << handler_type
+                   << "\" for URI \"" << uri << "\"";
+        return false;  // Invalid handler type
+      }
+    } else {
+      LOG(error) << "Invalid config for URI \"" << uri << "\". " << 
+                    "Expected \"handler <type>\"";
+      return false;  // Invalid config
+    }
+  } else {
+    LOG(error) << "Invalid config for URI \"" << uri << "\"";
+    return false;  // Invalid config
   }
-  LOG(warning) << "No factory entry for URI \"" << uri << "\"";
   return false;  // No handler created for this URI
 }
 

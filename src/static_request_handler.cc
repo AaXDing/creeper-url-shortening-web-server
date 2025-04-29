@@ -3,10 +3,32 @@
 
 #include <boost/filesystem.hpp>
 #include <fstream>
+#include <memory>
+
+StaticRequestHandler::StaticRequestHandler(std::string root_path)
+    : root_path_(std::move(root_path)) {
+  // Ensure the root path is valid
+}
 
 std::string StaticRequestHandler::handle_request(Request& req,
                                                  Response& res) const {
-  std::string file_path = ".." + req.uri;
+  // remove the first / field
+  // and add the root path
+  // to the file path
+
+  // e.g. if root /var/www}
+  // e.g. /static/test1/test.txt -> ../var/www/test1/test.txt
+  std::string file_path = "";
+  if (req.uri.size() > 1) {
+    int pos = req.uri.substr(1).find_first_of('/');
+    if (pos != std::string::npos) {
+      file_path = req.uri.substr(pos + 1);
+    } else {
+      file_path = req.uri;
+    }
+  }
+
+  file_path = ".." + root_path_ + file_path;
   // Remove trailing slashes from the URI
   while (file_path.size() > 0 && file_path[file_path.size() - 1] == '/') {
     file_path.pop_back();  // Remove trailing slashes

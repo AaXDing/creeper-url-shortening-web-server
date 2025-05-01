@@ -1,0 +1,49 @@
+#include "http_header.h"
+
+#include "gtest/gtest.h"
+
+class HttpHeaderTestFixture : public ::testing::Test {
+ protected:
+  Response res;
+  std::string response_str;
+};
+
+TEST_F(HttpHeaderTestFixture, ResponseToString) {
+  res.status_code = 200;
+  res.status_message = "OK";
+  res.version = "HTTP/1.1";
+  res.content_type = "text/plain";
+  res.body = "Hello, World!";
+  response_str = res.to_string();
+
+  EXPECT_EQ(response_str,
+            "HTTP/1.1 200 OK\r\n"
+            "Content-Type: text/plain\r\n"
+            "Content-Length: 13\r\n"
+            "\r\n"
+            "Hello, World!");
+}
+
+TEST_F(HttpHeaderTestFixture, ResponseToStringEmptyBody) {
+  res.status_code = 204;
+  res.status_message = "No Content";
+  res.version = "HTTP/1.1";
+  res.content_type = "text/plain";
+  res.body = "";
+  response_str = res.to_string();
+
+  EXPECT_EQ(response_str,
+            "HTTP/1.1 204 No Content\r\n"
+            "Content-Type: text/plain\r\n"
+            "Content-Length: 0\r\n"
+            "\r\n");
+}
+
+TEST_F(HttpHeaderTestFixture, RepsonseConstructor) {
+  res = Response("HTTP/1.1", 200, "OK", "text/plain", "Hello, World!");
+  EXPECT_EQ(res.status_code, 200);
+  EXPECT_EQ(res.status_message, "OK");
+  EXPECT_EQ(res.version, "HTTP/1.1");
+  EXPECT_EQ(res.content_type, "text/plain");
+  EXPECT_EQ(res.body, "Hello, World!");
+}

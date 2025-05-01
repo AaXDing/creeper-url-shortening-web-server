@@ -5,16 +5,16 @@
 #include <boost/asio.hpp>
 #include <boost/system/error_code.hpp>
 
+#include "config_parser.h"  // for NginxConfig
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "isession.h"
 #include "session.h"  // for dynamic_cast<> on real session
-#include "config_parser.h"  // for NginxConfig
 
 using ::testing::_;
 using ::testing::NiceMock;
-using ::testing::ReturnRef;
 using ::testing::Return;
+using ::testing::ReturnRef;
 
 namespace asio = boost::asio;
 namespace sys = boost::system;
@@ -62,13 +62,13 @@ TEST(ServerTest, HandleAccept_CallsStartOnSuccess) {
   auto mock = std::make_shared<NiceMock<MockSession>>(ios);
 
   EXPECT_CALL(*mock, remote_endpoint())
-      .WillOnce(
-          Return(tcp::endpoint{ asio::ip::address::from_string("127.0.0.1"), 4242 }));
+      .WillOnce(Return(
+          tcp::endpoint{asio::ip::address::from_string("127.0.0.1"), 4242}));
 
   // Now factory + server
   ServerTest::SessionFactory factory = [mock]() {
-      return std::unique_ptr<ISession>( mock.get() );
-    };
+    return std::unique_ptr<ISession>(mock.get());
+  };
   NginxConfig config;
   ServerTest srv(ios, /*port=*/0, config, factory);
 

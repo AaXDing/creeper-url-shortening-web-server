@@ -16,7 +16,7 @@
 
 class RequestParser {
  public:
-  // Parse raw HTTP Request to versino, method, uri, headers
+  // Parse raw HTTP Request to version, method, uri, headers
   void parse(Request &req, const std::string &raw_request);
 };
 

@@ -1,5 +1,5 @@
-#ifndef HANDLER_DISPATCHER_H
-#define HANDLER_DISPATCHER_H
+#ifndef REQUEST_HANDLER_DISPATCHER_H
+#define REQUEST_HANDLER_DISPATCHER_H
 
 #include <string>
 #include <unordered_map>
@@ -26,4 +26,4 @@ class RequestHandlerDispatcher {
   friend class RequestHandlerDispatcherTest;
 };
 
-#endif
+#endif  // REQUEST_HANDLER_DISPATCHER_Hs

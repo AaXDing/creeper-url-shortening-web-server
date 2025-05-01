@@ -1,5 +1,5 @@
-#ifndef STATICREQUESTHANDLER_H
-#define STATICREQUESTHANDLER_H
+#ifndef STATIC_REQUEST_HANDLER_H
+#define STATIC_REQUEST_HANDLER_H
 
 #include <string>
 
@@ -14,7 +14,7 @@ class StaticRequestHandler : public RequestHandler {
   static StaticRequestHandler* create(std::string base_uri,
                                       std::string root_path);
   // Handle the Request and return the Response
-  std::string handle_request(Request& req, Response& res) const override;
+  Response handle_request(Request& req) const override;
 
   friend class StaticRequestHandlerTest;
 
@@ -26,4 +26,4 @@ class StaticRequestHandler : public RequestHandler {
   std::string root_path_;
 };
 
-#endif  // STATICREQUESTHANDLER_H
+#endif  // STATIC_REQUEST_HANDLER_H

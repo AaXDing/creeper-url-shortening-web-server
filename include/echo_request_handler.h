@@ -1,5 +1,5 @@
-#ifndef REQUEST_HANDLER_ECHO_H
-#define REQUEST_HANDLER_ECHO_H
+#ifndef ECHO_REQUEST_HANDLER_H
+#define ECHO_REQUEST_HANDLER_H
 
 #include <string>
 
@@ -15,7 +15,7 @@ class EchoRequestHandler : public RequestHandler {
       It inherits from RequestHandler and implements the handle_request method.
   */
  public:
-  virtual std::string handle_request(Request& req, Response& res) const;
+  virtual Response handle_request(Request& req) const;
 
   friend class EchoRequestHandlerTest;
 
@@ -23,4 +23,4 @@ class EchoRequestHandler : public RequestHandler {
   std::string request_to_string(const Request& req) const;
 };
 
-#endif  // REQUEST_HANDLER_ECHO_H
+#endif  // ECHO_REQUEST_HANDLER_H

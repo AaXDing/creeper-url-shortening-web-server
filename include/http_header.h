@@ -8,22 +8,10 @@
 const std::string CRLF = "\r\n";
 const std::string HTTP_VERSION = "HTTP/1.1";
 const std::string METHOD_GET = "GET";
-const std::unordered_map<unsigned int, std::string> STOCK_RESPONSE = {
-    {400,
-     "HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\nContent-Length: "
-     "15\r\n\r\n400 Bad Request"},
-    {404,
-     "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nContent-Length: "
-     "13\r\n\r\n404 Not Found"},
-};
-
 const std::unordered_map<std::string, std::string> CONTENT_TYPE = {
-    {"html", "text/html"},
-    {"txt", "text/plain"},
-    {"pdf", "application/pdf"},
-    {"zip", "application/zip"},
-    {"jpeg", "image/jpeg"},
-    {"jpg", "image/jpeg"},
+    {"html", "text/html"},      {"txt", "text/plain"},
+    {"pdf", "application/pdf"}, {"zip", "application/zip"},
+    {"jpeg", "image/jpeg"},     {"jpg", "image/jpeg"},
 };
 
 struct Header {
@@ -47,6 +35,18 @@ struct Response {
   std::string status_message;
   std::string content_type;
   std::string body;
+
+  Response();
+  Response(std::string version, int status_code, std::string status_message,
+           std::string content_type, std::string);
+  std::string to_string() const;
+};
+
+const std::unordered_map<unsigned int, Response> STOCK_RESPONSE = {
+    {400, Response(HTTP_VERSION, 400, "Bad Request", "text/plain",
+                   "400 Bad Request")},
+    {404,
+     Response(HTTP_VERSION, 404, "Not Found", "text/plain", "404 Not Found")},
 };
 
 #endif  // HTTP_HEADER_H

@@ -94,20 +94,19 @@ std::string Session::handle_response(size_t bytes_transferred) {
   p.parse(req, request_msg);
 
   auto h = dispatcher_->get_handler(req);
-  std::string response_str;
 
   if (!req.valid) {
     // If the request is invalid, return a 400 Bad Request response
     LOG(warning) << "Invalid request → 400";
-    response_str = STOCK_RESPONSE.at(400);
+    res = STOCK_RESPONSE.at(400);
   } else if (h != nullptr) {
     LOG(info) << "Dispatching to handler for uri=" << req.uri;
-    response_str = h->handle_request(req, res);
+    res = h->handle_request(req);
   } else {
     // If no handler is found, return a 404 Not Found response
     LOG(warning) << "No handler for uri=" << req.uri << " → 404";
-    response_str = STOCK_RESPONSE.at(404);
+    res = STOCK_RESPONSE.at(404);
   }
 
-  return response_str;
+  return res.to_string();
 }

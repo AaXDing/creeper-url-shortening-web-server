@@ -1,25 +1,25 @@
 // A class that handles HTTP requests
 
 #include "echo_request_handler.h"
+
 #include "logging.h"
 
-std::string EchoRequestHandler::handle_request(Request& req,
-                                               Response& res) const {
+Response EchoRequestHandler::handle_request(Request& req) const {
+  Response res;  // Create a new Response object
+
   if (req.valid) {  // If the request is valid, echo the request
     LOG(info) << "Valid echo request: " << req.method << " " << req.uri;
     res.status_code = 200;
     res.status_message = "OK";
     res.version = req.valid ? req.version : HTTP_VERSION;
-    ;
     res.content_type = "text/plain";
     res.body = request_to_string(req);
-
-    return RequestHandler::response_to_string(
-        res);  // Convert the Response object to a string
-  } else {     // If the request is invalid, return a 400 Bad Request response
+  } else {  // If the request is invalid, return a 400 Bad Request response
     LOG(warning) << "Invalid echo request → returning 400 Bad Request";
-    return STOCK_RESPONSE.at(400);  // Return a 400 Bad Request response
+    res = STOCK_RESPONSE.at(400);  // Return a 400 Bad Request response
   }
+
+  return res;  // Return the response
 }
 
 std::string EchoRequestHandler::request_to_string(const Request& req) const {

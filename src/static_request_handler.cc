@@ -37,8 +37,7 @@ StaticRequestHandler::StaticRequestHandler(std::string base_uri,
                                            std::string root_path)
     : base_uri_(std::move(base_uri)), root_path_(std::move(root_path)) {}
 
-std::string StaticRequestHandler::handle_request(Request& req,
-                                                 Response& res) const {
+Response StaticRequestHandler::handle_request(Request& req) const {
   // remove the first / field
   // and add the root path
   // to the file path
@@ -47,13 +46,13 @@ std::string StaticRequestHandler::handle_request(Request& req,
   // e.g. /static/test1/test.txt -> ../data/var/www/test1/test.txt
   std::string file_path = generate_file_path(req.uri);
 
-  std::string response_str;
+  Response res;
 
   // Check if the file exists and is a regular file
   if (!boost::filesystem::exists(file_path) ||
       !boost::filesystem::is_regular_file(file_path)) {
     LOG(warning) << "File not found or not a regular file: " << file_path;
-    response_str = STOCK_RESPONSE.at(404);
+    res = STOCK_RESPONSE.at(404);
   } else {
     LOG(info) << "Serving static file: " << file_path;
 
@@ -61,23 +60,20 @@ std::string StaticRequestHandler::handle_request(Request& req,
     std::ifstream file(file_path.c_str(), std::ios::in | std::ios::binary);
     if (!file) {
       LOG(error) << "Failed to open file: " << file_path;
-      return STOCK_RESPONSE.at(500);
+      res = STOCK_RESPONSE.at(404);
     }
 
+    res.version = req.valid ? req.version : HTTP_VERSION;
     res.status_code = 200;
     res.status_message = "OK";
-    res.version = req.valid ? req.version : HTTP_VERSION;
     res.content_type = get_file_content_type(file_path);
     // Read the file content into the response body
     std::string body((std::istreambuf_iterator<char>(file)),
                      std::istreambuf_iterator<char>());
     res.body = body;
-
-    // Convert the Response object to a string
-    response_str = RequestHandler::response_to_string(res);
   }
 
-  return response_str;
+  return res;
 }
 
 std::string StaticRequestHandler::generate_file_path(
@@ -98,8 +94,7 @@ std::string StaticRequestHandler::generate_file_path(
   // Add root path in front of the file path
   // e.g. root_path_ /var/www
   // e.g. /test1/test.txt -> ../data/var/www/test1/test.txt
-  file_path =
-      "../data" + root_path + file_path;
+  file_path = "../data" + root_path + file_path;
 
   // Remove trailing slashes from the URI
   while (file_path.size() > 0 && file_path[file_path.size() - 1] == '/') {

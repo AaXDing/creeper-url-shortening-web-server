@@ -1,5 +1,5 @@
-#ifndef StaticRequestHandler_H
-#define StaticRequestHandler_H
+#ifndef STATICREQUESTHANDLER_H
+#define STATICREQUESTHANDLER_H
 
 #include <string>
 
@@ -26,4 +26,4 @@ class StaticRequestHandler : public RequestHandler {
   std::string root_path_;
 };
 
-#endif  // StaticRequestHandler_H
+#endif  // STATICREQUESTHANDLER_H

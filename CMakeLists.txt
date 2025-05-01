@@ -124,6 +124,7 @@ generate_coverage_report(
         request_handler_dispatcher_lib
         server
     TESTS
+        http_header_test
         request_parser_lib_test
         echo_request_handler_lib_test
         static_request_handler_lib_test

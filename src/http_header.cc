@@ -2,6 +2,15 @@
 
 #include <string>
 
+std::string Request::to_string() const {
+  std::string request_str = method + " " + uri + " " + version + CRLF;
+  for (const auto& header : headers) {
+    request_str += header.name + ": " + header.value + CRLF;
+  }
+  request_str += CRLF;
+  return request_str;
+}
+
 Response::Response() {}
 
 Response::Response(std::string version, int status_code,

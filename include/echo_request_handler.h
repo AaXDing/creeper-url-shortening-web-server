@@ -18,9 +18,6 @@ class EchoRequestHandler : public RequestHandler {
   virtual Response handle_request(Request& req) const;
 
   friend class EchoRequestHandlerTest;
-
- private:
-  std::string request_to_string(const Request& req) const;
 };
 
 #endif  // ECHO_REQUEST_HANDLER_H

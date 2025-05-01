@@ -4,9 +4,30 @@
 
 class HttpHeaderTestFixture : public ::testing::Test {
  protected:
+  Request req;
+  std::string request_str;
   Response res;
   std::string response_str;
 };
+
+TEST_F(HttpHeaderTestFixture, RequestToString) {
+  req.valid = true;
+  req.version = "HTTP/1.1";
+  req.method = "GET";
+  req.uri = "/echo";
+  req.headers.push_back({"Host", "www.example.com"});
+  req.headers.push_back({"User-Agent", "curl/7.64.1"});
+  req.headers.push_back({"Accept", "*/*"});
+
+  request_str = req.to_string();
+
+  EXPECT_EQ(request_str,
+            "GET /echo HTTP/1.1\r\n"
+            "Host: www.example.com\r\n"
+            "User-Agent: curl/7.64.1\r\n"
+            "Accept: */*\r\n"
+            "\r\n");
+}
 
 TEST_F(HttpHeaderTestFixture, ResponseToString) {
   res.status_code = 200;

@@ -26,6 +26,8 @@ struct Request {
   std::string version;
   std::vector<Header> headers;
   bool valid = false;  // default valid to false
+
+  std::string to_string() const;
 };
 
 struct Response {

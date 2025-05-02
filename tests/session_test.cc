@@ -1,88 +1,81 @@
-// echo_response_test.cc
-// Code below modified based on LLM outputs
+// tests/session_test.cc -------------------------------------------------
 #include "session.h"
 
 #include <boost/asio.hpp>
+#include <boost/system/error_code.hpp>
 #include <string>
 
 #include "config_parser.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "request_handler_dispatcher.h"  // for RequestHandlerDispatcher
+#include "request_handler_dispatcher.h"
 
 using ::testing::AtLeast;
 
+namespace asio = boost::asio;
+namespace sys = boost::system;
+using tcp = asio::ip::tcp;
+using error_code = sys::error_code;
+
+// ---------------------------------------------------------------- 1. Testable
+// Session
 class SessionTest : public Session {
  public:
-  explicit SessionTest(boost::asio::io_service &io_service)
-      : Session(io_service,
-                std::make_shared<RequestHandlerDispatcher>(NginxConfig())),
-        is_deleted(nullptr) {  // only a placeholder
-    NginxConfigParser parser;
-    NginxConfig config;
-    parser.parse("../my_config", &config);
-    dispatcher_ = std::make_shared<RequestHandlerDispatcher>(config);
+  explicit SessionTest(asio::io_service& io)
+      : Session(io, std::make_shared<RequestHandlerDispatcher>(NginxConfig())),
+        deleted_flag_(nullptr) {
+    // re-initialise dispatcher with an actual config file
+    NginxConfig cfg;
+    NginxConfigParser().parse("../my_config", &cfg);
+    dispatcher_ = std::make_shared<RequestHandlerDispatcher>(cfg);
   }
 
-  ~SessionTest() {
-    if (is_deleted != nullptr) {
-      *is_deleted = true;  // Set the flag to true when deleted
-    }
-  }
-  // Expose the private handle_response method for testing.
-  std::string call_handle_response(size_t bytes_transferred) {
-    return Session::handle_response(bytes_transferred);
+  ~SessionTest() override {
+    if (deleted_flag_) *deleted_flag_ = true;
   }
 
-  void call_handle_read(const boost::system::error_code &error,
-                        size_t bytes_transferred) {
-    Session::handle_read(error, bytes_transferred);
+  // helpers to reach the protected/private bits
+  std::string call_handle_response(std::size_t n) {
+    return Session::handle_response(n);
+  }
+  void call_handle_read(const error_code& ec, std::size_t n) {
+    Session::handle_read(ec, n);
+  }
+  void call_handle_write(const error_code& ec) { Session::handle_write(ec); }
+
+  void set_data(const std::string& s) {
+    std::copy(s.begin(), s.end(), data_);
+    data_[s.size()] = '\0';
   }
 
-  void call_handle_write(const boost::system::error_code &error) {
-    Session::handle_write(error);
-  }
-
-  // write to data_ buffer for testing
-  void set_data(const std::string &data) {
-    std::copy(data.begin(), data.end(), data_);
-    data_[data.size()] = '\0';  // null-terminate the string
-  }
-  // This is a flag to check if the Session was deleted
-  // If there is an error in the Session, it will delete itself
-  // so we can't track if it was deleted or not. The pointer will
-  // be the same, but the memory is freed. This is a workaround for that.
-  bool *is_deleted;
+  bool* deleted_flag_;
 };
 
-// Define a test fixture for Session tests.
+// ---------------------------------------------------------------- 2. Fixture
 class SessionTestFixture : public ::testing::Test {
  protected:
-  std::string input;
+  asio::io_service io;
   std::string http_version = "HTTP/1.1";
-  boost::asio::io_service io_service;
-  std::shared_ptr<SessionTest> sess = std::make_shared<SessionTest>(io_service);
+  std::string input;
+  std::shared_ptr<SessionTest> sess = std::make_shared<SessionTest>(io);
 };
 
-// Test that a valid Request produces a 200 OK response with echoed body.
-// Assumes the Request parser is well-tested and valid.
+// ---------------------------------------------------------------- 3. Response
+// logic
 TEST_F(SessionTestFixture, ValidRequestReturns200) {
   input =
       "GET /echo HTTP/1.1\r\n"
       "Host: www.example.com\r\n"
       "\r\n";
   sess->set_data(input);
-  std::string expected_response =
-      http_version + " 200 OK\r\n" + "Content-Type: text/plain\r\n" +
-      "Content-Length: " + std::to_string(input.size()) + "\r\n" + "\r\n" +
-      input;
 
-  std::string response = sess->call_handle_response(input.size());
-  EXPECT_EQ(response, expected_response);
+  std::string expected =
+      http_version + " 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " +
+      std::to_string(input.size()) + "\r\n\r\n" + input;
+
+  EXPECT_EQ(sess->call_handle_response(input.size()), expected);
 }
 
-// Test that an invalid Request produces a 400 Bad Request response.
-// Assumes the Request parser is well-tested and valid.
 TEST_F(SessionTestFixture, InvalidRequestReturns400) {
   input =
       " /weird HTTP/1.1\r\n"
@@ -90,14 +83,13 @@ TEST_F(SessionTestFixture, InvalidRequestReturns400) {
       "\r\n";
   sess->set_data(input);
 
-  std::string body =
-      "400 Bad Request";  // Define the body for invalid requests.
-  std::string expected_response =
-      http_version + " 400 Bad Request\r\n" + "Content-Type: text/plain\r\n" +
-      "Content-Length: " + std::to_string(body.size()) + "\r\n" + "\r\n" + body;
+  std::string body = "400 Bad Request";
+  std::string expected = http_version +
+                         " 400 Bad Request\r\nContent-Type: text/plain\r\n"
+                         "Content-Length: " +
+                         std::to_string(body.size()) + "\r\n\r\n" + body;
 
-  std::string response = sess->call_handle_response(input.size());
-  EXPECT_EQ(response, expected_response);
+  EXPECT_EQ(sess->call_handle_response(input.size()), expected);
 }
 
 TEST_F(SessionTestFixture, InvalidLocationReturns404) {
@@ -107,16 +99,18 @@ TEST_F(SessionTestFixture, InvalidLocationReturns404) {
       "\r\n";
   sess->set_data(input);
 
-  std::string body = "404 Not Found";  // Define the body for invalid requests.
-  std::string expected_response =
-      http_version + " 404 Not Found\r\n" + "Content-Type: text/plain\r\n" +
-      "Content-Length: " + std::to_string(body.size()) + "\r\n" + "\r\n" + body;
+  std::string body = "404 Not Found";
+  std::string expected = http_version +
+                         " 404 Not Found\r\nContent-Type: text/plain\r\n"
+                         "Content-Length: " +
+                         std::to_string(body.size()) + "\r\n\r\n" + body;
 
-  std::string response = sess->call_handle_response(input.size());
-  EXPECT_EQ(response, expected_response);
+  EXPECT_EQ(sess->call_handle_response(input.size()), expected);
 }
 
-TEST_F(SessionTestFixture, HandleReadSuccessProcessesData) {
+// ------------------------------------------------------ 4. Read / write handlers
+// Success path – object should remain alive.
+TEST_F(SessionTestFixture, HandleReadSuccessKeepsSessionAlive) {
   input =
       "GET /index.html HTTP/1.1\r\n"
       "Host: www.example.com\r\n"
@@ -124,63 +118,60 @@ TEST_F(SessionTestFixture, HandleReadSuccessProcessesData) {
   sess->set_data(input);
 
   bool deleted = false;
-  sess->is_deleted = &deleted;  // Set the deletion flag
+  sess->deleted_flag_ = &deleted;
 
-  boost::system::error_code success_ec;
-  sess->call_handle_read(success_ec, input.size());
+  error_code ok;  // success
+  sess->call_handle_read(ok, input.size());
 
-  EXPECT_EQ(success_ec.value(), 0);  // No error
-  EXPECT_FALSE(deleted);             // Session should still exist
-
-  sess->is_deleted = nullptr;  // set to nullptr to avoid dangling pointer
+  EXPECT_FALSE(deleted);
+  sess->deleted_flag_ = nullptr;
 }
 
-TEST_F(SessionTestFixture, HandleReadErrorDeletesSession) {
-  SessionTest *raw_sess = new SessionTest(io_service);
-  boost::system::error_code error_ec(boost::asio::error::eof);
-
+TEST_F(SessionTestFixture, HandleWriteSuccessKeepsSessionAlive) {
   bool deleted = false;
-  raw_sess->is_deleted = &deleted;  // Set the deletion flag
+  sess->deleted_flag_ = &deleted;
 
-  raw_sess->call_handle_read(error_ec, 0);
+  error_code ok;
+  sess->call_handle_write(ok);
 
-  EXPECT_NE(error_ec.value(), 0);  // Error occurred
-  EXPECT_TRUE(deleted);            // Check if the deletion flag was set
+  EXPECT_FALSE(deleted);
+  sess->deleted_flag_ = nullptr;
 }
 
-TEST_F(SessionTestFixture, HandleWriteSuccessProcessesData) {
-  boost::system::error_code success_ec;
-
+// Error paths – destroy only when the last shared_ptr is gone.
+static void expect_destruction_after(const std::function<void()>& invoke) {
+  asio::io_service io;
+  auto s = std::make_shared<SessionTest>(io);
   bool deleted = false;
-  sess->is_deleted = &deleted;  // Set the deletion flag
+  s->deleted_flag_ = &deleted;
+  std::weak_ptr<SessionTest> weak = s;
 
-  sess->call_handle_write(success_ec);
+  invoke();  // run the handler while `s` is still held
 
-  EXPECT_EQ(success_ec.value(), 0);  // No error
-  EXPECT_FALSE(deleted);             // Session should still exist
-
-  sess->is_deleted = nullptr;  // set to nullptr to avoid dangling pointer
+  s.reset();  // drop the last strong ref
+  EXPECT_TRUE(deleted);
+  EXPECT_TRUE(weak.expired());
 }
 
-TEST_F(SessionTestFixture, HandleWriteErrorDeletesSession) {
-  SessionTest *raw_sess = new SessionTest(io_service);
-  boost::system::error_code error_ec(boost::asio::error::eof);
-
-  bool deleted = false;
-  raw_sess->is_deleted = &deleted;  // Set the deletion flag
-
-  raw_sess->call_handle_write(error_ec);
-
-  EXPECT_NE(error_ec.value(), 0);  // No error
-  EXPECT_TRUE(deleted);            // Check if the deletion flag was set
+TEST_F(SessionTestFixture, HandleReadErrorDestroysSession) {
+  expect_destruction_after([&] {
+    error_code ec = asio::error::eof;
+    sess->call_handle_read(ec, 0);
+  });
 }
 
-TEST_F(SessionTestFixture, StartSessionNotDeleted) {
-  bool deleted = false;
-  sess->is_deleted = &deleted;  // Set the deletion flag
+TEST_F(SessionTestFixture, HandleWriteErrorDestroysSession) {
+  expect_destruction_after([&] {
+    error_code ec = asio::error::eof;
+    sess->call_handle_write(ec);
+  });
+}
 
+// ---------------------------------------------------------------- 5. start()
+TEST_F(SessionTestFixture, StartDoesNotDestroySessionImmediately) {
+  bool deleted = false;
+  sess->deleted_flag_ = &deleted;
   sess->start();
-  EXPECT_FALSE(deleted);  // Session should still exist
-
-  sess->is_deleted = nullptr;  // set to nullptr to avoid dangling pointer
+  EXPECT_FALSE(deleted);
+  sess->deleted_flag_ = nullptr;
 }

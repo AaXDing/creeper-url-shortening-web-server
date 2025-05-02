@@ -1,60 +1,56 @@
-// A Server class that accepts incoming connections and starts a Session for
-// each client.
-//
-// Adopted from the Boost Asio example: async_tcp_echo_server.cpp
-// ~~~~~~~~~~~~~~~~~~~~~~~~~
-//
-// Copyright (c) 2003-2017 Christopher M. Kohlhoff (chris at kohlhoff dot com)
-//
-// Distributed under the Boost Software License, Version 1.0. (See accompanying
-// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
-//
+// server.cc ---------------------------------------------------------------
 #include "server.h"
 
 #include <boost/bind/bind.hpp>
+#include <boost/asio/placeholders.hpp>
 
-#include "config_parser.h"  // for NginxConfig
+#include "config_parser.h"
 #include "logging.h"
-#include "session.h"  // only for the default factory
+#include "session.h"  // default factory creates this concrete type
 
 using boost::asio::ip::tcp;
+using boost::asio::placeholders::error;
 
-Server::Server(boost::asio::io_service &io, short port,
-               const NginxConfig &config, SessionFactory factory)
+// ------------------------------------------------------------------ ctor
+Server::Server(boost::asio::io_service& io, short port,
+               const NginxConfig& config, SessionFactory factory)
     : io_(io),
       acceptor_(io, tcp::endpoint(tcp::v4(), port)),
       dispatcher_(std::make_shared<RequestHandlerDispatcher>(config)),
       make_session_(factory
-                        ? std::move(factory)  // test/mock path
-                        : [&] {
-                            return std::make_unique<Session>(io_, dispatcher_);
-                          }) {  // default path
+                        ? std::move(factory)  // test / mock
+                        : [&] {               // default
+                            return std::make_shared<Session>(io_, dispatcher_);
+                          }) {
   LOG(info) << "Server listening on port " << port;
   start_accept();
 }
 
+// --------------------------------------------------------- start_accept()
 void Server::start_accept() {
-  LOG(info) << "Waiting for new connection...";
+  LOG(info) << "Waiting for new connection…";
 
-  std::unique_ptr<ISession> next = make_session_();  // heap‑allocated
+  // Produce a shared_ptr<ISession>
+  SessionPtr session = make_session_();
 
-  ISession *raw = next.release();  // we will delete or transfer later
-
-  acceptor_.async_accept(
-      raw->socket(),                       // ISession exposes socket()
-      boost::bind(&Server::handle_accept,  // completion handler
-                  this, raw, boost::asio::placeholders::error));
+  acceptor_.async_accept(session->socket(),                   // tcp::socket&
+                         boost::bind(&Server::handle_accept,  // member fn
+                                     this,                    // Server*
+                                     session,                 // keep session alive
+                                     error));
 }
 
-void Server::handle_accept(ISession *sess,
-                           const boost::system::error_code &ec) {
+// --------------------------------------------------------- handle_accept()
+void Server::handle_accept(SessionPtr sess,
+                           const boost::system::error_code& ec) {
   if (!ec) {
-    auto ep = sess->remote_endpoint();
-    LOG(info) << "Accepted connection from " << ep.address().to_string() << ":"
+    tcp::endpoint ep = sess->remote_endpoint();
+    LOG(info) << "Accepted connection from " << ep.address().to_string() << ':'
               << ep.port();
-    sess->start();  // connection successful – kick off session logic
+    sess->start();
   } else {
-    delete sess;  // reclaim memory on failure
+    LOG(error) << "Accept error: " << ec.message();
   }
-  start_accept();  // immediately wait for the next client
+
+  start_accept();  // wait for next client
 }

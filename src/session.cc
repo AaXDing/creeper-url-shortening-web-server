@@ -24,6 +24,8 @@
 #include "request_parser.h"
 
 using boost::asio::ip::tcp;
+using boost::asio::placeholders::bytes_transferred;
+using boost::asio::placeholders::error;
 
 Session::Session(boost::asio::io_service &io_service,
                  std::shared_ptr<RequestHandlerDispatcher> dispatcher)
@@ -32,10 +34,10 @@ Session::Session(boost::asio::io_service &io_service,
 tcp::socket &Session::socket() { return socket_; }
 
 void Session::start() {
+  auto self = shared_from_this();
   socket_.async_read_some(
       boost::asio::buffer(data_, MAX_LENGTH),
-      boost::bind(&Session::handle_read, this, boost::asio::placeholders::error,
-                  boost::asio::placeholders::bytes_transferred));
+      boost::bind(&Session::handle_read, self, error, bytes_transferred));
 }
 
 void Session::handle_read(const boost::system::error_code &error,
@@ -45,36 +47,35 @@ void Session::handle_read(const boost::system::error_code &error,
 
     size_t response_length = response_msg.size();
     // send Response and continue reading loop
-    boost::asio::async_write(
-        socket_, boost::asio::buffer(response_msg.c_str(), response_length),
-        boost::bind(&Session::handle_write, this,
-                    boost::asio::placeholders::error));
+
+    auto self = shared_from_this();  // keep-alive again
+    boost::asio::async_write(socket_, boost::asio::buffer(response_msg),
+                             boost::bind(&Session::handle_write, self,
+                                         boost::asio::placeholders::error));
+
   } else if (error == boost::asio::error::eof ||
              error == boost::asio::error::connection_reset) {
     // client closed connection normally
     LOG(info) << "Client disconnected: " << error.message();
-    delete this;
   } else {
     // truly unexpected
     LOG(error) << "Read error: " << error.message();
-    delete this;
   }
 }
 
 void Session::handle_write(const boost::system::error_code &error) {
   if (!error) {
+    auto self = shared_from_this();  // keep-alive
     socket_.async_read_some(
         boost::asio::buffer(data_, MAX_LENGTH),
-        boost::bind(&Session::handle_read, this,
+        boost::bind(&Session::handle_read, self,
                     boost::asio::placeholders::error,
                     boost::asio::placeholders::bytes_transferred));
   } else if (error == boost::asio::error::eof ||
              error == boost::asio::error::connection_reset) {
     LOG(info) << "Client disconnected during write: " << error.message();
-    delete this;
   } else {
     LOG(error) << "Write error: " << error.message();
-    delete this;
   }
 }
 

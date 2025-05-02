@@ -1,5 +1,4 @@
-// tests/server_test.cpp
-
+// tests/server_test.cc --------------------------------------------------
 #include "server.h"
 
 #include <boost/asio.hpp>
@@ -17,119 +16,100 @@ using ::testing::Return;
 using ::testing::ReturnRef;
 
 namespace asio = boost::asio;
-namespace sys = boost::system;
-using tcp = asio::ip::tcp;
+namespace sys  = boost::system;
+using tcp        = asio::ip::tcp;
 using error_code = sys::error_code;
 
-// Test‑only helper: inherits the ctor, then exposes the two privates.
+// ------------------------------------------------ 1. Test-only wrapper
 class ServerTest : public Server {
  public:
-  using Server::Server;  // inherit constructor
+  using Server::Server;              // inherit ctor
 
-  // Expose private start_accept()
   void call_start_accept() { start_accept(); }
 
-  // Expose private handle_accept(...)
-  void call_handle_accept(ISession* sess, const boost::system::error_code& ec) {
-    handle_accept(sess, ec);
+  void call_handle_accept(SessionPtr sess, const error_code& ec) {
+    handle_accept(std::move(sess), ec);
   }
 
-  // directly run the factory and return the raw ISession* it creates
-  ISession* capture_session() {
-    auto up = make_session_();
-    return up.release();
-  }
+  SessionPtr capture_session() { return make_session_(); }
 };
 
-// A mock ISession that carries a real socket so async_accept can bind.
+// ------------------------------------------------ 2. Mock session
 class MockSession : public ISession {
  public:
   explicit MockSession(asio::io_service& io) : sock_(io) {
     ON_CALL(*this, socket()).WillByDefault(ReturnRef(sock_));
   }
 
-  MOCK_METHOD(tcp::socket&, socket, (), (override));
-  MOCK_METHOD(void, start, (), (override));
-  MOCK_METHOD(tcp::endpoint, remote_endpoint, (), (override));
+  MOCK_METHOD(tcp::socket&,   socket,         (), (override));
+  MOCK_METHOD(void,           start,          (), (override));
+  MOCK_METHOD(tcp::endpoint,  remote_endpoint,(), (override));
 
  private:
   tcp::socket sock_;
 };
 
-// TEST 1: original “success” path, with a real accept/connect
+// ------------------------------------------------ 3. “success” path
 TEST(ServerTest, HandleAccept_CallsStartOnSuccess) {
   asio::io_service ios;
   auto mock = std::make_shared<NiceMock<MockSession>>(ios);
 
   EXPECT_CALL(*mock, remote_endpoint())
-      .WillOnce(Return(
-          tcp::endpoint{asio::ip::address::from_string("127.0.0.1"), 4242}));
+      .WillOnce(Return(tcp::endpoint{
+          asio::ip::address::from_string("127.0.0.1"), 4242}));
 
-  // Now factory + server
-  ServerTest::SessionFactory factory = [mock]() {
-    return std::unique_ptr<ISession>(mock.get());
-  };
+  SessionFactory factory = [mock]() { return mock; };   // shared_ptr copy
+
   NginxConfig config;
   ServerTest srv(ios, /*port=*/0, config, factory);
 
-  // Expect start() to be invoked once on success
   EXPECT_CALL(*mock, start()).Times(1);
 
-  // Call handle_accept; since remote_endpoint() now works, it won't throw
-  error_code ec;  // ec == success
-  srv.call_handle_accept(mock.get(), ec);
+  error_code ec;                    // success
+  srv.call_handle_accept(mock, ec); // pass shared_ptr
 }
 
-// TEST 2: the error‐path, ensuring we don’t crash when delete + new accept()
-TEST(ServerTest, HandleAccept_DeletesOnError_NoCrash) {
+// ------------------------------------------------ 4. error path (no crash)
+TEST(ServerTest, HandleAccept_Error_NoCrash) {
   asio::io_service ios;
 
   bool first = true;
-  NiceMock<MockSession>* raw1 = new NiceMock<MockSession>(ios);
-  NiceMock<MockSession>* raw2 = nullptr;
+  auto sess1 = std::make_shared<NiceMock<MockSession>>(ios);
+  std::shared_ptr<NiceMock<MockSession>> sess2;
 
-  ServerTest::SessionFactory factory = [&] {
+  SessionFactory factory = [&] {
     if (first) {
       first = false;
-      return std::unique_ptr<ISession>(raw1);
+      return std::static_pointer_cast<ISession>(sess1);
     } else {
-      raw2 = new NiceMock<MockSession>(ios);
-      return std::unique_ptr<ISession>(raw2);
+      sess2 = std::make_shared<NiceMock<MockSession>>(ios);
+      return std::static_pointer_cast<ISession>(sess2);
     }
   };
 
   NginxConfig config;
   ServerTest srv(ios, /*port=*/0, config, factory);
-  error_code ec = asio::error::operation_aborted;
-  srv.call_handle_accept(raw1, ec);
 
-  // handle_accept deleted raw1, but raw2 was never deleted by server…
-  delete raw2;  // <— clean it up here
-  SUCCEED() << "error-path ran without crashing";
+  error_code ec = asio::error::operation_aborted;  // simulate failure
+  EXPECT_NO_THROW(srv.call_handle_accept(sess1, ec)); // should not crash
 }
 
-// TEST 3a: fire the default factory via start_accept()
-TEST(ServerTest, DefaultFactory_DoesNotCrash_StartAccept) {
+// ------------------------------------------------ 5a. default factory via accept()
+TEST(ServerTest, DefaultFactory_NoCrash_StartAccept) {
   asio::io_service ios;
-
-  // no factory ⇒ default branch is used
   NginxConfig config;
   ServerTest srv(ios, /*port=*/0, config);
 
-  // should run std::make_unique< Session >(io_) once
   EXPECT_NO_THROW(srv.call_start_accept());
 }
 
-// TEST 3b: directly capture what the default factory makes
-TEST(ServerTest, DefaultFactory_ReturnsRealSession) {
+// ------------------------------------------------ 5b. default factory product type
+TEST(ServerTest, DefaultFactory_ProducesSession) {
   asio::io_service ios;
-
   NginxConfig config;
   ServerTest srv(ios, /*port=*/0, config);
 
-  ISession* raw = srv.capture_session();
-  // it really should be our concrete `Session` type:
-  EXPECT_NE(dynamic_cast<Session*>(raw), nullptr)
-      << "The default factory must produce a Session";
-  delete raw;
+  SessionPtr sp = srv.capture_session();
+  EXPECT_NE(dynamic_cast<Session*>(sp.get()), nullptr)
+      << "Default factory must create a concrete Session";
 }

@@ -12,7 +12,7 @@
 
 class SessionTest;  // forward declaration for test fixture
 
-class Session : public ISession {  // Inherit from ISession Interface
+class Session : public ISession, public std::enable_shared_from_this<Session> {  // Inherit from ISession Interface
  public:
   explicit Session(boost::asio::io_service &io_service,
                    std::shared_ptr<RequestHandlerDispatcher> dispatcher);

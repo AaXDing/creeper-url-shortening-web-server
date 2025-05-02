@@ -6,26 +6,24 @@
 #include <functional>
 #include <memory>
 
-#include "isession.h"
 #include "config_parser.h"  // for NginxConfig
+#include "isession.h"
 #include "request_handler_dispatcher.h"  // for RequestHandler
 
 using boost::asio::ip::tcp;
+using SessionPtr = std::shared_ptr<ISession>;
+using SessionFactory = std::function<SessionPtr()>;
 
 class Server {
  public:
-  // Factory type: returns a new ISession ready for accept().
-  using SessionFactory = std::function<std::unique_ptr<ISession>()>;
-
-  // Construct on given io_service and port, with optional custom factory.
-  Server(boost::asio::io_service& io, short port, const NginxConfig& config, SessionFactory fac = nullptr);
-
-  // Allow our test helper ServerTest to reach private methods.
-  friend class ServerTest;
+  Server(boost::asio::io_service& io, short port, const NginxConfig& config,
+         SessionFactory fac = nullptr);
+  
+  friend class ServerTest;  
 
  private:
   void start_accept();
-  void handle_accept(ISession* sess, const boost::system::error_code& ec);
+  void handle_accept(SessionPtr sess, const boost::system::error_code& ec);
 
   boost::asio::io_service& io_;
   tcp::acceptor acceptor_;

@@ -82,3 +82,33 @@ TEST_F(RequestHandlerDispatcherTestFixtrue, InvalidStaticHandlerFilePath) {
   EXPECT_EQ(dispatcher->get_num_handlers(), 0);
   EXPECT_EQ(dispatcher->get_handler(req), nullptr);
 }
+
+TEST_F(RequestHandlerDispatcherTestFixtrue, InvalidRootPath) {
+  parser.parse("dispatcher_testcases/invalid_root_path", &config);
+  dispatcher = std::make_shared<RequestHandlerDispatcher>(config);
+  EXPECT_EQ(dispatcher->get_num_handlers(), 0);
+}
+
+TEST_F(RequestHandlerDispatcherTestFixtrue, MissingRootPath) {
+  parser.parse("dispatcher_testcases/missing_root_path", &config);
+  dispatcher = std::make_shared<RequestHandlerDispatcher>(config);
+  EXPECT_EQ(dispatcher->get_num_handlers(), 0);
+}
+
+TEST_F(RequestHandlerDispatcherTestFixtrue, MissingRootKeyword) {
+  parser.parse("dispatcher_testcases/missing_root_keyword", &config);
+  dispatcher = std::make_shared<RequestHandlerDispatcher>(config);
+  EXPECT_EQ(dispatcher->get_num_handlers(), 0);
+}
+
+TEST_F(RequestHandlerDispatcherTestFixtrue, NoHandlerType) {
+  parser.parse("dispatcher_testcases/no_handler_type", &config);
+  dispatcher = std::make_shared<RequestHandlerDispatcher>(config);
+  EXPECT_EQ(dispatcher->get_num_handlers(), 0);
+}
+
+TEST_F(RequestHandlerDispatcherTestFixtrue, InvalidHandlerFormat) {
+  parser.parse("dispatcher_testcases/invalid_handler_format", &config);
+  dispatcher = std::make_shared<RequestHandlerDispatcher>(config);
+  EXPECT_EQ(dispatcher->get_num_handlers(), 0);
+}

@@ -63,7 +63,9 @@ bool RequestHandlerDispatcher::add_handler(
         LOG(info) << "Added EchoRequestHandler for URI \"" << uri << "\"";
         return true;
       } else if (handler_type == "static") {
-        if (config->statements_.size() >= 2) {
+        if (config->statements_.size() == 2 &&
+            config->statements_[1]->tokens_.size() == 2 &&
+            config->statements_[1]->tokens_[0] == "root") {
           std::string root_path = config->statements_[1]->tokens_[1];
           auto handler = StaticRequestHandler::create(uri, root_path);
           if (handler == nullptr) {

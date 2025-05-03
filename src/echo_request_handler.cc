@@ -23,5 +23,5 @@ Response EchoRequestHandler::handle_request(Request& req) const {
 }
 
 RequestHandler::HandlerType EchoRequestHandler::get_type() const {
-  return RequestHandler::HandlerType::ECHO_REQUEST_HANDLER;  // Return the handler type
+  return RequestHandler::HandlerType::ECHO_REQUEST_HANDLER;
 }

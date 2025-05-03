@@ -127,3 +127,7 @@ std::string StaticRequestHandler::get_file_content_type(
                << "'; defaulting to application/octet-stream";
   return "application/octet-stream";  // Default content type
 }
+
+RequestHandler::HandlerType StaticRequestHandler::get_type() const {
+  return RequestHandler::HandlerType::STATIC_REQUEST_HANDLER;
+}

@@ -15,6 +15,7 @@ class StaticRequestHandler : public RequestHandler {
                                       std::string root_path);
   // Handle the Request and return the Response
   Response handle_request(Request& req) const override;
+  RequestHandler::HandlerType get_type() const override;
 
   friend class StaticRequestHandlerTest;
 

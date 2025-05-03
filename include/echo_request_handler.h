@@ -15,7 +15,8 @@ class EchoRequestHandler : public RequestHandler {
       It inherits from RequestHandler and implements the handle_request method.
   */
  public:
-  virtual Response handle_request(Request& req) const;
+  Response handle_request(Request& req) const override;
+  RequestHandler::HandlerType get_type() const override;
 
   friend class EchoRequestHandlerTest;
 };

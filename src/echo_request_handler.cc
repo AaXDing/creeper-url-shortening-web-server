@@ -21,3 +21,7 @@ Response EchoRequestHandler::handle_request(Request& req) const {
 
   return res;  // Return the response
 }
+
+RequestHandler::HandlerType EchoRequestHandler::get_type() const {
+  return RequestHandler::HandlerType::ECHO_REQUEST_HANDLER;  // Return the handler type
+}

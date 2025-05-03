@@ -17,7 +17,8 @@ TEST_F(RequestHandlerDispatcherTestFixtrue, EchoHandler) {
   parser.parse("dispatcher_testcases/echo_handler", &config);
   dispatcher = std::make_shared<RequestHandlerDispatcher>(config);
   EXPECT_EQ(dispatcher->get_num_handlers(), 1);
-  EXPECT_NE(dispatcher->get_handler(req), nullptr);
+  EXPECT_EQ(dispatcher->get_handler(req)->get_type(),
+            RequestHandler::HandlerType::ECHO_REQUEST_HANDLER);
 }
 
 TEST_F(RequestHandlerDispatcherTestFixtrue, InvalidHandler) {
@@ -33,7 +34,8 @@ TEST_F(RequestHandlerDispatcherTestFixtrue, StaticHandler) {
   parser.parse("dispatcher_testcases/static_handler", &config);
   dispatcher = std::make_shared<RequestHandlerDispatcher>(config);
   EXPECT_EQ(dispatcher->get_num_handlers(), 1);
-  EXPECT_NE(dispatcher->get_handler(req), nullptr);
+  EXPECT_EQ(dispatcher->get_handler(req)->get_type(),
+            RequestHandler::HandlerType::STATIC_REQUEST_HANDLER);
 }
 
 TEST_F(RequestHandlerDispatcherTestFixtrue, EchoHandlerWithTrailingSlash) {
@@ -42,7 +44,8 @@ TEST_F(RequestHandlerDispatcherTestFixtrue, EchoHandlerWithTrailingSlash) {
                &config);
   dispatcher = std::make_shared<RequestHandlerDispatcher>(config);
   EXPECT_EQ(dispatcher->get_num_handlers(), 1);
-  EXPECT_NE(dispatcher->get_handler(req), nullptr);
+  EXPECT_EQ(dispatcher->get_handler(req)->get_type(),
+            RequestHandler::HandlerType::ECHO_REQUEST_HANDLER);
 }
 
 TEST_F(RequestHandlerDispatcherTestFixtrue, DuplicateHandlers) {
@@ -50,7 +53,8 @@ TEST_F(RequestHandlerDispatcherTestFixtrue, DuplicateHandlers) {
   parser.parse("dispatcher_testcases/duplicate_handlers", &config);
   dispatcher = std::make_shared<RequestHandlerDispatcher>(config);
   EXPECT_EQ(dispatcher->get_num_handlers(), 1);
-  EXPECT_NE(dispatcher->get_handler(req), nullptr);
+  EXPECT_EQ(dispatcher->get_handler(req)->get_type(),
+            RequestHandler::HandlerType::STATIC_REQUEST_HANDLER);
 }
 
 TEST_F(RequestHandlerDispatcherTestFixtrue, MultipleHandlers) {
@@ -58,7 +62,8 @@ TEST_F(RequestHandlerDispatcherTestFixtrue, MultipleHandlers) {
   parser.parse("dispatcher_testcases/multiple_handlers", &config);
   dispatcher = std::make_shared<RequestHandlerDispatcher>(config);
   EXPECT_EQ(dispatcher->get_num_handlers(), 5);
-  EXPECT_NE(dispatcher->get_handler(req), nullptr);
+  EXPECT_EQ(dispatcher->get_handler(req)->get_type(),
+            RequestHandler::HandlerType::STATIC_REQUEST_HANDLER);
 }
 
 TEST_F(RequestHandlerDispatcherTestFixtrue, GetEchoHandlerWithTrailingSlash) {
@@ -66,7 +71,8 @@ TEST_F(RequestHandlerDispatcherTestFixtrue, GetEchoHandlerWithTrailingSlash) {
   parser.parse("dispatcher_testcases/echo_handler", &config);
   dispatcher = std::make_shared<RequestHandlerDispatcher>(config);
   EXPECT_EQ(dispatcher->get_num_handlers(), 1);
-  EXPECT_NE(dispatcher->get_handler(req), nullptr);
+  EXPECT_EQ(dispatcher->get_handler(req)->get_type(),
+            RequestHandler::HandlerType::ECHO_REQUEST_HANDLER);
 }
 
 TEST_F(RequestHandlerDispatcherTestFixtrue, InvalidStaticHandlerFilePath) {

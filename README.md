@@ -50,8 +50,19 @@ make
 
 ### Run
 
+#### Normal run (INFO+ → file, ERROR+ → console)
 ```bash
 bin/server ../my_config
+```
+
+#### Trace run (TRACE+ → file, ERROR+ → console)
+```bash
+CREEPER_LOG_DEBUG=trace bin/server ../my_config
+```
+
+#### Debug run (DEBUG+ → file, ERROR+ → console)
+```bash
+CREEPER_LOG_DEBUG=debug bin/server ../my_config
 ```
 
 ### Sample Client Request

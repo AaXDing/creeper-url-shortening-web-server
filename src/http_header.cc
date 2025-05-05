@@ -1,8 +1,12 @@
 #include "http_header.h"
+#include "logging.h"
 
 #include <string>
 
 std::string Request::to_string() const {
+  
+  LOG(debug) << "Serializing request to string";
+
   std::string request_str = method + " " + uri + " " + version + CRLF;
   for (const auto& header : headers) {
     request_str += header.name + ": " + header.value + CRLF;
@@ -23,6 +27,7 @@ Response::Response(std::string version, int status_code,
       body(std::move(body)) {}
 
 std::string Response::to_string() const {
+  LOG(debug) << "Serializing response to string; length=" << body.size();
   std::string response_str =
       "HTTP/1.1 " + std::to_string(status_code) + " " + status_message + CRLF;
   response_str += "Content-Type: " + content_type + CRLF;

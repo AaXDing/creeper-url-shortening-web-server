@@ -14,6 +14,15 @@
 namespace fs = boost::filesystem;
 using severity_level = boost::log::trivial::severity_level;
 
+// Helper to tear down and re-init logging with a fresh file sink
+static void reinit_file_sink(const std::string& pattern) {
+  // Remove existing sinks
+  boost::log::core::get()->remove_all_sinks();
+  // Re-install only the file sink
+  logging::init_logging(nullptr, pattern);
+  boost::log::core::get()->flush();
+}
+
 // --------------------
 // Console-sink tests
 // --------------------
@@ -119,4 +128,38 @@ TEST_F(LoggingFileTest, FatalIsLoggedToFile) {
 
   std::string out = read_file();
   EXPECT_NE(out.find("Fatal message"), std::string::npos);
+}
+
+// Testing debug level
+TEST_F(LoggingFileTest, DebugEnabledLogsDebugButNotTrace) {
+  // Enable DEBUG (but not TRACE)
+  setenv("CREEPER_LOG_DEBUG", "debug", /*overwrite=*/1);
+  reinit_file_sink(pattern);
+
+  BOOST_LOG_TRIVIAL(debug) << "Debug message";
+  BOOST_LOG_TRIVIAL(trace) << "Trace message";
+  boost::log::core::get()->flush();
+
+  std::string out = read_file();
+  EXPECT_NE(out.find("Debug message"), std::string::npos)
+      << "DEBUG should be logged when CREEPER_LOG_DEBUG=debug";
+  EXPECT_EQ(out.find("Trace message"), std::string::npos)
+      << "TRACE should NOT be logged when CREEPER_LOG_DEBUG=debug";
+}
+
+// Testing trace level
+TEST_F(LoggingFileTest, TraceEnabledLogsTraceAndDebug) {
+  // Enable TRACE (this should also capture DEBUG)
+  setenv("CREEPER_LOG_DEBUG", "trace", /*overwrite=*/1);
+  reinit_file_sink(pattern);
+
+  BOOST_LOG_TRIVIAL(debug) << "Debug message";
+  BOOST_LOG_TRIVIAL(trace) << "Trace message";
+  boost::log::core::get()->flush();
+
+  std::string out = read_file();
+  EXPECT_NE(out.find("Debug message"), std::string::npos)
+      << "DEBUG should be logged when CREEPER_LOG_DEBUG=trace";
+  EXPECT_NE(out.find("Trace message"), std::string::npos)
+      << "TRACE should be logged when CREEPER_LOG_DEBUG=trace";
 }

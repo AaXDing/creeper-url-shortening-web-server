@@ -11,6 +11,7 @@
 #include <boost/log/utility/setup/common_attributes.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/shared_ptr.hpp>
+#include <cstdlib>
 
 namespace logging {
 namespace expr = boost::log::expressions;
@@ -23,6 +24,19 @@ void init_logging(std::ostream* console_stream,
   // Remove any existing sinks (useful for tests that re-init)
   auto core = boost::log::core::get();
   core->remove_all_sinks();
+
+  // Determine minimum file severity from env:
+  //   CREEPER_LOG_DEBUG=debug  → debug+
+  //   CREEPER_LOG_DEBUG=trace  → trace+
+  severity_level file_min = severity_level::info;
+  if (const char* env = std::getenv("CREEPER_LOG_DEBUG")) {
+    std::string lvl(env);
+    if (lvl == "trace") {
+      file_min = severity_level::trace;
+    } else {
+      file_min = severity_level::debug;
+    }
+  }
 
   // common formatter
   auto fmt = expr::format("[%1%] [%2%] <%3%> %4%") %
@@ -45,7 +59,7 @@ void init_logging(std::ostream* console_stream,
     core->add_sink(sink);
   }
 
-  // File sink （Info and above）
+  // File sink (Info+, or Debug/Trace+ if CREEPER_LOG_DEBUG set)
   if (!file_pattern.empty()) {
     typedef sinks::synchronous_sink<sinks::text_file_backend> file_sink;
     auto sink = boost::make_shared<file_sink>(
@@ -55,8 +69,8 @@ void init_logging(std::ostream* console_stream,
             sinks::file::rotation_at_time_point(0, 0, 0),
         keywords::auto_flush = true);
     sink->set_formatter(fmt);
-    // filter: only info and above to file
-    sink->set_filter(expr::attr<severity_level>("Severity") >= severity_level::info);
+    // filter: info+ by default, or debug/trace+ if enabled
+    sink->set_filter(expr::attr<severity_level>("Severity") >= file_min);
     core->add_sink(sink);
   }
 

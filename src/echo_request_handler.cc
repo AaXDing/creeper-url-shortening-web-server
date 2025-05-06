@@ -18,7 +18,7 @@ Response EchoRequestHandler::handle_request(Request& req) const {
     LOG(warning) << "Invalid echo request → returning 400 Bad Request";
     res = STOCK_RESPONSE.at(400);  // Return a 400 Bad Request response
   }
-
+  LOG(trace) << "handle_request completed with status=" << res.status_code;
   return res;  // Return the response
 }
 

@@ -25,6 +25,7 @@ void RequestHandlerDispatcher::add_handlers(const NginxConfig& config) {
             child_statement->tokens_[0] == "location") {
           if (!add_handler(child_statement->tokens_[1],
                            child_statement->child_block_)) {
+            LOG(warning) << "Dispatcher failed to add handler for URI " << child_statement->tokens_[1];
           }
         }
       }
@@ -37,6 +38,7 @@ bool RequestHandlerDispatcher::add_handler(
     std::string uri, std::unique_ptr<NginxConfig>& config) {
   while (uri.size() > 1 && uri[uri.size() - 1] == '/') {
     uri.pop_back();  // Remove trailing slashes
+    LOG(debug) << "Dispatcher trimmed URI to=" << uri; 
   }
 
   // Check if the URI already exists in the map
@@ -97,6 +99,7 @@ bool RequestHandlerDispatcher::add_handler(
     LOG(error) << "Invalid config for URI \"" << uri << "\"";
     return false;  // Invalid config
   }
+  LOG(debug) << "add_handler reached end without adding handler for URI=" << uri;
   return false;  // No handler created for this URI
 }
 
@@ -106,6 +109,7 @@ std::shared_ptr<RequestHandler> RequestHandlerDispatcher::get_handler(
   // Remove trailing slashes from the URI
   while (uri.size() > 0 && uri[uri.size() - 1] == '/') {
     uri.pop_back();  // Remove trailing slashes
+    LOG(debug) << "Dispatcher trimmed request URI to=" << uri;
   }
 
   std::shared_ptr<RequestHandler> handler = nullptr;

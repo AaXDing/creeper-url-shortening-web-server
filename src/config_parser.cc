@@ -50,6 +50,7 @@ int NginxConfig::get_port() const {
       }
     }
   }
+  LOG(debug) << "No listen directive found; defaulting to -1";
   return -1;  // Default value if no port is found
 }
 
@@ -111,6 +112,7 @@ NginxConfigParser::TokenType NginxConfigParser::parse_token(
     if (!input->good()) {
       break;
     }
+    LOG(trace) << "Read char='" << c << "'"; 
     switch (state) {
       case TOKEN_STATE_INITIAL_WHITESPACE:
         switch (c) {
@@ -182,12 +184,12 @@ NginxConfigParser::TokenType NginxConfigParser::parse_token(
     return TOKEN_TYPE_ERROR;
   }
 
-  LOG(trace) << "Reached EOF in parse_token";
+  LOG(debug) << "Reached EOF in parse_token";
   return TOKEN_TYPE_EOF;
 }
 
 bool NginxConfigParser::parse(std::istream* config_file, NginxConfig* config) {
-  LOG(info) << "Starting parse of nginx config";
+  LOG(debug) << "Starting parse of nginx config";
   std::stack<NginxConfig*> config_stack;
   config_stack.push(config);
   TokenType last_token_type = TOKEN_TYPE_START;
@@ -207,6 +209,7 @@ bool NginxConfigParser::parse(std::istream* config_file, NginxConfig* config) {
     }
 
     if (token_type == TOKEN_TYPE_NORMAL) {
+      LOG(trace) << "Parsing NORMAL token: '" << token << "'"; 
       if (last_token_type == TOKEN_TYPE_START ||
           last_token_type == TOKEN_TYPE_STATEMENT_END ||
           last_token_type == TOKEN_TYPE_START_BLOCK ||
@@ -226,6 +229,7 @@ bool NginxConfigParser::parse(std::istream* config_file, NginxConfig* config) {
         LOG(error) << "Unexpected STATEMENT_END after " << token_type_as_string(last_token_type);
         break;
       }
+      LOG(debug) << "Completed statement when encountering ';'";
     } else if (token_type == TOKEN_TYPE_START_BLOCK) {
       if (last_token_type != TOKEN_TYPE_NORMAL) {
         LOG(error) << "Unexpected START_BLOCK after " << token_type_as_string(last_token_type);
@@ -271,7 +275,7 @@ bool NginxConfigParser::parse(std::istream* config_file, NginxConfig* config) {
 }
 
 bool NginxConfigParser::parse(const char* file_name, NginxConfig* config) {
-  LOG(info) << "Opening config file: " << file_name;
+  LOG(debug) << "Opening config file: " << file_name;
   std::ifstream config_file;
   config_file.open(file_name);
   if (!config_file.good()) {

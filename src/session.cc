@@ -87,7 +87,6 @@ void Session::handle_write(const boost::system::error_code &error) {
 // handler
 std::string Session::handle_response(size_t bytes_transferred) {
   std::string request_msg(data_, bytes_transferred);
-
   RequestParser p;
   Request req;
   Response res;

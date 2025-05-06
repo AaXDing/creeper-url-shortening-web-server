@@ -11,6 +11,7 @@ StaticRequestHandler* StaticRequestHandler::create(std::string base_uri,
   // path must start with a slash or be a single slash
   bool valid = root_path.size() >= 1 && root_path[0] == '/' &&
                (root_path == "/" || root_path.back() != '/');
+  LOG(debug) << "Initial root_path valid=" << valid; 
 
   if (valid && root_path != "/") {
     for (size_t i = 1; i < root_path.size(); ++i) {
@@ -19,6 +20,7 @@ StaticRequestHandler* StaticRequestHandler::create(std::string base_uri,
         break;
       }
     }
+    LOG(debug) << "Post-sanitization valid=" << valid;
   }
 
   if (!valid) {
@@ -29,7 +31,6 @@ StaticRequestHandler* StaticRequestHandler::create(std::string base_uri,
            "single slash), and must not contain consecutive slashes.";
     return nullptr;
   }
-
   return new StaticRequestHandler(std::move(base_uri), std::move(root_path));
 }
 
@@ -45,6 +46,7 @@ Response StaticRequestHandler::handle_request(Request& req) const {
   // e.g. if root /var/www}
   // e.g. /static/test1/test.txt -> ../data/var/www/test1/test.txt
   std::string file_path = generate_file_path(req.uri);
+  LOG(debug) << "Computed file_path='" << file_path << "'";
 
   Response res;
 
@@ -85,6 +87,7 @@ std::string StaticRequestHandler::generate_file_path(
   // e.g. Base URI /static
   // /static/test1/test.txt -> /test1/test.txt
   file_path = uri.substr(base_uri_.size());
+  LOG(debug) << "Path after base_uri strip='" << file_path << "'"; 
 
   // Remove slash if the root path is a single slash
   if (root_path_ == "/") {
@@ -95,12 +98,13 @@ std::string StaticRequestHandler::generate_file_path(
   // e.g. root_path_ /var/www
   // e.g. /test1/test.txt -> ../data/var/www/test1/test.txt
   file_path = "../data" + root_path + file_path;
+  LOG(debug) << "Assembled path='" << file_path << "'"; 
 
   // Remove trailing slashes from the URI
   while (file_path.size() > 0 && file_path[file_path.size() - 1] == '/') {
     file_path.pop_back();  // Remove trailing slashes
+    LOG(debug) << "Trimmed trailing slash, now='" << file_path << "'";
   }
-
   return file_path;
 }
 
@@ -115,11 +119,13 @@ std::string StaticRequestHandler::get_file_content_type(
   size_t pos = pure_file_path.find_last_of('.');
   if (pos != std::string::npos) {
     file_extension = file_path.substr(pos + 1 + 3);  // +3 to skip "../"
+    LOG(debug) << "file_extension='" << file_extension << "'"; 
   }
 
   // Set the content type based on the file extension
   auto it = CONTENT_TYPE.find(file_extension);
   if (it != CONTENT_TYPE.end()) {
+    LOG(debug) << "content_type='" << it->second << "'";
     return it->second;
   }
 

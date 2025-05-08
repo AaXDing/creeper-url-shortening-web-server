@@ -1,6 +1,4 @@
-server {
-  listen   80;
-  server_name foo.com;
-  location /static1 {
-  }
+port 80;
+
+location /static1 {
 }

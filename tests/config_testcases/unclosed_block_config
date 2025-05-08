@@ -1,8 +1,1 @@
-foo "bar";
-
-# this test case should fail
-
-server {
-  listen   80;
-  server_name foo.com;
-  root /home/ubuntu/sites/foo/;
+location /echo EchoHandler {

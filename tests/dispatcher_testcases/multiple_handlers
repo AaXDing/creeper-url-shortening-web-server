@@ -1,22 +1,19 @@
-server {
-  listen   80;
-  server_name foo.com;
-  location /echo {
-    handler echo;
-  }
-  location /hahaha {
-    handler echo;
-  }
-  location /static {
-    handler static;
-    root /static;
-  }
-  location /static1 {
-    handler static;
-    root /var;
-  }
-  location /static3 {
-    handler static;
-    root /www;
-  }
+port 80;
+
+location /echo EchoHandler {
+}
+
+location /hahaha EchoHandler {
+}
+
+location /static StaticHandler {
+  root ../data/test1;
+}
+
+location /static1 StaticHandler {
+  root ../data/test2;
+}
+
+location /static3 StaticHandler {
+  root ../data;
 }

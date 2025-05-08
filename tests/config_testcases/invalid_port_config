@@ -1,7 +1,1 @@
-foo "bar";
-
-server {
-  listen   aa;
-  server_name foo.com;
-  root /home/ubuntu/sites/foo/;
-}
+port   aa;

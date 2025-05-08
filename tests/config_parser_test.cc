@@ -90,13 +90,10 @@ TEST_F(NginxConfigParserTestFixture, ToStringMethod) {
   bool success = parser.parse("config_testcases/nested_block_config", &config);
   EXPECT_TRUE(success);
   std::string expected_output =
-      "foo \"bar\";\n"
       "server {\n"
-      "  listen 80;\n"
-      "  server_name foo.com;\n"
-      "  root /home/ubuntu/sites/foo/;\n"
-      "  location / {\n"
-      "    root /data/www;\n"
+      "  port 80;\n"
+      "  location /static StaticHandler {\n"
+      "    root ./static;\n"
       "  }\n"
       "}\n";
   std::string actual_output = config.to_string();
@@ -118,7 +115,7 @@ TEST_F(NginxConfigParserTestFixture, GetInvalidPort) {
 }
 
 TEST_F(NginxConfigParserTestFixture, GetPortWithNoPort) {
-  bool success = parser.parse("config_testcases/no_port_config", &config);
+  bool success = parser.parse("config_testcases/empty_block_config", &config);
   EXPECT_TRUE(success);
   int port = config.get_port();
   EXPECT_EQ(port, -1);

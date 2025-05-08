@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -17,12 +18,24 @@ class NginxConfigStatement {
   std::unique_ptr<NginxConfig> child_block_;
 };
 
+struct NginxLocation {
+  std::string path;
+  std::string handler;
+  std::optional<std::string> root;
+};
+
+struct NginxLocationResult {
+  bool valid;
+  std::vector<NginxLocation> locations;
+};
+
 // The parsed representation of the entire config.
 class NginxConfig {
  public:
   std::string to_string(int depth = 0);
   std::vector<std::shared_ptr<NginxConfigStatement>> statements_;
   int get_port() const;
+  NginxLocationResult get_locations() const;
 };
 
 // The driver that parses a config file and generates an NginxConfig.

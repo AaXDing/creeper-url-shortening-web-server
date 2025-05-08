@@ -5,6 +5,6 @@ server {
   }
   location /static {
     handler static;
-    root /;
+    root ../data;
   }
 }

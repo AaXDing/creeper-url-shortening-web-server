@@ -67,7 +67,7 @@ add_library(static_request_handler_lib src/static_request_handler.cc)
 target_link_libraries(static_request_handler_lib PUBLIC http_header_lib Boost::filesystem logging_lib)
 
 add_library(request_handler_dispatcher_lib src/request_handler_dispatcher.cc)
-target_link_libraries(request_handler_dispatcher_lib PUBLIC http_header_lib echo_request_handler_lib static_request_handler_lib logging_lib)
+target_link_libraries(request_handler_dispatcher_lib PUBLIC http_header_lib echo_request_handler_lib static_request_handler_lib config_parser_lib logging_lib)
 
 add_library(logging_lib src/logging.cc)
 target_link_libraries(logging_lib PUBLIC Boost::log Boost::log_setup Boost::system Boost::filesystem)

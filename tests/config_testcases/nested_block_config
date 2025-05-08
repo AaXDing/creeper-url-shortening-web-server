@@ -1,12 +1,7 @@
-foo "bar";
-
-# should be valid
-
+# does not work in real server, but should work in test
 server {
-  listen   80;
-  server_name foo.com;
-  root /home/ubuntu/sites/foo/;
-  location / {
-    root /data/www;
+  port 80;
+  location /static StaticHandler {
+    root ./static;
   }
 }

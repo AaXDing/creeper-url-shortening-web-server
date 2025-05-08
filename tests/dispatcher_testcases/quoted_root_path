@@ -1,5 +1,5 @@
 port 80;
 
 location /static StaticHandler {
-  root ./static/;
+  root "./files";
 }

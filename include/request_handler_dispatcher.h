@@ -18,12 +18,12 @@ class RequestHandlerDispatcher {
   size_t get_num_handlers();
 
  private:
-  void add_handlers(const NginxConfig& config);
-  bool add_handler(std::string uri, std::unique_ptr<NginxConfig>& config);
+  bool add_handlers(const NginxConfig& config);
+  bool add_handler(NginxLocation location);
   std::unordered_map<std::string, std::shared_ptr<RequestHandler>>
       handlers_;  // map that maps uri to handler
 
   friend class RequestHandlerDispatcherTest;
 };
 
-#endif  // REQUEST_HANDLER_DISPATCHER_Hs
+#endif  // REQUEST_HANDLER_DISPATCHER_H

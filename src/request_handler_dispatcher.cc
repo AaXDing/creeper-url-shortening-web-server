@@ -8,37 +8,39 @@
 #include "request_handler.h"
 #include "static_request_handler.h"
 
+// TODO: discuss with team about how to handle errors
 RequestHandlerDispatcher::RequestHandlerDispatcher(const NginxConfig& config) {
-  add_handlers(config);
+  if (!add_handlers(config)) {
+    LOG(error) << "Failed to add handlers to dispatcher";
+    throw std::runtime_error("Failed to add handlers to dispatcher");
+  }
 }
 
 RequestHandlerDispatcher::~RequestHandlerDispatcher() {}
 
 size_t RequestHandlerDispatcher::get_num_handlers() { return handlers_.size(); }
 
-void RequestHandlerDispatcher::add_handlers(const NginxConfig& config) {
-  // Iterate through the config blocks and initialize handlers
-  for (const auto& statement : config.statements_) {
-    if (statement->tokens_.size() == 1 && statement->tokens_[0] == "server") {
-      for (const auto& child_statement : statement->child_block_->statements_) {
-        if (child_statement->tokens_.size() == 2 &&
-            child_statement->tokens_[0] == "location") {
-          if (!add_handler(child_statement->tokens_[1],
-                           child_statement->child_block_)) {
-            LOG(warning) << "Dispatcher failed to add handler for URI " << child_statement->tokens_[1];
-          }
-        }
-      }
-      break;
+bool RequestHandlerDispatcher::add_handlers(const NginxConfig& config) {
+  NginxLocationResult result = config.get_locations();
+  if (!result.valid) {
+    LOG(error) << "Invalid locations in config";
+    return false;
+  }
+  std::vector<NginxLocation> locations = result.locations;
+  for (const auto& location : locations) {
+    if (!add_handler(location)) {
+      LOG(warning) << "Dispatcher failed to add handler for URI "
+                   << location.path;
     }
   }
+  return true;
 }
 
-bool RequestHandlerDispatcher::add_handler(
-    std::string uri, std::unique_ptr<NginxConfig>& config) {
+bool RequestHandlerDispatcher::add_handler(NginxLocation location) {
+  std::string uri = location.path;
   while (uri.size() > 1 && uri[uri.size() - 1] == '/') {
     uri.pop_back();  // Remove trailing slashes
-    LOG(debug) << "Dispatcher trimmed URI to=" << uri; 
+    LOG(debug) << "Dispatcher trimmed URI to=" << uri;
   }
 
   // Check if the URI already exists in the map
@@ -48,59 +50,34 @@ bool RequestHandlerDispatcher::add_handler(
     return false;  // URI already exists
   }
 
-  if (config == nullptr) {
-    LOG(error) << "Null config for URI \"" << uri << "\"";
-    return false;  // Invalid config
-  }
-
   std::string handler_type;
 
-  if (config->statements_.size() >= 1) {
-    // for echo handler
-    if (config->statements_[0]->tokens_.size() == 2 &&
-        config->statements_[0]->tokens_[0] == "handler") {
-      handler_type = config->statements_[0]->tokens_[1];
-      if (handler_type == "echo") {
-        handlers_[uri] = std::make_shared<EchoRequestHandler>();
-        LOG(info) << "Added EchoRequestHandler for URI \"" << uri << "\"";
-        return true;
-      } else if (handler_type == "static") {
-        if (config->statements_.size() == 2 &&
-            config->statements_[1]->tokens_.size() == 2 &&
-            config->statements_[1]->tokens_[0] == "root") {
-          std::string root_path = config->statements_[1]->tokens_[1];
-          auto handler = StaticRequestHandler::create(uri, root_path);
-          if (handler == nullptr) {
-            LOG(error) << "Failed to create StaticRequestHandler for URI \""
-                       << uri << "\"";
-            return false;  // Failed to create handler
-          }
-          handlers_[uri] = std::shared_ptr<RequestHandler>(handler);
-          LOG(info) << "Added StaticRequestHandler for URI \"" << uri
-                    << "\" with root path \"" << root_path << "\"";
-          return true;
-        } else {
-          LOG(error) << "Missing root path for static handler for URI \"" << uri
-                     << "\"";
-          return false;  // Missing root path
-        }
+  handler_type = location.handler;
 
-      } else {
-        LOG(error) << "Invalid handler type \"" << handler_type
-                   << "\" for URI \"" << uri << "\"";
-        return false;  // Invalid handler type
-      }
-    } else {
-      LOG(error) << "Invalid config for URI \"" << uri << "\". "
-                 << "Expected \"handler <type>\"";
-      return false;  // Invalid config
-    }
-  } else {
-    LOG(error) << "Invalid config for URI \"" << uri << "\"";
-    return false;  // Invalid config
+  if (handler_type == "EchoHandler") {
+    handlers_[uri] = std::make_shared<EchoRequestHandler>();
+    LOG(info) << "Added EchoRequestHandler for URI \"" << uri << "\"";
+    return true;
   }
-  LOG(debug) << "add_handler reached end without adding handler for URI=" << uri;
-  return false;  // No handler created for this URI
+
+  if (handler_type == "StaticHandler") {
+    std::string root_path = location.root.value();
+
+    auto handler = StaticRequestHandler::create(uri, root_path);
+
+    if (handler == nullptr) {
+      LOG(error) << "Failed to create StaticRequestHandler for URI \"" << uri
+                 << "\"";
+      return false;  // Failed to create handler
+    }
+
+    handlers_[uri] = std::shared_ptr<RequestHandler>(handler);
+    LOG(info) << "Added StaticRequestHandler for URI \"" << uri
+              << "\" with root path \"" << root_path << "\"";
+    return true;
+  }
+
+  return false;
 }
 
 std::shared_ptr<RequestHandler> RequestHandlerDispatcher::get_handler(

@@ -1,7 +1,4 @@
-server {
-  listen   80;
-  server_name foo.com;
-  location /static1 {
-    handler static /static;
-  }
+port 80;
+
+location /static1 StaticHandler {
 }

@@ -7,6 +7,8 @@
 
 class EchoRequestHandlerTest : public EchoRequestHandler {
  public:
+  EchoRequestHandlerTest(const std::string& a, const std::string& b) : EchoRequestHandler(a, b) {}
+
   Response call_handle_request(Request& req) const {
     return handle_request(req);
   }
@@ -14,7 +16,8 @@ class EchoRequestHandlerTest : public EchoRequestHandler {
 
 class EchoRequestHandlerTestFixture : public ::testing::Test {
  protected:
-  EchoRequestHandlerTest handler;
+  std::shared_ptr<EchoRequestHandlerTest> handler =
+      std::make_shared<EchoRequestHandlerTest>("", "");
   Request req;
   Response res;
   std::string request_str;
@@ -29,7 +32,7 @@ TEST_F(EchoRequestHandlerTestFixture, ValidEchoRequest) {
   req.headers.push_back({"User-Agent", "curl/7.64.1"});
   req.headers.push_back({"Accept", "*/*"});
 
-  res = handler.call_handle_request(req);
+  res = handler->call_handle_request(req);
 
   EXPECT_EQ(res.status_code, 200);
   EXPECT_EQ(res.status_message, "OK");
@@ -51,7 +54,7 @@ TEST_F(EchoRequestHandlerTestFixture, InvalidEchoRequest) {
   req.headers.push_back({"User-Agent", "curl/7.64.1"});
   req.headers.push_back({"Accept", "*/*"});
 
-  res = handler.call_handle_request(req);
+  res = handler->call_handle_request(req);
 
   EXPECT_EQ(res.status_code, 400);
   EXPECT_EQ(res.status_message, "Bad Request");

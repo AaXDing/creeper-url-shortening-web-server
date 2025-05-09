@@ -2,26 +2,39 @@
 #define REQUEST_HANDLER_DISPATCHER_H
 
 #include <string>
+#include <tuple>
 #include <unordered_map>
 
 #include "config_parser.h"
 #include "echo_request_handler.h"
 #include "http_header.h"
+#include "registry.h"
 #include "request_handler.h"
+
+using RequestHandlerFactoryPtr =
+   std::shared_ptr<RequestHandlerFactory>;
+                      
+using RequestHandlerFactoryAndWorkersPtr =
+    std::shared_ptr<std::tuple<RequestHandlerFactoryPtr,
+                               std::string, std::string>>;
 
 class RequestHandlerDispatcher {
  public:
   RequestHandlerDispatcher(const NginxConfig& config);
   ~RequestHandlerDispatcher();
 
-  std::shared_ptr<RequestHandler> get_handler(const Request& req) const;
-  size_t get_num_handlers();
+  std::unique_ptr<RequestHandler> get_handler(const Request& req);
 
  private:
-  bool add_handlers(const NginxConfig& config);
-  bool add_handler(NginxLocation location);
-  std::unordered_map<std::string, std::shared_ptr<RequestHandler>>
-      handlers_;  // map that maps uri to handler
+  bool add_routes(const NginxConfig& config);
+  bool add_route(const NginxLocation& location);
+
+  std::string longest_prefix_match(const std::string& url);
+
+
+  std::unordered_map<std::string, RequestHandlerFactoryAndWorkersPtr>
+      routes_;
+
 
   friend class RequestHandlerDispatcherTest;
 };

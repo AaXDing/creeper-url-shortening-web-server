@@ -7,10 +7,11 @@
 #include "logging.h"
 #include "request_handler.h"
 #include "static_request_handler.h"
+#include "registry.h"
 
 // TODO: discuss with team about how to handle errors
 RequestHandlerDispatcher::RequestHandlerDispatcher(const NginxConfig& config) {
-  if (!add_handlers(config)) {
+  if (!add_routes(config)) {
     LOG(error) << "Failed to add handlers to dispatcher";
     throw std::runtime_error("Failed to add handlers to dispatcher");
   }
@@ -18,9 +19,8 @@ RequestHandlerDispatcher::RequestHandlerDispatcher(const NginxConfig& config) {
 
 RequestHandlerDispatcher::~RequestHandlerDispatcher() {}
 
-size_t RequestHandlerDispatcher::get_num_handlers() { return handlers_.size(); }
 
-bool RequestHandlerDispatcher::add_handlers(const NginxConfig& config) {
+bool RequestHandlerDispatcher::add_routes(const NginxConfig& config) {
   NginxLocationResult result = config.get_locations();
   if (!result.valid) {
     LOG(error) << "Invalid locations in config";
@@ -28,16 +28,18 @@ bool RequestHandlerDispatcher::add_handlers(const NginxConfig& config) {
   }
   std::vector<NginxLocation> locations = result.locations;
   for (const auto& location : locations) {
-    if (!add_handler(location)) {
-      LOG(warning) << "Dispatcher failed to add handler for URI "
+    if (!add_route(location)) {
+      LOG(warning) << "Dispatcher failed to add route for URI "
                    << location.path;
     }
   }
   return true;
 }
 
-bool RequestHandlerDispatcher::add_handler(NginxLocation location) {
+bool RequestHandlerDispatcher::add_route(const NginxLocation& location) {
   std::string uri = location.path;
+  std::string handler_type = location.handler;
+
   while (uri.size() > 1 && uri[uri.size() - 1] == '/') {
     uri.pop_back();  // Remove trailing slashes
     LOG(debug) << "Dispatcher trimmed URI to=" << uri;
@@ -45,67 +47,73 @@ bool RequestHandlerDispatcher::add_handler(NginxLocation location) {
 
   // Check if the URI already exists in the map
   // Only the first handler for a URI is added
-  if (handlers_.find(uri) != handlers_.end()) {
+  if (routes_.find(uri) != routes_.end()) {
     LOG(warning) << "Handler for URI \"" << uri << "\" already exists";
     return false;  // URI already exists
   }
 
-  std::string handler_type;
+  // register the handler type with uri and root path
+  RequestHandlerFactoryPtr factory_ptr = Registry::get_handler_factory(handler_type);
 
-  handler_type = location.handler;
+  routes_[uri] = std::make_shared<std::tuple<std::shared_ptr<RequestHandlerFactory>,
+                                              std::string, std::string>>(
+      std::make_tuple(factory_ptr, uri,
+                      location.root.value_or("")));
 
-  if (handler_type == "EchoHandler") {
-    handlers_[uri] = std::make_shared<EchoRequestHandler>();
-    LOG(info) << "Added EchoRequestHandler for URI \"" << uri << "\"";
-    return true;
-  }
-
-  if (handler_type == "StaticHandler") {
-    std::string root_path = location.root.value();
-
-    auto handler = StaticRequestHandler::create(uri, root_path);
-
-    if (handler == nullptr) {
-      LOG(error) << "Failed to create StaticRequestHandler for URI \"" << uri
-                 << "\"";
-      return false;  // Failed to create handler
-    }
-
-    handlers_[uri] = std::shared_ptr<RequestHandler>(handler);
-    LOG(info) << "Added StaticRequestHandler for URI \"" << uri
-              << "\" with root path \"" << root_path << "\"";
-    return true;
-  }
-
-  return false;
+  return true;
 }
 
-std::shared_ptr<RequestHandler> RequestHandlerDispatcher::get_handler(
-    const Request& req) const {
-  std::string uri = req.uri;
+std::unique_ptr<RequestHandler> RequestHandlerDispatcher::get_handler(
+    const Request& req) {
+  std::string url = req.uri;
   // Remove trailing slashes from the URI
-  while (uri.size() > 0 && uri[uri.size() - 1] == '/') {
-    uri.pop_back();  // Remove trailing slashes
-    LOG(debug) << "Dispatcher trimmed request URI to=" << uri;
+  while (url.size() > 0 && url[url.size() - 1] == '/') {
+    url.pop_back();  // Remove trailing slashes
+    LOG(debug) << "Dispatcher trimmed request URI to=" << url;
   }
 
-  std::shared_ptr<RequestHandler> handler = nullptr;
-  size_t max_length = 0;
+  std::string location = longest_prefix_match(url);
+  
+  if(routes_.find(location) == routes_.end()) {
+    LOG(warning) << "No handler found for URI \"" << location << "\"";
+    return nullptr;  // No handler found
+  }
 
-  // longest prefix match
-  for (auto it = handlers_.begin(); it != handlers_.end(); ++it) {
-    if (uri.substr(0, it->first.size()).compare(it->first) == 0) {
-      if (it->first.size() > max_length) {
-        max_length = it->first.size();
-        handler = it->second;
+  RequestHandlerFactoryAndWorkersPtr factory_and_workers_ptr =
+      routes_[location];
+  RequestHandlerFactoryPtr factory_ptr =
+      std::get<0>(*factory_and_workers_ptr);
+  std::string uri = std::get<1>(*factory_and_workers_ptr);
+  std::string root = std::get<2>(*factory_and_workers_ptr);
+
+  if (factory_ptr == nullptr) {
+    LOG(warning) << "No handler found for URI \"" << location << "\"";
+    return nullptr;  // No handler found
+  }
+
+  // std::unique_ptr<RequestHandler> handler =
+  //     Registry::create_handler(
+  //         (*factory_ptr), uri, root);
+
+  std::unique_ptr<RequestHandler> handler = (*factory_ptr)(uri, root);
+  return handler;
+}
+
+std::string RequestHandlerDispatcher::longest_prefix_match(
+    const std::string& url) {
+  // First argument is the URL to match, second argument is the URI in config
+  size_t max_length = 0;
+  std::string longest_match = "";
+
+  for (const auto& route : routes_) {
+    const std::string& route_uri = route.first;
+    if (url.substr(0, route_uri.size()) == route_uri) {
+      if (route_uri.size() > max_length) {
+        max_length = route_uri.size();
+        longest_match = route_uri;
       }
     }
   }
 
-  if (handler == nullptr) {
-    LOG(warning) << "No handler found for URI: " << uri;
-  } else {
-    LOG(info) << "Found handler for URI: " << uri;
-  }
-  return handler;
+  return longest_match;
 }

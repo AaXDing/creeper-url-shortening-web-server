@@ -3,6 +3,13 @@
 #include "echo_request_handler.h"
 
 #include "logging.h"
+#include "registry.h"
+
+
+// dummy constructor
+EchoRequestHandler::EchoRequestHandler(const std::string& arg1, const std::string& arg2) {
+}
+
 
 Response EchoRequestHandler::handle_request(Request& req) const {
   Response res;  // Create a new Response object
@@ -25,3 +32,5 @@ Response EchoRequestHandler::handle_request(Request& req) const {
 RequestHandler::HandlerType EchoRequestHandler::get_type() const {
   return RequestHandler::HandlerType::ECHO_REQUEST_HANDLER;
 }
+
+REGISTER_HANDLER("EchoHandler", EchoRequestHandler);

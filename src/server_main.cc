@@ -17,6 +17,7 @@
 #include "config_parser.h"
 #include "logging.h"
 #include "server.h"
+#include "registry.h"
 
 int main(int argc, char* argv[]) {
   logging::init_logging();

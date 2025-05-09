@@ -5,6 +5,10 @@
 #include <memory>
 
 #include "logging.h"
+#include "request_handler.h"
+#include "registry.h"
+
+REGISTER_HANDLER("StaticHandler", StaticRequestHandler);
 
 StaticRequestHandler* StaticRequestHandler::create(std::string base_uri,
                                                    std::string root_path) {

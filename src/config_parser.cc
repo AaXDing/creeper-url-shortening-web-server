@@ -256,7 +256,6 @@ NginxConfigParser::TokenType NginxConfigParser::parse_token(
     if (!input->good()) {
       break;
     }
-    LOG(trace) << "Read char='" << c << "'";
     switch (state) {
       case TOKEN_STATE_INITIAL_WHITESPACE:
         switch (c) {

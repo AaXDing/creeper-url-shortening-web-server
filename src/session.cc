@@ -92,14 +92,18 @@ std::string Session::handle_response(size_t bytes_transferred) {
   Response res;
 
   p.parse(req, request_msg);
-
-  auto h = dispatcher_->get_handler(req);
-
   if (!req.valid) {
     // If the request is invalid, return a 400 Bad Request response
     LOG(warning) << "Invalid request → 400";
-    res = STOCK_RESPONSE.at(400);
-  } else if (h != nullptr) {
+    return STOCK_RESPONSE.at(400).to_string();
+  }
+
+
+  std::unique_ptr<RequestHandler> h = dispatcher_->get_handler(req);
+
+
+ 
+  if (h != nullptr) {
     LOG(info) << "Dispatching to handler for uri=" << req.uri;
     res = h->handle_request(req);
   } else {

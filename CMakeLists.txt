@@ -57,6 +57,9 @@ target_link_libraries(config_parser_lib PUBLIC logging_lib)
 add_library(http_header_lib src/http_header.cc)
 target_link_libraries(http_header_lib PUBLIC logging_lib)
 
+add_library(registry_lib src/registry.cc)
+target_link_libraries(registry_lib PUBLIC logging_lib)
+
 add_library(echo_request_handler_lib src/echo_request_handler.cc)
 target_link_libraries(echo_request_handler_lib PUBLIC http_header_lib logging_lib)
 

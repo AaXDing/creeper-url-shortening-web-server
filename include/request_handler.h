@@ -18,7 +18,8 @@ class RequestHandler {
     STATIC_REQUEST_HANDLER,
   };  // Enum to represent the type of handler
 
-  virtual Response handle_request(Request& req) const = 0;
+  virtual ~RequestHandler() = default;
+  virtual std::unique_ptr<Response> handle_request(const Request& req) = 0;
   virtual HandlerType get_type() const = 0;
 };
 

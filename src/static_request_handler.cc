@@ -10,42 +10,16 @@
 
 REGISTER_HANDLER("StaticHandler", StaticRequestHandler);
 
-StaticRequestHandler* StaticRequestHandler::create(std::string base_uri,
-                                                   std::string root_path) {
-  // Assume root path is valid
-
-  // // path must start with a slash or be a single slash
-  // bool valid = root_path.size() >= 1 && root_path[0] == '/' &&
-  //              (root_path == "/" || root_path.back() != '/');
-  // LOG(debug) << "Initial root_path valid=" << valid;
-
-  // if (valid && root_path != "/") {
-  //   for (size_t i = 1; i < root_path.size(); ++i) {
-  //     if (root_path[i] == '/' && root_path[i - 1] == '/') {
-  //       valid = false;
-  //       break;
-  //     }
-  //   }
-  //   LOG(debug) << "Post-sanitization valid=" << valid;
-  // }
-
-  // if (!valid) {
-  //   LOG(error) << "Invalid root path \"" << root_path << "\" for URI \""
-  //              << base_uri << "\"";
-  //   LOG(error)
-  //       << "Root path must start with a slash, not end with one (unless it's
-  //       a "
-  //          "single slash), and must not contain consecutive slashes.";
-  //   return nullptr;
-  // }
-  return new StaticRequestHandler(std::move(base_uri), std::move(root_path));
+std::unique_ptr<StaticRequestHandler> StaticRequestHandler::create(std::string base_uri,
+                                                                   std::string root_path) {
+  return std::make_unique<StaticRequestHandler>(std::move(base_uri), std::move(root_path));
 }
 
 StaticRequestHandler::StaticRequestHandler(std::string base_uri,
                                            std::string root_path)
     : base_uri_(std::move(base_uri)), root_path_(std::move(root_path)) {}
 
-Response StaticRequestHandler::handle_request(Request& req) const {
+std::unique_ptr<Response> StaticRequestHandler::handle_request(const Request& req) {
   // remove the first / field
   // and add the root path
   // to the file path
@@ -55,13 +29,13 @@ Response StaticRequestHandler::handle_request(Request& req) const {
   std::string file_path = generate_file_path(req.uri);
   LOG(debug) << "Computed file_path='" << file_path << "'";
 
-  Response res;
+  auto res = std::make_unique<Response>();
 
   // Check if the file exists and is a regular file
   if (!boost::filesystem::exists(file_path) ||
       !boost::filesystem::is_regular_file(file_path)) {
     LOG(warning) << "File not found or not a regular file: " << file_path;
-    res = STOCK_RESPONSE.at(404);
+    *res = STOCK_RESPONSE.at(404);
   } else {
     LOG(info) << "Serving static file: " << file_path;
 
@@ -69,17 +43,17 @@ Response StaticRequestHandler::handle_request(Request& req) const {
     std::ifstream file(file_path.c_str(), std::ios::in | std::ios::binary);
     if (!file) {
       LOG(error) << "Failed to open file: " << file_path;
-      res = STOCK_RESPONSE.at(404);
+      *res = STOCK_RESPONSE.at(404);
     }
 
-    res.version = req.valid ? req.version : HTTP_VERSION;
-    res.status_code = 200;
-    res.status_message = "OK";
-    res.content_type = get_file_content_type(file_path);
+    res->version = req.valid ? req.version : HTTP_VERSION;
+    res->status_code = 200;
+    res->status_message = "OK";
+    res->content_type = get_file_content_type(file_path);
     // Read the file content into the response body
     std::string body((std::istreambuf_iterator<char>(file)),
                      std::istreambuf_iterator<char>());
-    res.body = body;
+    res->body = std::move(body);
   }
 
   return res;

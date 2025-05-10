@@ -10,8 +10,9 @@ class StaticRequestHandlerTest : public StaticRequestHandler {
   StaticRequestHandlerTest(std::string base_uri, std::string root_path)
       : StaticRequestHandler(std::move(base_uri), std::move(root_path)) {}
 
-  Response call_handle_request(Request& req) const {
-    return StaticRequestHandler::handle_request(req);
+  Response call_handle_request(Request& req) {
+    std::unique_ptr<Response> p = handle_request(req);
+    return *p;
   }
 
   std::string call_get_file_content_type(const std::string& file_path) const {
@@ -27,7 +28,7 @@ class StaticRequestHandlerTestFixture : public ::testing::Test {
  protected:
   std::string base_uri = "/static";
   std::string root_path = "../data";
-  StaticRequestHandler* handler;
+  std::unique_ptr<StaticRequestHandler> handler;
   StaticRequestHandlerTest test_handler =
       StaticRequestHandlerTest(base_uri, root_path);
   Request req;
@@ -37,7 +38,6 @@ class StaticRequestHandlerTestFixture : public ::testing::Test {
 TEST_F(StaticRequestHandlerTestFixture, CreateHandlerSingleSlash) {
   handler = StaticRequestHandler::create("/static", "./");
   EXPECT_NE(handler, nullptr);
-  delete handler;
 }
 
 // TEST_F(StaticRequestHandlerTestFixture, CreateHandlerValidPath) {

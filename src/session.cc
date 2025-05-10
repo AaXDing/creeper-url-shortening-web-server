@@ -89,7 +89,7 @@ std::string Session::handle_response(size_t bytes_transferred) {
   std::string request_msg(data_, bytes_transferred);
   RequestParser p;
   Request req;
-  Response res;
+  std::unique_ptr<Response> res;
 
   p.parse(req, request_msg);
   if (!req.valid) {
@@ -98,19 +98,16 @@ std::string Session::handle_response(size_t bytes_transferred) {
     return STOCK_RESPONSE.at(400).to_string();
   }
 
-
   std::unique_ptr<RequestHandler> h = dispatcher_->get_handler(req);
 
-
- 
   if (h != nullptr) {
     LOG(info) << "Dispatching to handler for uri=" << req.uri;
     res = h->handle_request(req);
   } else {
     // If no handler is found, return a 404 Not Found response
     LOG(warning) << "No handler for uri=" << req.uri << " → 404";
-    res = STOCK_RESPONSE.at(404);
+    res = std::make_unique<Response>(STOCK_RESPONSE.at(404));
   }
 
-  return res.to_string();
+  return res->to_string();
 }

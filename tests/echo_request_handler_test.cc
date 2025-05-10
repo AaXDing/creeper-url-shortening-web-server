@@ -9,8 +9,9 @@ class EchoRequestHandlerTest : public EchoRequestHandler {
  public:
   EchoRequestHandlerTest(const std::string& a, const std::string& b) : EchoRequestHandler(a, b) {}
 
-  Response call_handle_request(Request& req) const {
-    return handle_request(req);
+  Response call_handle_request(Request& req) {
+    std::unique_ptr<Response> p = handle_request(req);
+    return *p;
   }
 };
 

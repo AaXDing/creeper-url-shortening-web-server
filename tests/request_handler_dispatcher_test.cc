@@ -6,6 +6,7 @@
 #include "registry.h"
 #include <iostream>
 #include "echo_request_handler.h"
+#include "static_request_handler.h"
 
 class RequestHandlerDispatcherTestFixtrue : public ::testing::Test {
  protected:

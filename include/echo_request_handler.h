@@ -2,6 +2,7 @@
 #define ECHO_REQUEST_HANDLER_H
 
 #include <string>
+#include <memory>
 
 #include "config_parser.h"
 #include "http_header.h"
@@ -16,7 +17,7 @@ class EchoRequestHandler : public RequestHandler {
   */
  public:
   EchoRequestHandler(const std::string& arg1, const std::string& arg2);
-  Response handle_request(Request& req) const override;
+  std::unique_ptr<Response> handle_request(const Request& req) override;
   RequestHandler::HandlerType get_type() const override;
   friend class EchoRequestHandlerTest;
 };

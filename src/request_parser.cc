@@ -1,10 +1,11 @@
 #include "request_parser.h"
-#include "logging.h"
 
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
 #include <iostream>
 #include <unordered_set>
+
+#include "logging.h"
 
 std::string get_version(unsigned int version) {
   return "HTTP/" + std::to_string(version / 10) + "." +
@@ -38,7 +39,8 @@ void RequestParser::parse(Request &req, const std::string &raw_request) {
 
   // Get parsed Request
   auto res = parser.get();
-  LOG(trace) << "parsed version=" << res.version() << " method=" << res.method_string();
+  LOG(trace) << "parsed version=" << res.version()
+             << " method=" << res.method_string();
 
   // Check Request version HTTP/1.1 and Request method allowed
   if (res.version() != 11 ||

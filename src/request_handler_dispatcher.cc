@@ -5,9 +5,9 @@
 #include "config_parser.h"
 #include "echo_request_handler.h"
 #include "logging.h"
+#include "registry.h"
 #include "request_handler.h"
 #include "static_request_handler.h"
-#include "registry.h"
 
 // TODO: discuss with team about how to handle errors
 RequestHandlerDispatcher::RequestHandlerDispatcher(const NginxConfig& config) {
@@ -18,7 +18,6 @@ RequestHandlerDispatcher::RequestHandlerDispatcher(const NginxConfig& config) {
 }
 
 RequestHandlerDispatcher::~RequestHandlerDispatcher() {}
-
 
 bool RequestHandlerDispatcher::add_routes(const NginxConfig& config) {
   NginxLocationResult result = config.get_locations();
@@ -53,12 +52,13 @@ bool RequestHandlerDispatcher::add_route(const NginxLocation& location) {
   }
 
   // register the handler type with uri and root path
-  RequestHandlerFactoryPtr factory_ptr = Registry::get_handler_factory(handler_type);
+  RequestHandlerFactoryPtr factory_ptr =
+      Registry::get_handler_factory(handler_type);
 
-  routes_[uri] = std::make_shared<std::tuple<std::shared_ptr<RequestHandlerFactory>,
-                                              std::string, std::string>>(
-      std::make_tuple(factory_ptr, uri,
-                      location.root.value_or("")));
+  routes_[uri] =
+      std::make_shared<std::tuple<std::shared_ptr<RequestHandlerFactory>,
+                                  std::string, std::string>>(
+          std::make_tuple(factory_ptr, uri, location.root.value_or("")));
 
   return true;
 }
@@ -73,16 +73,15 @@ std::unique_ptr<RequestHandler> RequestHandlerDispatcher::get_handler(
   }
 
   std::string location = longest_prefix_match(url);
-  
-  if(routes_.find(location) == routes_.end()) {
+
+  if (routes_.find(location) == routes_.end()) {
     LOG(warning) << "No handler found for URI \"" << location << "\"";
     return nullptr;  // No handler found
   }
 
   RequestHandlerFactoryAndWorkersPtr factory_and_workers_ptr =
       routes_[location];
-  RequestHandlerFactoryPtr factory_ptr =
-      std::get<0>(*factory_and_workers_ptr);
+  RequestHandlerFactoryPtr factory_ptr = std::get<0>(*factory_and_workers_ptr);
   std::string uri = std::get<1>(*factory_and_workers_ptr);
   std::string root = std::get<2>(*factory_and_workers_ptr);
 

@@ -5,21 +5,23 @@
 #include <memory>
 
 #include "logging.h"
-#include "request_handler.h"
 #include "registry.h"
+#include "request_handler.h"
 
 REGISTER_HANDLER("StaticHandler", StaticRequestHandler);
 
-std::unique_ptr<StaticRequestHandler> StaticRequestHandler::create(std::string base_uri,
-                                                                   std::string root_path) {
-  return std::make_unique<StaticRequestHandler>(std::move(base_uri), std::move(root_path));
+std::unique_ptr<StaticRequestHandler> StaticRequestHandler::create(
+    std::string base_uri, std::string root_path) {
+  return std::make_unique<StaticRequestHandler>(std::move(base_uri),
+                                                std::move(root_path));
 }
 
 StaticRequestHandler::StaticRequestHandler(std::string base_uri,
                                            std::string root_path)
     : base_uri_(std::move(base_uri)), root_path_(std::move(root_path)) {}
 
-std::unique_ptr<Response> StaticRequestHandler::handle_request(const Request& req) {
+std::unique_ptr<Response> StaticRequestHandler::handle_request(
+    const Request& req) {
   // remove the first / field
   // and add the root path
   // to the file path
@@ -108,6 +110,54 @@ std::string StaticRequestHandler::get_file_content_type(
   LOG(warning) << "Unknown extension '" << file_extension
                << "'; defaulting to application/octet-stream";
   return "application/octet-stream";  // Default content type
+}
+
+bool StaticRequestHandler::check_location(
+    std::shared_ptr<NginxConfigStatement> statement, NginxLocation& location) {
+  if (statement->child_block_->statements_.size() == 1 &&
+      statement->child_block_->statements_[0]->tokens_.size() == 2 &&
+      statement->child_block_->statements_[0]->tokens_[0] == "root") {
+    location.root = statement->child_block_->statements_[0]->tokens_[1];
+    
+    // error if root path has trailing slash
+    if (location.root.value().back() == '/') {
+      LOG(error) << "Root path cannot have trailing slash";
+      return false;
+    }
+
+    // normalize path if it is a relative path
+    if (boost::filesystem::path(location.root.value()).is_relative()) {
+      try {
+        location.root.value() =
+            boost::filesystem::canonical(location.root.value()).string();
+      } catch (const boost::filesystem::filesystem_error& e) {
+        LOG(error) << "Root path does not exist: " << location.root.value();
+        return false;
+      }
+    } else {
+      try {
+        // Check if absolute path exists and is accessible
+        if (!boost::filesystem::exists(location.root.value())) {
+          LOG(error) << "Root path does not exist: " << location.root.value();
+          return false;
+        }
+        // Convert to canonical form to resolve any symlinks and normalize
+        // the path
+        location.root.value() =
+            boost::filesystem::canonical(location.root.value()).string();
+      } catch (const boost::filesystem::filesystem_error& e) {
+        LOG(error) << "Error accessing root path: " << location.root.value()
+                   << " - " << e.what();
+        return false;
+      }
+    }
+
+  } else {
+    LOG(error) << "StaticHandler must have exactly one argument with "
+                  "root directive";
+    return false;
+  }
+  return true;
 }
 
 RequestHandler::HandlerType StaticRequestHandler::get_type() const {

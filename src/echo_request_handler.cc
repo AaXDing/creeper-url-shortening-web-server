@@ -2,17 +2,18 @@
 
 #include "echo_request_handler.h"
 
+#include "config_parser.h"
 #include "logging.h"
 #include "registry.h"
 
 REGISTER_HANDLER("EchoHandler", EchoRequestHandler);
 
 // dummy constructor
-EchoRequestHandler::EchoRequestHandler(const std::string& arg1, const std::string& arg2) {
-}
+EchoRequestHandler::EchoRequestHandler(const std::string& arg1,
+                                       const std::string& arg2) {}
 
-
-std::unique_ptr<Response> EchoRequestHandler::handle_request(const Request& req) {
+std::unique_ptr<Response> EchoRequestHandler::handle_request(
+    const Request& req) {
   auto res = std::make_unique<Response>();  // Create a new Response object
 
   if (req.valid) {  // If the request is valid, echo the request
@@ -28,6 +29,15 @@ std::unique_ptr<Response> EchoRequestHandler::handle_request(const Request& req)
   }
   LOG(trace) << "handle_request completed with status=" << res->status_code;
   return res;  // Return the response
+}
+
+bool EchoRequestHandler::check_location(
+    std::shared_ptr<NginxConfigStatement> statement, NginxLocation& location) {
+  if (statement->child_block_->statements_.size() != 0) {
+    LOG(error) << "EchoHandler must have no arguments";
+    return false;
+  }
+  return true;
 }
 
 RequestHandler::HandlerType EchoRequestHandler::get_type() const {

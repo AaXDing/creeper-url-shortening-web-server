@@ -18,7 +18,11 @@
 #include <string>
 #include <vector>
 
+// #include "echo_request_handler.h"
 #include "logging.h"
+#include "registry.h"
+// #include "request_handler.h"
+// #include "static_request_handler.h"
 
 std::string NginxConfig::to_string(int depth) {
   std::string serialized_config;
@@ -76,7 +80,7 @@ NginxLocationResult NginxConfig::get_locations() const {
       }
 
       // error if path has trailing slash
-      if (location.path.back() == '/') {
+      if (location.path.back() == '/' && location.path != "/") {
         LOG(error) << "Location path cannot have trailing slash";
         // return error return type
         result.valid = false;
@@ -101,89 +105,19 @@ NginxLocationResult NginxConfig::get_locations() const {
         }
       }
 
-      // It is now coded statically
-      // TODO: Make it dynamic
-      if (location.handler == "StaticHandler") {
-        if (statement->child_block_->statements_.size() == 1 &&
-            statement->child_block_->statements_[0]->tokens_.size() == 2 &&
-            statement->child_block_->statements_[0]->tokens_[0] == "root") {
-          location.root = statement->child_block_->statements_[0]->tokens_[1];
-          // error if root path has trailing slash
-
-          // error if root path is quoted
-          if (location.root.value().front() == '"' &&
-                  location.root.value().back() == '"' ||
-              location.root.value().front() == '\'' &&
-                  location.root.value().back() == '\'') {
-            LOG(error) << "Root path cannot be quoted";
-            // return error return type
-            result.valid = false;
-            return result;
-          }
-
-          if (location.root.value().back() == '/') {
-            LOG(error) << "Root path cannot have trailing slash";
-            // return error return type
-            result.valid = false;
-            return result;
-          }
-
-          // normalize path if it is a relative path
-          if (boost::filesystem::path(location.root.value()).is_relative()) {
-            try {
-              location.root.value() =
-                  boost::filesystem::canonical(location.root.value()).string();
-            } catch (const boost::filesystem::filesystem_error& e) {
-              LOG(error) << "Root path does not exist: "
-                         << location.root.value();
-              result.valid = false;
-              return result;
-            }
-          } else {
-            try {
-              // Check if absolute path exists and is accessible
-              if (!boost::filesystem::exists(location.root.value())) {
-                LOG(error) << "Root path does not exist: "
-                           << location.root.value();
-                result.valid = false;
-                return result;
-              }
-              // Convert to canonical form to resolve any symlinks and normalize
-              // the path
-              location.root.value() =
-                  boost::filesystem::canonical(location.root.value()).string();
-            } catch (const boost::filesystem::filesystem_error& e) {
-              LOG(error) << "Error accessing root path: "
-                         << location.root.value() << " - " << e.what();
-              result.valid = false;
-              return result;
-            }
-          }
-
-        } else {
-          LOG(error) << "StaticHandler must have exactly one argument with "
-                        "root directive";
-          result.valid = false;
-          return result;
-        }
-        locations.push_back(location);
-        continue;
+      auto check_location_func = Registry::get_check_location(location.handler);
+      if (!check_location_func) {
+        LOG(error) << "Location handler not found: " << location.handler;
+        result.valid = false;
+        return result;
       }
 
-      if (location.handler == "EchoHandler") {
-        if (statement->child_block_->statements_.size() != 0) {
-          LOG(error) << "EchoHandler must have no arguments";
-          result.valid = false;
-          return result;
-        }
-        locations.push_back(location);
-        continue;
+      if (!(*check_location_func)(statement, location)) {
+        result.valid = false;
+        return result;
       }
-
-      LOG(error) << "Location handler not found: " << location.handler;
-      // return error return type
-      result.valid = false;
-      return result;
+      locations.push_back(location);
+      continue;
     } else if (statement->tokens_.size() >= 1 &&
                statement->tokens_[0] == "location") {
       LOG(error) << "Invalid location handler: " << statement->to_string(0);

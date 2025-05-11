@@ -11,12 +11,10 @@
 #include "registry.h"
 #include "request_handler.h"
 
-using RequestHandlerFactoryPtr =
-   std::shared_ptr<RequestHandlerFactory>;
-                      
-using RequestHandlerFactoryAndWorkersPtr =
-    std::shared_ptr<std::tuple<RequestHandlerFactoryPtr,
-                               std::string, std::string>>;
+using RequestHandlerFactoryPtr = std::shared_ptr<RequestHandlerFactory>;
+
+using RequestHandlerFactoryAndWorkersPtr = std::shared_ptr<
+    std::tuple<RequestHandlerFactoryPtr, std::string, std::string>>;
 
 class RequestHandlerDispatcher {
  public:
@@ -31,10 +29,7 @@ class RequestHandlerDispatcher {
 
   std::string longest_prefix_match(const std::string& url);
 
-
-  std::unordered_map<std::string, RequestHandlerFactoryAndWorkersPtr>
-      routes_;
-
+  std::unordered_map<std::string, RequestHandlerFactoryAndWorkersPtr> routes_;
 
   friend class RequestHandlerDispatcherTest;
 };

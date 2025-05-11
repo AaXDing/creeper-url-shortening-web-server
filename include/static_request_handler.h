@@ -1,12 +1,12 @@
 #ifndef STATIC_REQUEST_HANDLER_H
 #define STATIC_REQUEST_HANDLER_H
 
-#include <string>
 #include <memory>
+#include <string>
 
+#include "config_parser.h"
 #include "http_header.h"
 #include "request_handler.h"
-
 class StaticRequestHandlerTest;  // forward declaration for test fixture
 
 class StaticRequestHandler : public RequestHandler {
@@ -18,6 +18,8 @@ class StaticRequestHandler : public RequestHandler {
   StaticRequestHandler(std::string base_uri, std::string root_path);
   // Handle the Request and return Response
   std::unique_ptr<Response> handle_request(const Request& req) override;
+  static bool check_location(std::shared_ptr<NginxConfigStatement> statement,
+                             NginxLocation& location);
   RequestHandler::HandlerType get_type() const override;
 
   friend class StaticRequestHandlerTest;

@@ -55,7 +55,8 @@ void init_logging(std::ostream* console_stream,
         boost::shared_ptr<std::ostream>(console_stream, [](void*) {}));
     sink->set_formatter(fmt);
     // filter: only errors and above to console
-    sink->set_filter(expr::attr<severity_level>("Severity") >= severity_level::error);
+    sink->set_filter(expr::attr<severity_level>("Severity") >=
+                     severity_level::error);
     core->add_sink(sink);
   }
 

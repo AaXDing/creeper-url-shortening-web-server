@@ -6,13 +6,13 @@
 FROM creeper:base AS builder
 
 # Share work directory
-COPY . /usr/src/project
-WORKDIR /usr/src/project/build
+COPY . /usr/src/project/creeper
+WORKDIR /usr/src/project/creeper/build
 
 # Build and test
 RUN cmake ..
-RUN make
-RUN ctest --output-on_failure
+RUN make -j4
+RUN ctest --output-on-failure
 
 
 ### Deploy container ###
@@ -23,11 +23,11 @@ FROM ubuntu:noble AS deploy
 RUN mkdir -p /app
 RUN mkdir -p /data
 # Copy server output binary to "/app"
-COPY --from=builder /usr/src/project/build/bin/server /app/
+COPY --from=builder /usr/src/project/creeper/build/bin/server /app/
 # Copy config file as well
-COPY --from=builder /usr/src/project/my_config /app/
+COPY --from=builder /usr/src/project/creeper/my_config /app/
 # Copy static files to "."
-COPY --from=builder /usr/src/project/data /data
+COPY --from=builder /usr/src/project/creeper/data /data
 # Set working directory
 WORKDIR /app
 

@@ -30,6 +30,37 @@ creeper/
 6. **Configuration Parser (`config_parser.h/cc`)**: Parses server configuration
 7. **Registry (`registry.h/cc`)**: Manages request handler registration
 
+### Source Code Layout
+<pre>
+            server_main.cc  <-- Entry point
+                  |
+        +---------+---------+
+        |                   |
+ config_parser.cc       server.cc  <-- Accepts connections
+                             |
+              +--------------+--------------+
+              |                             |
+   request_handler_dispatcher.cc     session.cc  <-- Manages client session
+      (owned,build routes)                  |   ----------------- > request_parser.cc (owns)
+                                            | (uses)              
+                                            v
+                                 request_handler_dispatcher.cc <-- Build routes from config
+                                             | (creates)
+                                             |
+                                 request_handler.h  <-- Interface
+                                             |
+                                   echo_request_handler.cc    (impl) 
+                                   static_request_handler.cc  (impl)
+
+Utility Modules:
+----------------
+  http_header.cc   logging.cc
+
+Factory & Registration:
+------------------------
+  registry.cc  <-- Registers handlers and get_location functions
+</pre>
+
 ## Building and Running
 
 ### Build & Test

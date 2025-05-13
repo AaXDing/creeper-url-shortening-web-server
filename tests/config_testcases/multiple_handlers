@@ -1,0 +1,19 @@
+port 80;
+
+location /echo EchoHandler {
+}
+
+location /hahaha EchoHandler {
+}
+
+location /static StaticHandler {
+  root ../data/test1;
+}
+
+location /static1 StaticHandler {
+  root ../data/test2;
+}
+
+location /static3 StaticHandler {
+  root ../data;
+}

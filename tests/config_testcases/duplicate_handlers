@@ -1,0 +1,9 @@
+port 80;
+
+location /static StaticHandler {
+  root ../data;
+}
+
+location /static StaticHandler {
+  root ../data;
+}

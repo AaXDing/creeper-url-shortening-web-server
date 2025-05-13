@@ -3,8 +3,8 @@
 FROM creeper:base AS coverage
 
 # Copy the full source tree
-COPY . /usr/src/project/creeper
-WORKDIR /usr/src/project/creeper/build
+COPY . /usr/src/projects/creeper
+WORKDIR /usr/src/projects/creeper/build
 
 # Configure for coverage
 RUN cmake -DCMAKE_BUILD_TYPE=Coverage ..

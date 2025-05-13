@@ -4,16 +4,15 @@
 #include "gtest/gtest.h"
 #include "registry.h"
 #include "static_request_handler.h"
+#include "not_found_request_handler.h"
 #include "boost/filesystem.hpp"
-
-REGISTER_HANDLER("EchoHandler", EchoRequestHandler);
-REGISTER_HANDLER("StaticHandler", StaticRequestHandler);
 
 // below are tests added using test fixture
 class NginxConfigParserTestFixture : public testing::Test {
  protected:
   NginxConfigParser parser;
   NginxConfig config;
+  NginxLocationResult result;
 };
 
 // provided test using fixture syntax
@@ -129,39 +128,39 @@ TEST_F(NginxConfigParserTestFixture, GetPortWithNoPort) {
 }
 
 TEST_F(NginxConfigParserTestFixture, GetValidEchoLocations) {
-  bool success = parser.parse("dispatcher_testcases/echo_handler_on_root", &config);
+  bool success = parser.parse("config_testcases/echo_handler_on_root", &config);
   EXPECT_TRUE(success);
-  NginxLocationResult locations = config.get_locations();
-  EXPECT_TRUE(locations.valid);
-  EXPECT_EQ(locations.locations.size(), 1);
-  EXPECT_EQ(locations.locations[0].path, "/");
-  EXPECT_EQ(locations.locations[0].handler, "EchoHandler");
+  result = config.get_locations();
+  EXPECT_TRUE(result.valid);
+  EXPECT_EQ(result.locations.size(), 1);
+  EXPECT_EQ(result.locations[0].path, "/");
+  EXPECT_EQ(result.locations[0].handler, "EchoHandler");
 }
 
 TEST_F(NginxConfigParserTestFixture, GetValidStaticLocations) {
-  bool success = parser.parse("dispatcher_testcases/static_handler", &config);
+  bool success = parser.parse("config_testcases/static_handler", &config);
   EXPECT_TRUE(success);
-  NginxLocationResult locations = config.get_locations();
-  EXPECT_TRUE(locations.valid);
-  EXPECT_EQ(locations.locations.size(), 1);
-  EXPECT_EQ(locations.locations[0].path, "/static");
-  EXPECT_EQ(locations.locations[0].handler, "StaticHandler");
-  EXPECT_TRUE(locations.locations[0].root.has_value());
-  EXPECT_EQ(locations.locations[0].root.value(), boost::filesystem::canonical("../data").string());
+  result = config.get_locations();
+  EXPECT_TRUE(result.valid);
+  EXPECT_EQ(result.locations.size(), 1);
+  EXPECT_EQ(result.locations[0].path, "/static");
+  EXPECT_EQ(result.locations[0].handler, "StaticHandler");
+  EXPECT_TRUE(result.locations[0].root.has_value());
+  EXPECT_EQ(result.locations[0].root.value(), boost::filesystem::canonical("../data").string());
 }
 
 TEST_F(NginxConfigParserTestFixture, GetMultipleValidLocations) {
-  bool success = parser.parse("dispatcher_testcases/multiple_handlers", &config);
+  bool success = parser.parse("config_testcases/multiple_handlers", &config);
   EXPECT_TRUE(success);
-  NginxLocationResult locations = config.get_locations();
-  EXPECT_TRUE(locations.valid);
-  EXPECT_EQ(locations.locations.size(), 5);
+  result = config.get_locations();
+  EXPECT_TRUE(result.valid);
+  EXPECT_EQ(result.locations.size(), 5);
   
   // Verify each location
   bool found_echo = false;
   bool found_static = false;
   bool found_static1 = false;
-  for (const auto& loc : locations.locations) {
+  for (const auto& loc : result.locations) {
     if (loc.path == "/echo" && loc.handler == "EchoHandler") {
       found_echo = true;
     }
@@ -182,82 +181,100 @@ TEST_F(NginxConfigParserTestFixture, GetMultipleValidLocations) {
 }
 
 TEST_F(NginxConfigParserTestFixture, GetLocationsWithInvalidPath) {
-  bool success = parser.parse("dispatcher_testcases/invalid_path", &config);
+  bool success = parser.parse("config_testcases/invalid_path", &config);
   EXPECT_TRUE(success);
-  NginxLocationResult locations = config.get_locations();
-  EXPECT_FALSE(locations.valid);
-  EXPECT_EQ(locations.locations.size(), 0);
+  result = config.get_locations();
+  EXPECT_FALSE(result.valid);
+  EXPECT_EQ(result.locations.size(), 0);
 }
 
 TEST_F(NginxConfigParserTestFixture, GetLocationsWithQuotedPath) {
-  bool success = parser.parse("dispatcher_testcases/quoted_path", &config);
+  bool success = parser.parse("config_testcases/quoted_path", &config);
   EXPECT_TRUE(success);
-  NginxLocationResult locations = config.get_locations();
-  EXPECT_FALSE(locations.valid);
-  EXPECT_EQ(locations.locations.size(), 0);
+  result = config.get_locations();
+  EXPECT_FALSE(result.valid);
+  EXPECT_EQ(result.locations.size(), 0);
 }
 
 TEST_F(NginxConfigParserTestFixture, GetLocationsWithQuotedRootPath) {
-  bool success = parser.parse("dispatcher_testcases/quoted_root_path", &config);
+  bool success = parser.parse("config_testcases/quoted_root_path", &config);
   EXPECT_TRUE(success);
-  NginxLocationResult locations = config.get_locations();
-  EXPECT_FALSE(locations.valid);
-  EXPECT_EQ(locations.locations.size(), 0);
+  result = config.get_locations();
+  EXPECT_FALSE(result.valid);
+  EXPECT_EQ(result.locations.size(), 0);
 }
 
 TEST_F(NginxConfigParserTestFixture, GetLocationsWithDuplicatePath) {
-  bool success = parser.parse("dispatcher_testcases/duplicate_handlers", &config);
+  bool success = parser.parse("config_testcases/duplicate_handlers", &config);
   EXPECT_TRUE(success);
-  NginxLocationResult locations = config.get_locations();
-  EXPECT_FALSE(locations.valid);
-  EXPECT_EQ(locations.locations.size(), 0);
+  result = config.get_locations();
+  EXPECT_FALSE(result.valid);
+  EXPECT_EQ(result.locations.size(), 0);
 }
 
 TEST_F(NginxConfigParserTestFixture, GetLocationsWithInvalidHandler) {
-  bool success = parser.parse("dispatcher_testcases/invalid_handler_type", &config);
+  bool success = parser.parse("config_testcases/invalid_handler_type", &config);
   EXPECT_TRUE(success);
-  NginxLocationResult locations = config.get_locations();
-  EXPECT_FALSE(locations.valid);
-  EXPECT_EQ(locations.locations.size(), 0);
+  result = config.get_locations();
+  EXPECT_FALSE(result.valid);
+  EXPECT_EQ(result.locations.size(), 0);
 }
 
 TEST_F(NginxConfigParserTestFixture, GetLocationsWithInvalidStaticConfig) {
-  bool success = parser.parse("dispatcher_testcases/invalid_static_config", &config);
+  bool success = parser.parse("config_testcases/invalid_static_config", &config);
   EXPECT_TRUE(success);
-  NginxLocationResult locations = config.get_locations();
-  EXPECT_FALSE(locations.valid);
-  EXPECT_EQ(locations.locations.size(), 0);
+  result = config.get_locations();
+  EXPECT_FALSE(result.valid);
+  EXPECT_EQ(result.locations.size(), 0);
 }
 
 TEST_F(NginxConfigParserTestFixture, GetLocationsWithInvalidEchoConfig) {
-  bool success = parser.parse("dispatcher_testcases/invalid_echo_config", &config);
+  bool success = parser.parse("config_testcases/invalid_echo_config", &config);
   EXPECT_TRUE(success);
-  NginxLocationResult locations = config.get_locations();
-  EXPECT_FALSE(locations.valid);
-  EXPECT_EQ(locations.locations.size(), 0);
+  result = config.get_locations();
+  EXPECT_FALSE(result.valid);
+  EXPECT_EQ(result.locations.size(), 0);
 }
 
 TEST_F(NginxConfigParserTestFixture, GetLocationsWithTrailingSlash) {
-  bool success = parser.parse("dispatcher_testcases/trailing_slash", &config);
+  bool success = parser.parse("config_testcases/trailing_slash", &config);
   EXPECT_TRUE(success);
-  NginxLocationResult locations = config.get_locations();
-  EXPECT_FALSE(locations.valid);
-  EXPECT_EQ(locations.locations.size(), 0);
+  result = config.get_locations();
+  EXPECT_FALSE(result.valid);
+  EXPECT_EQ(result.locations.size(), 0);
 }
 
 TEST_F(NginxConfigParserTestFixture, ValidGetLocationsWithAbsoluteRootPath) {
-  bool success = parser.parse("dispatcher_testcases/absolute_root_path", &config);
+  bool success = parser.parse("config_testcases/absolute_root_path", &config);
   EXPECT_TRUE(success);
-  NginxLocationResult locations = config.get_locations();
-  EXPECT_TRUE(locations.valid);
-  EXPECT_EQ(locations.locations.size(), 1);
-  EXPECT_EQ(locations.locations[0].root.value(), "/usr/src/project/creeper/data");
+  result = config.get_locations();
+  EXPECT_TRUE(result.valid);
+  EXPECT_EQ(result.locations.size(), 1);
+  EXPECT_EQ(result.locations[0].root.value(), "/usr/src/projects/creeper/data");
 }
 
 TEST_F(NginxConfigParserTestFixture, InvalidGetLocationsWithAbsoluteRootPath) {
-  bool success = parser.parse("dispatcher_testcases/invalid_absolute_root_path", &config);
+  bool success = parser.parse("config_testcases/invalid_absolute_root_path", &config);
   EXPECT_TRUE(success);
-  NginxLocationResult locations = config.get_locations();
-  EXPECT_FALSE(locations.valid);
-  EXPECT_EQ(locations.locations.size(), 0);
+  result = config.get_locations();
+  EXPECT_FALSE(result.valid);
+  EXPECT_EQ(result.locations.size(), 0);
+}
+
+TEST_F(NginxConfigParserTestFixture, ValidGetLocationsWithNotFoundHandler) {
+  bool success = parser.parse("config_testcases/not_found_handler", &config);
+  EXPECT_TRUE(success);
+  result = config.get_locations();
+  EXPECT_TRUE(result.valid);
+  EXPECT_EQ(result.locations.size(), 1);
+  EXPECT_EQ(result.locations[0].path, "/");
+  EXPECT_EQ(result.locations[0].handler, "NotFoundHandler");
+}
+
+TEST_F(NginxConfigParserTestFixture, InvalidGetLocationsWithNotFoundHandler) {
+  bool success = parser.parse("config_testcases/invalid_not_found_handler", &config);
+  EXPECT_TRUE(success);
+  result = config.get_locations();
+  EXPECT_FALSE(result.valid);
+  EXPECT_EQ(result.locations.size(), 0);
 }

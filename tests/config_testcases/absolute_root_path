@@ -1,0 +1,5 @@
+port 80;
+
+location /static StaticHandler {
+  root /usr/src/projects/creeper/data;
+}

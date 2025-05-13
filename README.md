@@ -225,21 +225,27 @@ enum class HandlerType {
 ```
 
 4. Update CMakeLists.txt:
-```cmake
-# Create a new library target for your request handler
-add_library(new_request_handler_lib src/new_request_handler.cc)
-# Link against required dependencies
-target_link_libraries(new_request_handler_lib PUBLIC http_header_lib logging_lib registry_lib)
+- Create a new library target for your request handler
+`add_library(new_request_handler_lib src/new_request_handler.cc)`
+- Link against required dependencies
+`target_link_libraries(new_request_handler_lib PUBLIC http_header_lib logging_lib registry_lib)`
 
-# Add your handler's source file to these executables to ensure it's included in the build:
-# - server: Main server executable
-# - session_lib_test: Session testing
-# - request_handler_dispatcher_lib_test: Request handler dispatcher testing
-# Example: add_executable(server ... src/new_request_handler.cc)
+- Add your handler's source file to these executables to ensure it's included in the build:
+    - server: Main server executable
+    - config_parser_lib_test: Config Parser teseting
+    - session_lib_test: Session testing
+    - request_handler_dispatcher_lib_test: Request handler dispatcher testing
 
-# Add your library to the coverage report targets section
-# Example: add to the TARGETS list in generate_coverage_report()
-```
+    Example: `add_executable(server ... src/new_request_handler.cc)`
+
+- Add your handler's library target to these executables to ensure it's included in the build:
+    - config_parser_lib_test: Config Parser teseting
+
+    Example: `target_link_libraries(config_parser_lib_test ... new_request_handler_lib)`
+
+- Add your library to the coverage report targets section
+
+    Example: add to the TARGETS list in generate_coverage_report()
 
 5. Create test file in `tests/`:
 ```cpp
@@ -256,18 +262,17 @@ TEST_F(NewRequestHandlerTestFixture, BasicFunctionality) {
 }
 ```
 Update `CMakeLists.txt`
-```cmake
-# Create test executable for your request handler
-add_executable(new_request_handler_lib_test tests/new_request_handler_test.cc)
-# Link against required test dependencies
-target_link_libraries(new_request_handler_lib_test http_header_lib new_request_handler_lib registry_lib logging_lib gtest_main)
+- Create test executable for your request handler
+`add_executable(new_request_handler_lib_test tests/new_request_handler_test.cc)`
+- Link against required test dependencies
+`target_link_libraries(new_request_handler_lib_test http_header_lib new_request_handler_lib registry_lib logging_lib gtest_main)`
 
-# Register the test with Google Test
-gtest_discover_tests(new_request_handler_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+- Register the test with Google Test
+`gtest_discover_tests(new_request_handler_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)`
 
-# Add your test to the coverage report tests section
-# Example: add to the TESTS list in generate_coverage_report()
-```
+- Add your test to the coverage report tests section
+    
+    Example: add to the TESTS list in generate_coverage_report()
 
 ### Example: Echo Request Handler
 

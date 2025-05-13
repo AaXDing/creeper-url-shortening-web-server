@@ -1,0 +1,3 @@
+location /static StaticHandler {
+    root /usr/src/projects/creeper/data;
+} 

@@ -9,13 +9,14 @@ The project follows a modular architecture with clear separation of concerns:
 ```
 creeper/
 ├── include/           # Header files
-├── src/              # Source files
-├── tests/            # Test files
-│   ├── dispatcher_testcases/    # Test cases for request handler dispatcher
-│   ├── integration_testcases/   # Integration test cases
-│   └── config_testcases/        # Configuration test cases
-├── data/             # Static files for testing
-└── cmake/            # CMake configuration files
+├── src/               # Source files
+├── tests/             # Test files
+│   ├── dispatcher_testcases/       # Request handler dispatcher test configs
+│   ├── integration_testcases/      # Integration test configs
+│   ├── config_testcases/           # Configuration test confis
+│   └── request_handler_tesetcases  # Request handler test configs
+├── data/              # Static files for testing
+└── cmake/             # CMake configuration files
 ```
 
 ### Key Components
@@ -265,7 +266,7 @@ Update `CMakeLists.txt`
 - Create test executable for your request handler
 `add_executable(new_request_handler_lib_test tests/new_request_handler_test.cc)`
 - Link against required test dependencies
-`target_link_libraries(new_request_handler_lib_test http_header_lib new_request_handler_lib registry_lib logging_lib gtest_main)`
+`target_link_libraries(new_request_handler_lib_test http_header_lib new_request_handler_lib config_parser_lib registry_lib logging_lib gtest_main)`
 
 - Register the test with Google Test
 `gtest_discover_tests(new_request_handler_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)`

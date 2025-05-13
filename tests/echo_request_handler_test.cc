@@ -22,6 +22,8 @@ class EchoRequestHandlerTestFixture : public ::testing::Test {
   Request req;
   Response res;
   std::string request_str;
+  NginxConfigParser parser = NginxConfigParser();
+  NginxConfig config;
 };
 
 TEST_F(EchoRequestHandlerTestFixture, ValidEchoRequest) {
@@ -62,4 +64,22 @@ TEST_F(EchoRequestHandlerTestFixture, InvalidEchoRequest) {
   EXPECT_EQ(res.version, "HTTP/1.1");
   EXPECT_EQ(res.content_type, "text/plain");
   EXPECT_EQ(res.body, "400 Bad Request");
+}
+
+TEST_F(EchoRequestHandlerTestFixture, CheckLocation) {
+  bool success = parser.parse("request_handler_testcases/valid_echo_config", &config);
+  EXPECT_TRUE(success);
+  NginxLocation location;
+  EXPECT_TRUE(EchoRequestHandler::check_location(config.statements_[0], location));
+}
+
+TEST_F(EchoRequestHandlerTestFixture, CheckLocationInvalid) {
+  bool success = parser.parse("request_handler_testcases/invalid_echo_config", &config);
+  EXPECT_TRUE(success);
+  NginxLocation location;
+  EXPECT_FALSE(EchoRequestHandler::check_location(config.statements_[0], location));
+}
+
+TEST_F(EchoRequestHandlerTestFixture, GetType) {
+  EXPECT_EQ(handler->get_type(), RequestHandler::HandlerType::ECHO_REQUEST_HANDLER);
 }

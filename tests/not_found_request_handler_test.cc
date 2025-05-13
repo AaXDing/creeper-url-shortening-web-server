@@ -22,6 +22,8 @@ class NotFoundRequestHandlerTestFixture : public ::testing::Test {
       std::make_shared<NotFoundRequestHandlerTest>("", "");
   Request req;
   Response res;
+  NginxConfigParser parser = NginxConfigParser();
+  NginxConfig config;
 };
 
 TEST_F(NotFoundRequestHandlerTestFixture, ValidRequestNotFound) {
@@ -62,4 +64,18 @@ TEST_F(NotFoundRequestHandlerTestFixture, InvalidRequestNotFound) {
 TEST_F(NotFoundRequestHandlerTestFixture, GetType) {
   // Test the get_type method
   EXPECT_TRUE(handler->get_type() == RequestHandler::HandlerType::NOT_FOUND_REQUEST_HANDLER);
+}
+
+TEST_F(NotFoundRequestHandlerTestFixture, CheckLocationValid) {
+  bool success = parser.parse("request_handler_testcases/valid_not_found_config", &config);
+  EXPECT_TRUE(success);
+  NginxLocation location;
+  EXPECT_TRUE(NotFoundRequestHandler::check_location(config.statements_[0], location));
+}
+
+TEST_F(NotFoundRequestHandlerTestFixture, CheckLocationInvalid) {
+  bool success = parser.parse("request_handler_testcases/invalid_not_found_config", &config);
+  EXPECT_TRUE(success);
+  NginxLocation location;
+  EXPECT_FALSE(NotFoundRequestHandler::check_location(config.statements_[0], location));
 }

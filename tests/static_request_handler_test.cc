@@ -33,6 +33,8 @@ class StaticRequestHandlerTestFixture : public ::testing::Test {
       StaticRequestHandlerTest(base_uri, root_path);
   Request req;
   Response res;
+  NginxConfigParser parser = NginxConfigParser();
+  NginxConfig config;
 };
 
 TEST_F(StaticRequestHandlerTestFixture, CreateHandlerSingleSlash) {
@@ -208,4 +210,59 @@ TEST_F(StaticRequestHandlerTestFixture, FilePathPdfFile) {
   std::string extension = test_handler.call_get_file_content_type(file_path);
   EXPECT_EQ(file_path, "../data/test2/creeper.pdf");
   EXPECT_EQ(extension, "application/pdf");
+}
+
+TEST_F(StaticRequestHandlerTestFixture, GetType) {
+  EXPECT_EQ(test_handler.get_type(), RequestHandler::HandlerType::STATIC_REQUEST_HANDLER);
+}
+
+TEST_F(StaticRequestHandlerTestFixture, CheckLocationRelativeRoot) {
+  bool success = parser.parse("request_handler_testcases/static_config_relative_root", &config);
+  EXPECT_TRUE(success);
+  NginxLocation location;
+  EXPECT_TRUE(StaticRequestHandler::check_location(config.statements_[0], location));
+  EXPECT_EQ(location.root, "/usr/src/projects/creeper/data");
+}
+
+TEST_F(StaticRequestHandlerTestFixture, CheckLocationAbsoluteRoot) {
+  bool success = parser.parse("request_handler_testcases/static_config_absolute_root", &config);
+  EXPECT_TRUE(success);
+  NginxLocation location;
+  EXPECT_TRUE(StaticRequestHandler::check_location(config.statements_[0], location));
+  EXPECT_EQ(location.root, "/usr/src/projects/creeper/data");
+}
+
+TEST_F(StaticRequestHandlerTestFixture, CheckLocationTrailingSlash) {
+  bool success = parser.parse("request_handler_testcases/static_config_trailing_slash", &config);
+  EXPECT_TRUE(success);
+  NginxLocation location;
+  EXPECT_FALSE(StaticRequestHandler::check_location(config.statements_[0], location));
+}
+
+TEST_F(StaticRequestHandlerTestFixture, CheckLocationMissingRoot) {
+  bool success = parser.parse("request_handler_testcases/static_config_missing_root", &config);
+  EXPECT_TRUE(success);
+  NginxLocation location;
+  EXPECT_FALSE(StaticRequestHandler::check_location(config.statements_[0], location));
+}
+
+TEST_F(StaticRequestHandlerTestFixture, CheckLocationInvalidRoot) {
+  bool success = parser.parse("request_handler_testcases/static_config_invalid_root", &config);
+  EXPECT_TRUE(success);
+  NginxLocation location;
+  EXPECT_FALSE(StaticRequestHandler::check_location(config.statements_[0], location));
+}
+
+TEST_F(StaticRequestHandlerTestFixture, CheckLocationPathNotExistAbsolute) {
+  bool success = parser.parse("request_handler_testcases/static_config_path_not_exist_absolute", &config);
+  EXPECT_TRUE(success);
+  NginxLocation location;
+  EXPECT_FALSE(StaticRequestHandler::check_location(config.statements_[0], location));
+}
+
+TEST_F(StaticRequestHandlerTestFixture, CheckLocationPathNotExistRelative) {
+  bool success = parser.parse("request_handler_testcases/static_config_path_not_exist_relative", &config);
+  EXPECT_TRUE(success);
+  NginxLocation location;
+  EXPECT_FALSE(StaticRequestHandler::check_location(config.statements_[0], location));
 }

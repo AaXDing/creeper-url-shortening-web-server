@@ -39,11 +39,6 @@ bool RequestHandlerDispatcher::add_route(const NginxLocation& location) {
   std::string uri = location.path;
   std::string handler_type = location.handler;
 
-  while (uri.size() > 1 && uri[uri.size() - 1] == '/') {
-    uri.pop_back();  // Remove trailing slashes
-    LOG(debug) << "Dispatcher trimmed URI to=" << uri;
-  }
-
   // Check if the URI already exists in the map
   // Only the first handler for a URI is added
   if (routes_.find(uri) != routes_.end()) {
@@ -66,11 +61,6 @@ bool RequestHandlerDispatcher::add_route(const NginxLocation& location) {
 std::unique_ptr<RequestHandler> RequestHandlerDispatcher::get_handler(
     const Request& req) {
   std::string url = req.uri;
-  // Remove trailing slashes from the URI
-  while (url.size() > 0 && url[url.size() - 1] == '/') {
-    url.pop_back();  // Remove trailing slashes
-    LOG(debug) << "Dispatcher trimmed request URI to=" << url;
-  }
 
   std::string location = longest_prefix_match(url);
 

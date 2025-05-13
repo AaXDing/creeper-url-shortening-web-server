@@ -42,22 +42,6 @@ TEST_F(StaticRequestHandlerTestFixture, CreateHandlerSingleSlash) {
   EXPECT_NE(handler, nullptr);
 }
 
-// TEST_F(StaticRequestHandlerTestFixture, CreateHandlerValidPath) {
-//   handler = StaticRequestHandler::create("/static", "./var/www");
-//   EXPECT_NE(handler, nullptr);
-//   delete handler;
-// }
-
-// TEST_F(StaticRequestHandlerTestFixture, CreateHandlerEndsWithSlash) {
-//   handler = StaticRequestHandler::create("/static", "./var/www/");
-//   EXPECT_EQ(handler, nullptr);
-// }
-
-// TEST_F(StaticRequestHandlerTestFixture, CreateHandlerDuplicateSlashs) {
-//   handler = StaticRequestHandler::create("/static", "./var//www");
-//   EXPECT_EQ(handler, nullptr);
-// }
-
 TEST_F(StaticRequestHandlerTestFixture, ValidStaticRequest) {
   req.valid = true;
   req.version = "HTTP/1.1";
@@ -81,11 +65,11 @@ TEST_F(StaticRequestHandlerTestFixture, ValidStaticRequestWithExtraSlashes) {
 
   res = test_handler.call_handle_request(req);
 
-  EXPECT_EQ(res.status_code, 200);
-  EXPECT_EQ(res.status_message, "OK");
+  EXPECT_EQ(res.status_code, 404);
+  EXPECT_EQ(res.status_message, "Not Found");
   EXPECT_EQ(res.version, "HTTP/1.1");
   EXPECT_EQ(res.content_type, "text/plain");
-  EXPECT_EQ(res.body, "line1\nline2\n\nline4");
+  EXPECT_EQ(res.body, "404 Not Found");
 }
 
 TEST_F(StaticRequestHandlerTestFixture, PdfFileRequest) {
@@ -200,8 +184,8 @@ TEST_F(StaticRequestHandlerTestFixture, FilePathTextFileWithTrailingSlash) {
   std::string file_path =
       test_handler.call_generate_file_path("/static/test1/test.txt//");
   std::string extension = test_handler.call_get_file_content_type(file_path);
-  EXPECT_EQ(file_path, "../data/test1/test.txt");
-  EXPECT_EQ(extension, "text/plain");
+  EXPECT_EQ(file_path, "../data/test1/test.txt//");
+  EXPECT_EQ(extension, "application/octet-stream");
 }
 
 TEST_F(StaticRequestHandlerTestFixture, FilePathPdfFile) {

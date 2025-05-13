@@ -66,11 +66,6 @@ std::string StaticRequestHandler::generate_file_path(
   file_path = uri.substr(base_uri_.size());
   LOG(debug) << "Path after base_uri strip='" << file_path << "'";
 
-  // Remove trailing slashes
-  while (file_path.back() == '/') {
-    file_path.pop_back();
-  }
-
   // Add root path in front of the file path
   // e.g. root_path_ ./var/www
   // e.g. /test1/test.txt -> ./var/www/test1/test.txt

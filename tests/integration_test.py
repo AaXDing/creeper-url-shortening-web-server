@@ -32,7 +32,7 @@ log_file = None
 # ------------------- Server Control -------------------
 
 
-def start_server(config_file, integration_test_folder):
+def start_server(config_file, integration_test_folder_exists):
     """
     Starts the server as a background subprocess.
     Output is written to a temporary log file.
@@ -41,7 +41,7 @@ def start_server(config_file, integration_test_folder):
     log_file = tempfile.NamedTemporaryFile(delete=False)
     build_dir = os.path.abspath(os.getcwd())
     server_path = os.path.join(build_dir, SERVER_BIN)
-    if integration_test_folder:
+    if integration_test_folder_exists:
         config_file = os.path.join(CONFIG_FILE_INTEGRATION_PATH, config_file)
     else:
         config_file = os.path.join(CONFIG_FILE_BASE_PATH, config_file)
@@ -198,6 +198,12 @@ def define_tests():
                  "method": b"GET /static/test1/test.txt HTTP/1.1\r\nHost: localhost\r\nUser-Agent: curl/8.5.0\r\nAccept: */*\r\n\r\n",
                  "expected": b"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 18\r\n\r\nline1\nline2\n\nline4",
                  "use_nc": True
+             },
+             {
+                 "name": "Invalid request",
+                 "method": b"GET /notfound HTTP/1.1\r\nHost: localhost\r\nUser-Agent: curl/8.5.0\r\nAccept: */*\r\n\r\n",
+                 "expected": b"HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nContent-Length: 13\r\n\r\n404 Not Found",
+                 "use_nc": True
              }
          ]},
     ]
@@ -214,12 +220,9 @@ def main():
 
     for test in tests:
         config_file = test["config"]
-        integration_test_folder = test["integration_test_folder"]
-        if not os.path.isfile(os.path.join(CONFIG_FILE_BASE_PATH, config_file)):
-            print(f"Config file {config_file} not found.")
-            continue
+        integration_test_folder_exists = test["integration_test_folder"]
         print(f"Running tests for config: {config_file}")
-        start_server(config_file, integration_test_folder)
+        start_server(config_file, integration_test_folder_exists)
         try:
             for test_case in test["tests"]:
                 all_passed &= run_test(

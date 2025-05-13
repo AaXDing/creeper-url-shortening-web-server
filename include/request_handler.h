@@ -16,6 +16,7 @@ class RequestHandler {
   enum class HandlerType {
     ECHO_REQUEST_HANDLER,
     STATIC_REQUEST_HANDLER,
+    NOT_FOUND_REQUEST_HANDLER,
   };  // Enum to represent the type of handler
 
   virtual ~RequestHandler() = default;

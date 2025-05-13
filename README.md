@@ -26,6 +26,7 @@ creeper/
 4. **Request Handlers**:
    - `echo_request_handler.h/cc`: Echoes back the request
    - `static_request_handler.h/cc`: Serves static files
+   - `not_found_request_handler.h/cc`: Returns 404 Not Found response when no other handler can handle a request (Need to setup config file correctly)
 5. **Request Handler Dispatcher (`request_handler_dispatcher.h/cc`)**: Routes requests to appropriate handlers
 6. **Configuration Parser (`config_parser.h/cc`)**: Parses server configuration
 7. **Registry (`registry.h/cc`)**: Manages request handler registration
@@ -49,8 +50,9 @@ creeper/
                                              |
                                  request_handler.h  <-- Interface
                                              |
-                                   echo_request_handler.cc    (impl) 
-                                   static_request_handler.cc  (impl)
+                                echo_request_handler.cc      (impl) 
+                                static_request_handler.cc    (impl)
+                                not_found_request_handler.cc (impl)
 
 Utility Modules:
 ----------------
@@ -217,14 +219,26 @@ RequestHandler::HandlerType NewRequestHandler::get_type() const {
 enum class HandlerType {
     ECHO_REQUEST_HANDLER,
     STATIC_REQUEST_HANDLER,
+    NOT_FOUND_REQUEST_HANDLER,
     NEW_REQUEST_HANDLER,  // Add your handler type
 };
 ```
 
 4. Update CMakeLists.txt:
 ```cmake
+# Create a new library target for your request handler
 add_library(new_request_handler_lib src/new_request_handler.cc)
+# Link against required dependencies
 target_link_libraries(new_request_handler_lib PUBLIC http_header_lib logging_lib registry_lib)
+
+# Add your handler's source file to these executables to ensure it's included in the build:
+# - server: Main server executable
+# - session_lib_test: Session testing
+# - request_handler_dispatcher_lib_test: Request handler dispatcher testing
+# Example: add_executable(server ... src/new_request_handler.cc)
+
+# Add your library to the coverage report targets section
+# Example: add to the TARGETS list in generate_coverage_report()
 ```
 
 5. Create test file in `tests/`:
@@ -232,14 +246,27 @@ target_link_libraries(new_request_handler_lib PUBLIC http_header_lib logging_lib
 #include "new_request_handler.h"
 #include "gtest/gtest.h"
 
-class NewRequestHandlerTest : public ::testing::Test {
+class NewRequestHandlerTestFixture : public ::testing::Test {
 protected:
     // Set up test fixtures
 };
 
-TEST_F(NewRequestHandlerTest, BasicFunctionality) {
+TEST_F(NewRequestHandlerTestFixture, BasicFunctionality) {
     // Add test cases
 }
+```
+Update `CMakeLists.txt`
+```cmake
+# Create test executable for your request handler
+add_executable(new_request_handler_lib_test tests/new_request_handler_test.cc)
+# Link against required test dependencies
+target_link_libraries(new_request_handler_lib_test http_header_lib new_request_handler_lib registry_lib logging_lib gtest_main)
+
+# Register the test with Google Test
+gtest_discover_tests(new_request_handler_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+
+# Add your test to the coverage report tests section
+# Example: add to the TESTS list in generate_coverage_report()
 ```
 
 ### Example: Echo Request Handler
@@ -279,6 +306,9 @@ The server uses a configuration file in nginx-like format:
 
 ```nginx
 port 80;
+
+location / NotFoundHandler {
+}
 
 # no trailing slash after path
 location /echo EchoHandler {

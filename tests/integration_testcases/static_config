@@ -1,7 +1,5 @@
-server {
-  listen   80;
-  location /file {
-    handler static;
-    root ../data/test1;
-  }
+port 80;
+
+location /file StaticHandler {
+  root ../data/test1;
 }

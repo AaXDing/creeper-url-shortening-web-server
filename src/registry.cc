@@ -1,7 +1,6 @@
 #include "registry.h"
 
 #include "logging.h"
-// TODO: logging to be added
 
 bool Registry::register_handler(const std::string& name,
                                 RequestHandlerFactory factory,

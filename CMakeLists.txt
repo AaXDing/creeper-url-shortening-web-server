@@ -109,6 +109,9 @@ target_link_libraries(request_handler_dispatcher_lib_test request_handler_dispat
 add_executable(http_header_test tests/http_header_test.cc)
 target_link_libraries(http_header_test http_header_lib gtest_main)
 
+add_executable(registry_lib_test tests/registry_test.cc src/echo_request_handler.cc)
+target_link_libraries(registry_lib_test registry_lib echo_request_handler_lib gtest_main)
+
 gtest_discover_tests(http_header_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(request_parser_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(config_parser_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
@@ -119,6 +122,7 @@ gtest_discover_tests(echo_request_handler_lib_test WORKING_DIRECTORY ${CMAKE_CUR
 gtest_discover_tests(static_request_handler_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(not_found_request_handler_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(request_handler_dispatcher_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+gtest_discover_tests(registry_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 # --- Coverage support for unit tests only ---
 include(cmake/CodeCoverageReportConfig.cmake)
 
@@ -134,6 +138,7 @@ generate_coverage_report(
         config_parser_lib
         logging_lib
         request_handler_dispatcher_lib
+        registry_lib
         server
     TESTS
         http_header_test
@@ -146,6 +151,7 @@ generate_coverage_report(
         session_lib_test
         logging_lib_test
         request_handler_dispatcher_lib_test
+        registry_lib_test
 )
 
 # Integration test using Python script

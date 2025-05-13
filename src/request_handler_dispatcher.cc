@@ -90,10 +90,6 @@ std::unique_ptr<RequestHandler> RequestHandlerDispatcher::get_handler(
     return nullptr;  // No handler found
   }
 
-  // std::unique_ptr<RequestHandler> handler =
-  //     Registry::create_handler(
-  //         (*factory_ptr), uri, root);
-
   std::unique_ptr<RequestHandler> handler = (*factory_ptr)(uri, root);
   return handler;
 }

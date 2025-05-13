@@ -79,10 +79,6 @@ void Session::handle_write(const boost::system::error_code &error) {
   }
 }
 
-// Parse the Request message and determine its validity.
-// Constructs an HTTP Response that echoes the provided request_msg.
-// If valid is true, returns a 200 OK Response echoing the original Request;
-// otherwise, returns a 400 Bad Request Response.
 // RequestHandlerDispatcher will base the parsing to generate the specific
 // handler
 std::string Session::handle_response(size_t bytes_transferred) {

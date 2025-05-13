@@ -12,13 +12,6 @@ bool Registry::register_handler(const std::string& name,
   return true;
 }
 
-// create_handler implementation
-std::unique_ptr<RequestHandler> Registry::create_handler(
-    RequestHandlerFactory factory, const std::string& arg1,
-    const std::string& arg2) {
-  return factory(arg1, arg2);
-}
-
 std::shared_ptr<RequestHandlerFactory> Registry::get_handler_factory(
     const std::string& name) {
   LOG(debug) << "Registry::get_handler_factory: name=" << name;

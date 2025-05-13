@@ -10,12 +10,6 @@
 
 REGISTER_HANDLER("StaticHandler", StaticRequestHandler);
 
-std::unique_ptr<StaticRequestHandler> StaticRequestHandler::create(
-    std::string base_uri, std::string root_path) {
-  return std::make_unique<StaticRequestHandler>(std::move(base_uri),
-                                                std::move(root_path));
-}
-
 StaticRequestHandler::StaticRequestHandler(std::string base_uri,
                                            std::string root_path)
     : base_uri_(std::move(base_uri)), root_path_(std::move(root_path)) {}

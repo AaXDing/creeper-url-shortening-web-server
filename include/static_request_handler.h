@@ -11,10 +11,6 @@ class StaticRequestHandlerTest;  // forward declaration for test fixture
 
 class StaticRequestHandler : public RequestHandler {
  public:
-  // Factory method to create a unique_ptr to a StaticRequestHandler
-  static std::unique_ptr<StaticRequestHandler> create(std::string base_uri,
-                                                      std::string root_path);
-
   StaticRequestHandler(std::string base_uri, std::string root_path);
   // Handle the Request and return Response
   std::unique_ptr<Response> handle_request(const Request& req) override;

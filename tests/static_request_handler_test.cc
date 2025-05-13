@@ -36,7 +36,7 @@ class StaticRequestHandlerTestFixture : public ::testing::Test {
 };
 
 TEST_F(StaticRequestHandlerTestFixture, CreateHandlerSingleSlash) {
-  handler = StaticRequestHandler::create("/static", "./");
+  std::unique_ptr<StaticRequestHandler> handler = std::make_unique<StaticRequestHandler>("/static", "./");
   EXPECT_NE(handler, nullptr);
 }
 

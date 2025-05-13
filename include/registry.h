@@ -41,12 +41,6 @@ class Registry {
                                RequestHandlerFactory factory,
                                CheckLocationFactory check_location);
 
-  // Create a handler by name, passing along constructor args
-  // Returns nullptr if no such handler registered
-  static std::unique_ptr<RequestHandler> create_handler(
-      RequestHandlerFactory factory, const std::string& arg1,
-      const std::string& arg2);
-
   static std::shared_ptr<RequestHandlerFactory> get_handler_factory(
       const std::string& name);
 

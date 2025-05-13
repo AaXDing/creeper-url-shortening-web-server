@@ -1,11 +1,12 @@
 #include "request_handler_dispatcher.h"
 
+#include <iostream>
+
 #include "config_parser.h"
+#include "echo_request_handler.h"
 #include "gtest/gtest.h"
 #include "http_header.h"
 #include "registry.h"
-#include <iostream>
-#include "echo_request_handler.h"
 #include "static_request_handler.h"
 
 class RequestHandlerDispatcherTestFixtrue : public ::testing::Test {
@@ -14,7 +15,6 @@ class RequestHandlerDispatcherTestFixtrue : public ::testing::Test {
   NginxConfig config;
   NginxConfigParser parser;
   Request req;
-  
 };
 
 TEST_F(RequestHandlerDispatcherTestFixtrue, EchoHandler) {

@@ -7,7 +7,8 @@
 
 class EchoRequestHandlerTest : public EchoRequestHandler {
  public:
-  EchoRequestHandlerTest(const std::string& a, const std::string& b) : EchoRequestHandler(a, b) {}
+  EchoRequestHandlerTest(const std::string& a, const std::string& b)
+      : EchoRequestHandler(a, b) {}
 
   Response call_handle_request(Request& req) {
     std::unique_ptr<Response> p = handle_request(req);
@@ -67,19 +68,24 @@ TEST_F(EchoRequestHandlerTestFixture, InvalidEchoRequest) {
 }
 
 TEST_F(EchoRequestHandlerTestFixture, CheckLocation) {
-  bool success = parser.parse("request_handler_testcases/valid_echo_config", &config);
+  bool success =
+      parser.parse("request_handler_testcases/valid_echo_config", &config);
   EXPECT_TRUE(success);
   NginxLocation location;
-  EXPECT_TRUE(EchoRequestHandler::check_location(config.statements_[0], location));
+  EXPECT_TRUE(
+      EchoRequestHandler::check_location(config.statements_[0], location));
 }
 
 TEST_F(EchoRequestHandlerTestFixture, CheckLocationInvalid) {
-  bool success = parser.parse("request_handler_testcases/invalid_echo_config", &config);
+  bool success =
+      parser.parse("request_handler_testcases/invalid_echo_config", &config);
   EXPECT_TRUE(success);
   NginxLocation location;
-  EXPECT_FALSE(EchoRequestHandler::check_location(config.statements_[0], location));
+  EXPECT_FALSE(
+      EchoRequestHandler::check_location(config.statements_[0], location));
 }
 
 TEST_F(EchoRequestHandlerTestFixture, GetType) {
-  EXPECT_EQ(handler->get_type(), RequestHandler::HandlerType::ECHO_REQUEST_HANDLER);
+  EXPECT_EQ(handler->get_type(),
+            RequestHandler::HandlerType::ECHO_REQUEST_HANDLER);
 }

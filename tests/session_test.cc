@@ -108,8 +108,8 @@ TEST_F(SessionTestFixture, InvalidLocationReturns404) {
   EXPECT_EQ(sess->call_handle_response(input.size()), expected);
 }
 
-// ------------------------------------------------------ 4. Read / write handlers
-// Success path – object should remain alive.
+// ------------------------------------------------------ 4. Read / write
+// handlers Success path – object should remain alive.
 TEST_F(SessionTestFixture, HandleReadSuccessKeepsSessionAlive) {
   input =
       "GET /index.html HTTP/1.1\r\n"

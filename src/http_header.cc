@@ -1,10 +1,10 @@
 #include "http_header.h"
-#include "logging.h"
 
 #include <string>
 
+#include "logging.h"
+
 std::string Request::to_string() const {
-  
   LOG(debug) << "Serializing request to string";
 
   std::string request_str = method + " " + uri + " " + version + CRLF;

@@ -1,11 +1,11 @@
 #include "config_parser.h"
 
+#include "boost/filesystem.hpp"
 #include "echo_request_handler.h"
 #include "gtest/gtest.h"
+#include "not_found_request_handler.h"
 #include "registry.h"
 #include "static_request_handler.h"
-#include "not_found_request_handler.h"
-#include "boost/filesystem.hpp"
 
 // below are tests added using test fixture
 class NginxConfigParserTestFixture : public testing::Test {
@@ -146,7 +146,8 @@ TEST_F(NginxConfigParserTestFixture, GetValidStaticLocations) {
   EXPECT_EQ(result.locations[0].path, "/static");
   EXPECT_EQ(result.locations[0].handler, "StaticHandler");
   EXPECT_TRUE(result.locations[0].root.has_value());
-  EXPECT_EQ(result.locations[0].root.value(), boost::filesystem::canonical("../data").string());
+  EXPECT_EQ(result.locations[0].root.value(),
+            boost::filesystem::canonical("../data").string());
 }
 
 TEST_F(NginxConfigParserTestFixture, GetMultipleValidLocations) {
@@ -155,7 +156,7 @@ TEST_F(NginxConfigParserTestFixture, GetMultipleValidLocations) {
   result = config.get_locations();
   EXPECT_TRUE(result.valid);
   EXPECT_EQ(result.locations.size(), 5);
-  
+
   // Verify each location
   bool found_echo = false;
   bool found_static = false;
@@ -167,12 +168,14 @@ TEST_F(NginxConfigParserTestFixture, GetMultipleValidLocations) {
     if (loc.path == "/static" && loc.handler == "StaticHandler") {
       found_static = true;
       EXPECT_TRUE(loc.root.has_value());
-      EXPECT_EQ(loc.root.value(), boost::filesystem::canonical("../data/test1").string());
+      EXPECT_EQ(loc.root.value(),
+                boost::filesystem::canonical("../data/test1").string());
     }
     if (loc.path == "/static1" && loc.handler == "StaticHandler") {
       found_static1 = true;
       EXPECT_TRUE(loc.root.has_value());
-      EXPECT_EQ(loc.root.value(), boost::filesystem::canonical("../data/test2").string());
+      EXPECT_EQ(loc.root.value(),
+                boost::filesystem::canonical("../data/test2").string());
     }
   }
   EXPECT_TRUE(found_echo);
@@ -221,7 +224,8 @@ TEST_F(NginxConfigParserTestFixture, GetLocationsWithInvalidHandler) {
 }
 
 TEST_F(NginxConfigParserTestFixture, GetLocationsWithInvalidStaticConfig) {
-  bool success = parser.parse("config_testcases/invalid_static_config", &config);
+  bool success =
+      parser.parse("config_testcases/invalid_static_config", &config);
   EXPECT_TRUE(success);
   result = config.get_locations();
   EXPECT_FALSE(result.valid);
@@ -254,7 +258,8 @@ TEST_F(NginxConfigParserTestFixture, ValidGetLocationsWithAbsoluteRootPath) {
 }
 
 TEST_F(NginxConfigParserTestFixture, InvalidGetLocationsWithAbsoluteRootPath) {
-  bool success = parser.parse("config_testcases/invalid_absolute_root_path", &config);
+  bool success =
+      parser.parse("config_testcases/invalid_absolute_root_path", &config);
   EXPECT_TRUE(success);
   result = config.get_locations();
   EXPECT_FALSE(result.valid);
@@ -272,7 +277,8 @@ TEST_F(NginxConfigParserTestFixture, ValidGetLocationsWithNotFoundHandler) {
 }
 
 TEST_F(NginxConfigParserTestFixture, InvalidGetLocationsWithNotFoundHandler) {
-  bool success = parser.parse("config_testcases/invalid_not_found_handler", &config);
+  bool success =
+      parser.parse("config_testcases/invalid_not_found_handler", &config);
   EXPECT_TRUE(success);
   result = config.get_locations();
   EXPECT_FALSE(result.valid);

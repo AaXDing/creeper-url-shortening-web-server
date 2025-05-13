@@ -107,7 +107,7 @@ bool StaticRequestHandler::check_location(
       statement->child_block_->statements_[0]->tokens_.size() == 2 &&
       statement->child_block_->statements_[0]->tokens_[0] == "root") {
     location.root = statement->child_block_->statements_[0]->tokens_[1];
-    
+
     // error if root path has trailing slash
     if (location.root.value().back() == '/' && location.root.value() != "/") {
       LOG(error) << "Root path cannot have trailing slash";

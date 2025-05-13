@@ -16,14 +16,14 @@ using ::testing::Return;
 using ::testing::ReturnRef;
 
 namespace asio = boost::asio;
-namespace sys  = boost::system;
-using tcp        = asio::ip::tcp;
+namespace sys = boost::system;
+using tcp = asio::ip::tcp;
 using error_code = sys::error_code;
 
 // ------------------------------------------------ 1. Test-only wrapper
 class ServerTest : public Server {
  public:
-  using Server::Server;              // inherit ctor
+  using Server::Server;  // inherit ctor
 
   void call_start_accept() { start_accept(); }
 
@@ -41,9 +41,9 @@ class MockSession : public ISession {
     ON_CALL(*this, socket()).WillByDefault(ReturnRef(sock_));
   }
 
-  MOCK_METHOD(tcp::socket&,   socket,         (), (override));
-  MOCK_METHOD(void,           start,          (), (override));
-  MOCK_METHOD(tcp::endpoint,  remote_endpoint,(), (override));
+  MOCK_METHOD(tcp::socket&, socket, (), (override));
+  MOCK_METHOD(void, start, (), (override));
+  MOCK_METHOD(tcp::endpoint, remote_endpoint, (), (override));
 
  private:
   tcp::socket sock_;
@@ -55,18 +55,18 @@ TEST(ServerTest, HandleAccept_CallsStartOnSuccess) {
   auto mock = std::make_shared<NiceMock<MockSession>>(ios);
 
   EXPECT_CALL(*mock, remote_endpoint())
-      .WillOnce(Return(tcp::endpoint{
-          asio::ip::address::from_string("127.0.0.1"), 4242}));
+      .WillOnce(Return(
+          tcp::endpoint{asio::ip::address::from_string("127.0.0.1"), 4242}));
 
-  SessionFactory factory = [mock]() { return mock; };   // shared_ptr copy
+  SessionFactory factory = [mock]() { return mock; };  // shared_ptr copy
 
   NginxConfig config;
   ServerTest srv(ios, /*port=*/0, config, factory);
 
   EXPECT_CALL(*mock, start()).Times(1);
 
-  error_code ec;                    // success
-  srv.call_handle_accept(mock, ec); // pass shared_ptr
+  error_code ec;                     // success
+  srv.call_handle_accept(mock, ec);  // pass shared_ptr
 }
 
 // ------------------------------------------------ 4. error path (no crash)
@@ -90,11 +90,12 @@ TEST(ServerTest, HandleAccept_Error_NoCrash) {
   NginxConfig config;
   ServerTest srv(ios, /*port=*/0, config, factory);
 
-  error_code ec = asio::error::operation_aborted;  // simulate failure
-  EXPECT_NO_THROW(srv.call_handle_accept(sess1, ec)); // should not crash
+  error_code ec = asio::error::operation_aborted;      // simulate failure
+  EXPECT_NO_THROW(srv.call_handle_accept(sess1, ec));  // should not crash
 }
 
-// ------------------------------------------------ 5a. default factory via accept()
+// ------------------------------------------------ 5a. default factory via
+// accept()
 TEST(ServerTest, DefaultFactory_NoCrash_StartAccept) {
   asio::io_service ios;
   NginxConfig config;
@@ -103,7 +104,8 @@ TEST(ServerTest, DefaultFactory_NoCrash_StartAccept) {
   EXPECT_NO_THROW(srv.call_start_accept());
 }
 
-// ------------------------------------------------ 5b. default factory product type
+// ------------------------------------------------ 5b. default factory product
+// type
 TEST(ServerTest, DefaultFactory_ProducesSession) {
   asio::io_service ios;
   NginxConfig config;

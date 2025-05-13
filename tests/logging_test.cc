@@ -15,7 +15,7 @@ namespace fs = boost::filesystem;
 using severity_level = boost::log::trivial::severity_level;
 
 // Helper to tear down and re-init logging with a fresh file sink
-static void reinit_file_sink(const std::string& pattern) {
+static void reinit_file_sink(const std::string &pattern) {
   // Remove existing sinks
   boost::log::core::get()->remove_all_sinks();
   // Re-install only the file sink

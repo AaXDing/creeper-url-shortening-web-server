@@ -13,8 +13,8 @@ class NotFoundRequestHandler : public RequestHandler {
   NotFoundRequestHandler(const std::string& arg1, const std::string& arg2);
   std::unique_ptr<Response> handle_request(const Request& req) override;
   static bool check_location(std::shared_ptr<NginxConfigStatement> statement,
-                           NginxLocation& location);
+                             NginxLocation& location);
   RequestHandler::HandlerType get_type() const override;
 };
 
-#endif  // NOT_FOUND_REQUEST_HANDLER_H 
+#endif  // NOT_FOUND_REQUEST_HANDLER_H

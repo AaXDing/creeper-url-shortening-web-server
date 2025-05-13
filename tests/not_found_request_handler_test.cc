@@ -7,7 +7,7 @@
 
 class NotFoundRequestHandlerTest : public NotFoundRequestHandler {
  public:
-  NotFoundRequestHandlerTest(const std::string& a, const std::string& b) 
+  NotFoundRequestHandlerTest(const std::string& a, const std::string& b)
       : NotFoundRequestHandler(a, b) {}
 
   Response call_handle_request(Request& req) {
@@ -56,26 +56,32 @@ TEST_F(NotFoundRequestHandlerTestFixture, InvalidRequestNotFound) {
 
   EXPECT_EQ(res.status_code, 404);
   EXPECT_EQ(res.status_message, "Not Found");
-  EXPECT_EQ(res.version, HTTP_VERSION);  // Should use default version for invalid requests
+  EXPECT_EQ(res.version,
+            HTTP_VERSION);  // Should use default version for invalid requests
   EXPECT_EQ(res.content_type, "text/plain");
   EXPECT_EQ(res.body, "404 Not Found");
 }
 
 TEST_F(NotFoundRequestHandlerTestFixture, GetType) {
   // Test the get_type method
-  EXPECT_TRUE(handler->get_type() == RequestHandler::HandlerType::NOT_FOUND_REQUEST_HANDLER);
+  EXPECT_TRUE(handler->get_type() ==
+              RequestHandler::HandlerType::NOT_FOUND_REQUEST_HANDLER);
 }
 
 TEST_F(NotFoundRequestHandlerTestFixture, CheckLocationValid) {
-  bool success = parser.parse("request_handler_testcases/valid_not_found_config", &config);
+  bool success =
+      parser.parse("request_handler_testcases/valid_not_found_config", &config);
   EXPECT_TRUE(success);
   NginxLocation location;
-  EXPECT_TRUE(NotFoundRequestHandler::check_location(config.statements_[0], location));
+  EXPECT_TRUE(
+      NotFoundRequestHandler::check_location(config.statements_[0], location));
 }
 
 TEST_F(NotFoundRequestHandlerTestFixture, CheckLocationInvalid) {
-  bool success = parser.parse("request_handler_testcases/invalid_not_found_config", &config);
+  bool success = parser.parse(
+      "request_handler_testcases/invalid_not_found_config", &config);
   EXPECT_TRUE(success);
   NginxLocation location;
-  EXPECT_FALSE(NotFoundRequestHandler::check_location(config.statements_[0], location));
+  EXPECT_FALSE(
+      NotFoundRequestHandler::check_location(config.statements_[0], location));
 }

@@ -6,7 +6,7 @@
 REGISTER_HANDLER("NotFoundHandler", NotFoundRequestHandler);
 
 NotFoundRequestHandler::NotFoundRequestHandler(const std::string& arg1,
-                                             const std::string& arg2) {}
+                                               const std::string& arg2) {}
 
 std::unique_ptr<Response> NotFoundRequestHandler::handle_request(
     const Request& req) {
@@ -36,4 +36,4 @@ bool NotFoundRequestHandler::check_location(
 
 RequestHandler::HandlerType NotFoundRequestHandler::get_type() const {
   return RequestHandler::HandlerType::NOT_FOUND_REQUEST_HANDLER;
-} 
+}

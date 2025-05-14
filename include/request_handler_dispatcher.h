@@ -21,6 +21,7 @@ class RequestHandlerDispatcher {
   RequestHandlerDispatcher(const NginxConfig& config);
   ~RequestHandlerDispatcher();
 
+  std::unique_ptr<Response> handle_request(const Request& req);
   std::unique_ptr<RequestHandler> get_handler(const Request& req);
 
  private:

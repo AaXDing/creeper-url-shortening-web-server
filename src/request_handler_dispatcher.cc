@@ -9,7 +9,6 @@
 #include "request_handler.h"
 #include "static_request_handler.h"
 
-// TODO: discuss with team about how to handle errors
 RequestHandlerDispatcher::RequestHandlerDispatcher(const NginxConfig& config) {
   if (!add_routes(config)) {
     LOG(error) << "Failed to add handlers to dispatcher";
@@ -56,6 +55,14 @@ bool RequestHandlerDispatcher::add_route(const NginxLocation& location) {
           std::make_tuple(factory_ptr, uri, location.root.value_or("")));
 
   return true;
+}
+
+std::unique_ptr<Response> RequestHandlerDispatcher::handle_request(
+    const Request& req) {
+  std::unique_ptr<RequestHandler> h = get_handler(req);
+
+  LOG(info) << "Dispatching to handler for uri=" << req.uri;
+  return h->handle_request(req);
 }
 
 std::unique_ptr<RequestHandler> RequestHandlerDispatcher::get_handler(

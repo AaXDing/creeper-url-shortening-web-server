@@ -12,7 +12,7 @@ class NginxConfig;
 
 // The parsed representation of a single config statement.
 class NginxConfigStatement {
- public:
+public:
   std::string to_string(int depth);
   std::vector<std::string> tokens_;
   std::unique_ptr<NginxConfig> child_block_;
@@ -22,6 +22,7 @@ struct NginxLocation {
   std::string path;
   std::string handler;
   std::optional<std::string> root;
+  std::optional<std::string> data_path;
 };
 
 struct NginxLocationResult {
@@ -31,7 +32,7 @@ struct NginxLocationResult {
 
 // The parsed representation of the entire config.
 class NginxConfig {
- public:
+public:
   std::string to_string(int depth = 0);
   std::vector<std::shared_ptr<NginxConfigStatement>> statements_;
   int get_port() const;
@@ -40,16 +41,16 @@ class NginxConfig {
 
 // The driver that parses a config file and generates an NginxConfig.
 class NginxConfigParser {
- public:
+public:
   NginxConfigParser();
 
   // Take a opened config file or file name (respectively) and store the
   // parsed config in the provided NginxConfig out-param.  Returns true
   // iff the input config file is valid.
-  bool parse(std::istream* config_file, NginxConfig* config);
-  bool parse(const char* file_name, NginxConfig* config);
+  bool parse(std::istream *config_file, NginxConfig *config);
+  bool parse(const char *file_name, NginxConfig *config);
 
- private:
+private:
   enum TokenType {
     TOKEN_TYPE_START = 0,
     TOKEN_TYPE_NORMAL = 1,
@@ -60,7 +61,7 @@ class NginxConfigParser {
     TOKEN_TYPE_EOF = 6,
     TOKEN_TYPE_ERROR = 7
   };
-  const char* token_type_as_string(TokenType type);
+  const char *token_type_as_string(TokenType type);
 
   enum TokenParserState {
     TOKEN_STATE_INITIAL_WHITESPACE = 0,
@@ -70,7 +71,7 @@ class NginxConfigParser {
     TOKEN_STATE_TOKEN_TYPE_NORMAL = 4
   };
 
-  TokenType parse_token(std::istream* input, std::string* value);
+  TokenType parse_token(std::istream *input, std::string *value);
 };
 
-#endif  // CONFIG_PARSER_H
+#endif // CONFIG_PARSER_H

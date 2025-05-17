@@ -13,10 +13,11 @@ std::string get_version(unsigned int version) {
 }
 
 const std::unordered_set<std::string> allowed_methods = {
-    "GET"  // only GET method is allowed for now
-           /* future methods to be added:
-           , "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "PATCH", "TRACE", "CONNECT"
-           */
+    "GET", "POST", "PUT",
+    "DELETE" // only GET, POST, PUT, DELETE  methods is allowed for now
+             /* future methods to be added:
+             "HEAD", "OPTIONS", "PATCH", "TRACE", "CONNECT"
+             */
 };
 
 void RequestParser::parse(Request &req, const std::string &raw_request) {
@@ -50,13 +51,16 @@ void RequestParser::parse(Request &req, const std::string &raw_request) {
     req.valid = false;
     return;
   }
+  // Fill Request object
   req.valid = true;
   req.version = get_version(res.version());
   req.uri = res.target();
   req.method = res.method_string();
+  req.body = res.body();
 
   LOG(info) << "Valid request: " << req.method << " " << req.uri << " ("
             << req.version << ")";
+  LOG(trace) << "Request body: " << req.body;
 
   for (const auto &field : res) {
     req.headers.push_back(

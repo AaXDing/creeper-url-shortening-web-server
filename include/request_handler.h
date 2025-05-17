@@ -4,7 +4,7 @@
 #include <string>
 
 #include "http_header.h"
-
+#include <memory>
 class RequestHandler {
   /*
       This is an abstract class that defines the interface for handling
@@ -12,15 +12,16 @@ class RequestHandler {
       be implemented by any derived class. The function is responsible for
       processing the request and generating a response.
   */
- public:
+public:
   enum class HandlerType {
     ECHO_REQUEST_HANDLER,
     STATIC_REQUEST_HANDLER,
     NOT_FOUND_REQUEST_HANDLER,
-  };  // Enum to represent the type of handler
+    CRUD_REQUEST_HANDLER,
+  }; // Enum to represent the type of handler
 
   virtual ~RequestHandler() = default;
-  virtual std::unique_ptr<Response> handle_request(const Request& req) = 0;
+  virtual std::unique_ptr<Response> handle_request(const Request &req) = 0;
   virtual HandlerType get_type() const = 0;
 };
 

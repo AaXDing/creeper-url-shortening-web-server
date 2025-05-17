@@ -25,7 +25,8 @@ struct Request {
   std::string uri;
   std::string version;
   std::vector<Header> headers;
-  bool valid = false;  // default valid to false
+  std::string body;
+  bool valid = false; // default valid to false
 
   std::string to_string() const;
 };
@@ -49,6 +50,8 @@ const std::unordered_map<unsigned int, Response> STOCK_RESPONSE = {
                    "400 Bad Request")},
     {404,
      Response(HTTP_VERSION, 404, "Not Found", "text/plain", "404 Not Found")},
+    {500, Response(HTTP_VERSION, 500, "Internal Server Error", "text/plain",
+                   "500 Internal Server Error")},
 };
 
-#endif  // HTTP_HEADER_H
+#endif // HTTP_HEADER_H

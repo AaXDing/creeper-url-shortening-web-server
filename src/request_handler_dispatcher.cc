@@ -53,7 +53,6 @@ bool RequestHandlerDispatcher::add_route(const NginxLocation& location) {
       std::make_shared<std::tuple<std::shared_ptr<RequestHandlerFactory>,
                                   std::string, std::string>>(
           std::make_tuple(factory_ptr, uri, location.root.value_or("")));
-
   return true;
 }
 

@@ -1,0 +1,15 @@
+port 80;
+
+location /api CrudHandler {
+  data_path ./integration_test_data;
+}
+
+location / NotFoundHandler {
+}
+
+location /echo EchoHandler {
+}
+
+location /static StaticHandler {
+  root ../data;
+}

@@ -164,18 +164,18 @@ bool CrudRequestHandler::check_location(
     LOG(error) << "CrudHandler must have child statement: data_path <path>;";
     return false;
   }
-  location.data_path = data_path_stmt->tokens_[1];
+  location.root = data_path_stmt->tokens_[1];
   // Error if data_path path has trailing slash (except for "/")
-  if (location.data_path.value().back() == '/' &&
-      location.data_path.value() != "/") {
+  if (location.root.value().back() == '/' &&
+      location.root.value() != "/") {
     LOG(error) << "CrudHandler data_path path cannot have trailing slash";
     return false;
   }
 
   // Normalize to absolute path
   boost::filesystem::path abs_path =
-      boost::filesystem::absolute(location.data_path.value());
-  location.data_path = abs_path.string();
+      boost::filesystem::absolute(location.root.value());
+  location.root = abs_path.string();
 
   // If path exists, ensure it's a directory
   if (boost::filesystem::exists(abs_path)) {

@@ -9,3 +9,7 @@ location /echo EchoHandler { # no arguments
 location /static StaticHandler {
   root ../data; # supports relative paths
 }
+
+location /api CrudHandler {
+  data_path ../data;
+}

@@ -22,7 +22,6 @@ struct NginxLocation {
   std::string path;
   std::string handler;
   std::optional<std::string> root;
-  std::optional<std::string> data_path;
 };
 
 struct NginxLocationResult {

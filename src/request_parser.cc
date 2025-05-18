@@ -29,6 +29,8 @@ void RequestParser::parse(Request &req, const std::string &raw_request) {
   boost::beast::http::request_parser<boost::beast::http::string_body> parser;
   boost::beast::error_code ec;
 
+  // parses both the headers and the body
+  parser.eager(true);
   parser.put(buffer.data(), ec);
 
   // If error in Request, Request not valid

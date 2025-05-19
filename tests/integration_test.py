@@ -17,12 +17,15 @@ import tempfile
 import time
 import os
 import sys
+import shutil
+import json
 
 # ------------------- Configuration -------------------
 TEST_PORT = 80
 SERVER_BIN = "bin/server"
 CONFIG_FILE_BASE_PATH = "../"
 CONFIG_FILE_INTEGRATION_PATH = "../tests/integration_testcases/"
+TEMP_FILE_PATH = "../tests/temp/"
 
 
 # Global state for server process
@@ -38,6 +41,7 @@ def start_server(config_file, integration_test_folder_exists):
     Output is written to a temporary log file.
     """
     global server_proc, log_file
+    create_test_suite()
     log_file = tempfile.NamedTemporaryFile(delete=False)
     build_dir = os.path.abspath(os.getcwd())
     server_path = os.path.join(build_dir, SERVER_BIN)
@@ -53,7 +57,7 @@ def start_server(config_file, integration_test_folder_exists):
         stdout=log_file,
         stderr=subprocess.STDOUT
     )
-    time.sleep(1)  # Wait a moment for server to start
+    time.sleep(0.5)  # Wait a moment for server to start
 
 
 def stop_server():
@@ -66,6 +70,22 @@ def stop_server():
         server_proc.wait()
     if log_file:
         os.unlink(log_file.name)
+
+
+def cleanup_test_suite():
+    """
+    Deletes the current test directory, if it exists.
+    """
+    if os.path.isdir(TEMP_FILE_PATH):
+        shutil.rmtree(TEMP_FILE_PATH)
+
+def create_test_suite():
+    """
+    Creates a new test directory, removing previous contents if it exists.
+    """
+    cleanup_test_suite()
+    os.mkdir(TEMP_FILE_PATH)
+
 
 # ------------------- Test Execution -------------------
 
@@ -100,7 +120,6 @@ def compare_output(name, actual, expected):
     If they differ, prints a unified diff for inspection.
     """
     if actual == expected:
-        print(f"{name}: SUCCESS")
         return True
     else:
         print(f"{name}: FAILED")
@@ -114,21 +133,98 @@ def compare_output(name, actual, expected):
         return False
 
 
-def run_test(name, method, expected_bytes, use_nc=False):
+def run_test(name, method, expected_bytes, use_nc=False, crud_args=None):
     """
     Executes a single test case, using either curl or nc depending on `use_nc`.
+    'crud': expects crud type as a string: GET, POST, PUT, LIST,DELETE,
     """
+    print("======================================")
     print(f"Running test: {name}...")
+    test_result = False
     try:
         actual = run_nc_test(method) if use_nc else run_curl_test(method)
-        return compare_output(name, actual, expected_bytes)
+        test_result = compare_output(name, actual, expected_bytes)
     except subprocess.TimeoutExpired:
         print(f"{name}: TIMED OUT")
-        return False
+        test_result = False
     except subprocess.CalledProcessError as e:
         print(f"{name}: FAILED with subprocess error")
         print(e.output.decode())
+        test_result = False
+
+    # Verify File Contents
+    if not crud_args:
+        if test_result:
+            print(f"{name}: PASSED")
+        return test_result
+    if crud_args["type"] == "POST":
+        file_created = os.path.isfile(crud_args["file_path"])
+
+        if file_created:
+            file_content_valid = validate_file_content(crud_args["file_path"], crud_args["expected_file_contents"])
+            file_is_json = is_valid_json(crud_args["file_path"])
+
+        if not file_created:
+            print(f"{name}: FAILED: file not created/found.")
+        if not file_content_valid:
+            print(f"{name}: FAILED: file content invalid.")
+        if not is_valid_json:
+            print(f"{name}: FAILED: file not valid json.")
+        test_result = test_result and file_created and file_content_valid and file_is_json
+    elif crud_args["type"] == "LIST":
+        # list json isn't consistent throughout tries
+        headers_actual, body_actual = split_HTTP_response(actual)
+        headers_expected, body_expected = split_HTTP_response(expected_bytes)
+        headers_match = compare_output(name, headers_actual, headers_expected)
+
+        body_match = json_arrays_equal_unordered(body_actual, body_expected)
+        test_result = headers_match and body_match
+
+    if test_result:
+        print(f"{name}: PASSED")
+
+    return test_result
+
+def validate_file_content(file_path, expected_content):
+    with open(file_path, 'rb') as f:
+        actual = f.read()
+        same_content = compare_output(file_path, actual, expected_content)
+        return same_content
+
+def is_valid_json(file_path):
+    with open(file_path, 'rb') as f:
+        content = f.read()
+        try:
+            json.loads(content)
+            return True
+        except json.JSONDecodeError:
+            return False
+    return False
+
+def split_HTTP_response(response):
+    """
+    Splits a byte-string HTTP response into headers and body.
+    """
+    # HTTP headers and body are separated by b'\r\n\r\n'
+    separator = b"\r\n\r\n"
+    split_index = response.find(separator)
+
+    if split_index == -1:
+        return response, b""
+
+    headers = response[:split_index]
+    body = response[split_index + len(separator):]
+    return headers, body
+
+def json_arrays_equal_unordered(json_a, json_b):
+    try:
+        list_a = json.loads(json_a)
+        list_b = json.loads(json_b)
+    except json.JSONDecodeError:
         return False
+
+    return set(list_a) == set(list_b)
+
 
 # ------------------- Test Cases -------------------
 
@@ -147,7 +243,6 @@ def define_tests():
                  "method": "/echo",
                  "expected": b"GET /echo HTTP/1.1\r\nHost: localhost\r\nUser-Agent: curl/8.5.0\r\nAccept: */*\r\n\r\n",
                  "use_nc": False
-
              },
              {
                  "name": "Valid echo request",
@@ -206,6 +301,60 @@ def define_tests():
                  "use_nc": True
              }
          ]},
+        {"config": "crud_config",
+         "integration_test_folder": True,
+         "tests": [
+             {
+                 "name": "POST API Request Creates a File with Content",
+                 "method": b"POST /api/Shoes HTTP/1.1\r\nHost: localhost\r\nContent-Type: application/json\r\nContent-Length: 26\r\n\r\n{\"message\":\"creeper test\"}",
+                 "expected": b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 9\r\n\r\n{\"id\": 1}",
+                 "use_nc": True,
+                 "crud_args": {
+                     "type": "POST",
+                     "file_path": TEMP_FILE_PATH + "Shoes/1",
+                     "expected_file_contents": b'{"message":"creeper test"}',
+                 }
+             },
+             {
+                 "name": "GET API Request Retrieves a File",
+                 "method": b"GET /api/Shoes/1 HTTP/1.1\r\nHost: localhost\r\nContent-Type: application/json\r\n\r\n",
+                 "expected": b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 26\r\n\r\n{\"message\":\"creeper test\"}",
+                 "use_nc": True,
+                 "crud_args": {
+                     "type": "GET",
+                 }
+             },
+             {
+                "name": "GET API Request: Invalid Page returns 404",
+                "method": b"GET /api/Shoes/DNE HTTP/1.1\r\nHost: localhost\r\nContent-Type: application/json\r\n\r\n",
+                "expected": b"HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nContent-Length: 12\r\n\r\nID not found",
+                 "use_nc": True,
+                 "crud_args": {
+                     "type": "GET",
+                 }
+             },
+             {
+                 "name": "Second POST API Request Creates + Returns Correct ID",
+                 "method": b"POST /api/Shoes HTTP/1.1\r\nHost: localhost\r\nContent-Type: application/json\r\nContent-Length: 29\r\n\r\n{\"message\":\"creeper test 2\"}",
+                 "expected": b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 9\r\n\r\n{\"id\": 2}",
+                 "use_nc": True,
+                 "crud_args": {
+                     "type": "POST",
+                     "file_path": TEMP_FILE_PATH + "Shoes/2",
+                     "expected_file_contents": b'{"message":"creeper test 2"}',
+                 }
+             },
+             {
+                 "name": "LIST API Request returns a list of Valid IDs",
+                 "method": b"GET /api/Shoes/ HTTP/1.1\r\nHost: localhost\r\nContent-Type: application/json\r\n\r\n",
+                 "expected": b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 10\r\n\r\n[\"1\", \"2\"]",
+                 "use_nc": True,
+                 "crud_args": {
+                     "type": "LIST",
+                 }
+             }
+         ]
+        }
     ]
 
 # ------------------- Main Runner -------------------
@@ -229,10 +378,12 @@ def main():
                     test_case["name"],
                     test_case["method"],
                     test_case["expected"],
-                    test_case["use_nc"]
+                    test_case["use_nc"],
+                    test_case.get("crud_args", None)
                 )
         finally:
             stop_server()
+            cleanup_test_suite()
 
     print("All integration tests passed." if all_passed else "Some integration tests failed.")
     sys.exit(0 if all_passed else 1)

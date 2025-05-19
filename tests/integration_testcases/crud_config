@@ -1,7 +1,7 @@
 port 80;
 
 location /api CrudHandler {
-  data_path ./integration_test_data;
+  data_path ../tests/temp;
 }
 
 location / NotFoundHandler {

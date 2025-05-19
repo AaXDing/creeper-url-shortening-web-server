@@ -50,6 +50,8 @@ const std::unordered_map<unsigned int, Response> STOCK_RESPONSE = {
                    "400 Bad Request")},
     {404,
      Response(HTTP_VERSION, 404, "Not Found", "text/plain", "404 Not Found")},
+    {415, Response(HTTP_VERSION, 415, "Unsupported Media Type", "text/plain",
+                   "415 Unsupported Media Type")},
     {500, Response(HTTP_VERSION, 500, "Internal Server Error", "text/plain",
                    "500 Internal Server Error")},
 };

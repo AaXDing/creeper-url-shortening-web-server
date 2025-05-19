@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y \
     libboost-log-dev \
     libboost-regex-dev \
     libboost-system-dev \
+    libboost-json-dev \
     libgmock-dev \
     libgtest-dev \
     netcat-openbsd \

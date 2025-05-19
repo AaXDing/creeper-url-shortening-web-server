@@ -8,6 +8,7 @@
 #include "registry.h"
 #include <boost/filesystem.hpp>
 
+#include <boost/json.hpp>
 #include <filesystem>
 #include <fstream>
 #include <regex>
@@ -75,6 +76,21 @@ std::string CrudRequestHandler::list_ids(const std::string &entity_dir) const {
   return oss.str();
 }
 
+bool is_json_content_type(const Request &req) {
+  for (const auto &header : req.headers) {
+    if (header.name == "Content-Type") {
+      return header.value == "application/json";
+    }
+  }
+  return false; // Missing header = invalid
+}
+
+bool is_valid_json(const std::string &body) {
+  boost::json::error_code ec;
+  boost::json::parse(body, ec);
+  return !ec;
+}
+
 std::unique_ptr<Response>
 CrudRequestHandler::handle_request(const Request &req) {
   auto res = std::make_unique<Response>();
@@ -85,6 +101,48 @@ CrudRequestHandler::handle_request(const Request &req) {
   const std::string id = extract_id(uri);
   const std::string entity_dir = data_path_path_ + "/" + entity;
 
+  if (method == "POST" && id.empty()) {
+    // Validate content type and JSON structure
+    if (!is_json_content_type(req)) {
+      *res = STOCK_RESPONSE.at(415); // Unsupported Media Type
+      res->body = "Content-Type must be application/json";
+      return res;
+    }
+
+    boost::json::error_code ec;
+    boost::json::value parsed = boost::json::parse(req.body, ec);
+    if (ec) {
+      LOG(warning) << "Invalid JSON in POST: " << ec.message();
+      *res = STOCK_RESPONSE.at(400);
+      res->body = "Invalid JSON body";
+      return res;
+    }
+
+    std::filesystem::create_directories(entity_dir);
+    int new_id = get_next_available_id(entity_dir);
+    std::string filepath = entity_dir + "/" + std::to_string(new_id);
+
+    std::ofstream ofs(filepath);
+    if (!ofs) {
+      LOG(error) << "Failed to create file: " << filepath;
+      *res = STOCK_RESPONSE.at(500);
+      res->body = "Failed to create storage file";
+      return res;
+    }
+
+    // Write normalized JSON to file
+    ofs << boost::json::serialize(parsed);
+    ofs.close();
+
+    res->status_code = 200;
+    res->status_message = "OK";
+    res->version = req.valid ? req.version : HTTP_VERSION;
+    res->content_type = "application/json";
+    res->body = "{\"id\": " + std::to_string(new_id) + "}";
+    LOG(info) << "Created new " << entity << " with ID " << new_id;
+    return res;
+  }
+
   if (entity.empty()) {
     LOG(warning) << "Malformed CRUD request: no entity in URI.";
     *res = STOCK_RESPONSE.at(400);
@@ -92,9 +150,8 @@ CrudRequestHandler::handle_request(const Request &req) {
     return res;
   }
 
-  std::filesystem::create_directories(entity_dir);
-
   if (method == "POST" && id.empty()) {
+    std::filesystem::create_directories(entity_dir);
     int new_id = get_next_available_id(entity_dir);
     std::string filepath = entity_dir + "/" + std::to_string(new_id);
     std::ofstream ofs(filepath);
@@ -116,26 +173,45 @@ CrudRequestHandler::handle_request(const Request &req) {
   }
 
   if (method == "GET" && !id.empty()) {
-    std::string filepath = entity_dir + "/" + id;
-    std::ifstream ifs(filepath);
-    if (!ifs) {
-      LOG(warning) << "GET failed: file not found at " << filepath;
-      *res = STOCK_RESPONSE.at(404);
-      res->body = "ID not found";
-      return res;
-    }
-
-    std::ostringstream buffer;
-    buffer << ifs.rdbuf();
-    res->status_code = 200;
-    res->content_type = "application/json";
-    res->body = buffer.str();
-    res->version = req.valid ? req.version : HTTP_VERSION;
-    res->status_message = "OK";
+  std::string filepath = entity_dir + "/" + id;
+  std::ifstream ifs(filepath);
+  if (!ifs) {
+    LOG(warning) << "GET failed: file not found at " << filepath;
+    *res = STOCK_RESPONSE.at(404);
+    res->body = "ID not found";
     return res;
   }
 
+  std::ostringstream raw_stream;
+  raw_stream << ifs.rdbuf();
+  std::string raw_json = raw_stream.str();
+
+  // Attempt to parse and re-serialize using Boost.JSON
+  boost::json::error_code ec;
+  boost::json::value parsed = boost::json::parse(raw_json, ec);
+  if (ec) {
+    LOG(warning) << "Failed to parse JSON from file: " << filepath << " — " << ec.message();
+    *res = STOCK_RESPONSE.at(500);
+    res->body = "Stored JSON could not be parsed";
+    return res;
+  }
+
+  std::string normalized = boost::json::serialize(parsed);
+
+  res->status_code = 200;
+  res->content_type = "application/json";
+  res->body = normalized;
+  res->version = req.valid ? req.version : HTTP_VERSION;
+  res->status_message = "OK";
+  return res;
+}
+
   if (method == "GET" && id.empty()) {
+    if (!std::filesystem::exists(entity_dir)) {
+      *res = STOCK_RESPONSE.at(404);
+      res->body = "Entity type not found";
+      return res;
+    }
     res->status_code = 200;
     res->content_type = "application/json";
     res->body = list_ids(entity_dir);
@@ -166,8 +242,7 @@ bool CrudRequestHandler::check_location(
   }
   location.root = data_path_stmt->tokens_[1];
   // Error if data_path path has trailing slash (except for "/")
-  if (location.root.value().back() == '/' &&
-      location.root.value() != "/") {
+  if (location.root.value().back() == '/' && location.root.value() != "/") {
     LOG(error) << "CrudHandler data_path path cannot have trailing slash";
     return false;
   }

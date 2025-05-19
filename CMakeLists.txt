@@ -38,6 +38,7 @@ find_package(Boost 1.50 REQUIRED
     filesystem
     log
     log_setup
+    json
 )
 message(STATUS "Boost version: ${Boost_VERSION}")
 
@@ -76,7 +77,7 @@ add_library(logging_lib src/logging.cc)
 target_link_libraries(logging_lib PUBLIC Boost::log Boost::log_setup Boost::system Boost::filesystem)
 
 add_library(crud_request_handler_lib src/crud_request_handler.cc)
-target_link_libraries(crud_request_handler_lib PUBLIC http_header_lib logging_lib registry_lib Boost::filesystem)
+target_link_libraries(crud_request_handler_lib PUBLIC http_header_lib logging_lib registry_lib Boost::filesystem Boost::json)
 
 # add main executable
 add_executable(server src/server_main.cc src/echo_request_handler.cc src/static_request_handler.cc src/not_found_request_handler.cc src/crud_request_handler.cc)

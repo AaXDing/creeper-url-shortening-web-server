@@ -6,13 +6,15 @@
 
 // Utility to create a fake Request
 Request make_request(const std::string &method, const std::string &uri,
-                     const std::string &body = "") {
+                     const std::string &body = "",
+                     const std::vector<Header> &headers = {}) {
   Request req;
   req.method = method;
   req.uri = uri;
   req.version = "HTTP/1.1";
   req.valid = true;
   req.body = body;
+  req.headers = headers;
   return req;
 }
 
@@ -80,7 +82,8 @@ TEST_F(CrudRequestHandlerTestFixture, ListIdsReturnsAllFilenamesAsJsonArray) {
 }
 
 TEST_F(CrudRequestHandlerTestFixture, PostCreatesNewEntityFile) {
-  auto req = make_request("POST", base_uri + "/Books", R"({"title":"1984"})");
+  auto req = make_request("POST", base_uri + "/Books", R"({"title":"1984"})",
+                          {{"Content-Type", "application/json"}});
 
   auto res = handler.handle_request(req);
 
@@ -93,6 +96,50 @@ TEST_F(CrudRequestHandlerTestFixture, PostCreatesNewEntityFile) {
   id.erase(remove(id.begin(), id.end(), '}'), id.end());
   std::string file_path = test_dir + "/Books/" + std::to_string(std::stoi(id));
   EXPECT_TRUE(std::filesystem::exists(file_path));
+}
+
+TEST_F(CrudRequestHandlerTestFixture, PostValidJsonReturns200) {
+  auto req = make_request("POST", base_uri + "/Books", R"({"title":"Valid"})",
+                          {{"Content-Type", "application/json"}});
+
+  auto res = handler.handle_request(req);
+  EXPECT_EQ(res->status_code, 200);
+  EXPECT_EQ(res->status_message, "OK");
+}
+
+TEST_F(CrudRequestHandlerTestFixture, PostMissingContentTypeReturns415) {
+  auto req =
+      make_request("POST", base_uri + "/Books", R"({"title":"Missing"})");
+
+  auto res = handler.handle_request(req);
+  EXPECT_EQ(res->status_code, 415);
+  EXPECT_EQ(res->status_message, "Unsupported Media Type");
+}
+
+TEST_F(CrudRequestHandlerTestFixture, PostWrongContentTypeReturns415) {
+  auto req = make_request("POST", base_uri + "/Books", R"({"title":"Wrong"})",
+                          {{"Content-Type", "text/plain"}});
+
+  auto res = handler.handle_request(req);
+  EXPECT_EQ(res->status_code, 415);
+}
+
+TEST_F(CrudRequestHandlerTestFixture, PostEmptyBodyReturns400) {
+  auto req = make_request("POST", base_uri + "/Books", "",
+                          {{"Content-Type", "application/json"}});
+
+  auto res = handler.handle_request(req);
+  EXPECT_EQ(res->status_code, 400);
+  EXPECT_EQ(res->status_message, "Bad Request");
+}
+
+TEST_F(CrudRequestHandlerTestFixture, PostMalformedJsonReturns400) {
+  auto req = make_request("POST", base_uri + "/Books", "{ bad json",
+                          {{"Content-Type", "application/json"}});
+
+  auto res = handler.handle_request(req);
+  EXPECT_EQ(res->status_code, 400);
+  EXPECT_EQ(res->status_message, "Bad Request");
 }
 
 TEST_F(CrudRequestHandlerTestFixture, GetReturnsEntityContents) {
@@ -160,4 +207,15 @@ TEST_F(CrudRequestHandlerTestFixture, GetInvalidIdReturns404) {
 
   EXPECT_EQ(res->status_code, 404);
   EXPECT_EQ(res->status_message, "Not Found");
+}
+
+TEST_F(CrudRequestHandlerTestFixture, GetNonexistentEntityListReturns404) {
+  auto req = make_request(
+      "GET", base_uri + "/Ghosts"); // /api/Ghosts (directory doesn't exist)
+
+  auto res = handler.handle_request(req);
+
+  EXPECT_EQ(res->status_code, 404);
+  EXPECT_EQ(res->status_message, "Not Found");
+  EXPECT_EQ(res->body, "Entity type not found");
 }

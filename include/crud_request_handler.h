@@ -7,6 +7,14 @@
 #include "http_header.h"
 #include "request_handler.h"
 
+enum HTTP_Method {
+  POST,
+  GET,
+  PUT,
+  DELETE,
+  INVALID_METHOD
+};
+
 class CrudRequestHandler : public RequestHandler {
 public:
   CrudRequestHandler(const std::string &base_uri, const std::string &data_path);
@@ -19,6 +27,11 @@ public:
   std::string extract_id(const std::string &uri) const;
   int get_next_available_id(const std::string &entity_dir) const;
   std::string list_ids(const std::string &entity_dir) const;
+  enum HTTP_Method get_method(const std::string &method) const;
+  std::unique_ptr<Response> handle_post(const Request &req);
+  std::unique_ptr<Response> handle_get(const Request &req);
+  std::unique_ptr<Response> handle_put(const Request &req);
+  std::unique_ptr<Response> handle_delete(const Request &req);
 
 private:
   std::string data_path_path_;

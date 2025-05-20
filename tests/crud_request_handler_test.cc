@@ -219,3 +219,106 @@ TEST_F(CrudRequestHandlerTestFixture, GetNonexistentEntityListReturns404) {
   EXPECT_EQ(res->status_message, "Not Found");
   EXPECT_EQ(res->body, "Entity type not found");
 }
+
+TEST_F(CrudRequestHandlerTestFixture, CreateNonExistantEntityWithPUT){
+  std::string id = "420";
+  auto req = make_request(
+    "PUT", base_uri + "/Movies/" + id, R"({"title":"Wall-E", "rating": 10})", 
+    {{"Content-Type", "application/json"}}); 
+
+  auto res = handler.handle_request(req);
+
+  EXPECT_EQ(res->status_code, 200);
+
+  // Check file exists
+  std::string file_path = test_dir + "/Movies/" + id;
+  EXPECT_TRUE(std::filesystem::exists(file_path));
+}
+
+TEST_F(CrudRequestHandlerTestFixture, UpdateExistingEntityWithPUT){
+  std::string id = "420";
+  std::string entity_dir = test_dir + "/Movies";
+  auto req = make_request(
+    "PUT", base_uri + "/Movies/" + id, R"({"title":"Up", "rating": 9.5})", 
+    {{"Content-Type", "application/json"}}); 
+
+  auto res = handler.handle_request(req);
+
+  EXPECT_EQ(res->status_code, 200);
+
+  req = make_request(
+    "PUT", base_uri + "/Movies/" + id, R"({"title":"Cars", "rating": 9.2})", 
+    {{"Content-Type", "application/json"}});
+
+  res = handler.handle_request(req);
+
+  EXPECT_EQ(res->status_code, 200);
+
+  req = make_request("GET", base_uri + "/Movies/" + id);
+  res = handler.handle_request(req);
+
+  EXPECT_EQ(res->status_code, 200);
+  EXPECT_EQ(res->content_type, "application/json");
+  EXPECT_EQ(res->body, R"({"title":"Cars","rating":9.2E0})");
+}
+
+TEST_F(CrudRequestHandlerTestFixture, PutMalformedJsonReturns400) {
+  auto req = make_request("PUT", base_uri + "/Movies/69", "{ bad json",
+                          {{"Content-Type", "application/json"}});
+
+  auto res = handler.handle_request(req);
+  EXPECT_EQ(res->status_code, 400);
+  EXPECT_EQ(res->status_message, "Bad Request");
+}
+
+TEST_F(CrudRequestHandlerTestFixture, PutNoIDReturns405) {
+  auto req = make_request(
+    "PUT", base_uri + "/Movies", R"({"title":"Up", "rating": 9.5})", 
+    {{"Content-Type", "application/json"}}); 
+
+  auto res = handler.handle_request(req);
+  EXPECT_EQ(res->status_code, 405);
+}
+
+TEST_F(CrudRequestHandlerTestFixture, DeleteExistingEntity) {
+  std::string id = "420";
+  std::string entity_dir = test_dir + "/Movies";
+  auto req = make_request(
+    "PUT", base_uri + "/Movies/" + id, R"({"title":"Wall-E", "rating": 10})", 
+    {{"Content-Type", "application/json"}}); 
+
+  auto res = handler.handle_request(req);
+
+  EXPECT_EQ(res->status_code, 200);
+
+  // Check file exists
+  std::string file_path = test_dir + "/Movies/" + id;
+  EXPECT_TRUE(std::filesystem::exists(file_path));
+
+  req = make_request("DELETE", base_uri + "/Movies/" + id); 
+
+  res = handler.handle_request(req);
+
+  EXPECT_EQ(res->status_code, 200);
+
+  // Check file exists
+  EXPECT_FALSE(std::filesystem::exists(file_path));
+}
+
+TEST_F(CrudRequestHandlerTestFixture, DeleteNonExistingEntity) {
+  std::string id = "1234";
+  std::string entity_dir = test_dir + "/Movies";
+  auto req = make_request("DELETE", base_uri + "/Movies/" + id); 
+
+  auto res = handler.handle_request(req);
+
+  EXPECT_EQ(res->status_code, 404);
+}
+
+TEST_F(CrudRequestHandlerTestFixture, DeleteNoID) {
+  auto req = make_request("DELETE", base_uri + "/Movies"); 
+
+  auto res = handler.handle_request(req);
+
+  EXPECT_EQ(res->status_code, 405);
+}

@@ -30,7 +30,10 @@ std::string Response::to_string() const {
   LOG(debug) << "Serializing response to string; length=" << body.size();
   std::string response_str =
       "HTTP/1.1 " + std::to_string(status_code) + " " + status_message + CRLF;
-  response_str += "Content-Type: " + content_type + CRLF;
+  // Content-Type should always have a type 
+  if(content_type != "") {
+    response_str += "Content-Type: " + content_type + CRLF;
+  }
   response_str += "Content-Length: " + std::to_string(body.size()) + CRLF;
   response_str += CRLF;
   response_str += body;

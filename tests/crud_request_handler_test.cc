@@ -87,7 +87,7 @@ TEST_F(CrudRequestHandlerTestFixture, PostCreatesNewEntityFile) {
 
   auto res = handler.handle_request(req);
 
-  EXPECT_EQ(res->status_code, 200);
+  EXPECT_EQ(res->status_code, 201);
   EXPECT_EQ(res->content_type, "application/json");
   EXPECT_TRUE(res->body.find("\"id\":") != std::string::npos);
 
@@ -98,13 +98,22 @@ TEST_F(CrudRequestHandlerTestFixture, PostCreatesNewEntityFile) {
   EXPECT_TRUE(std::filesystem::exists(file_path));
 }
 
-TEST_F(CrudRequestHandlerTestFixture, PostValidJsonReturns200) {
+TEST_F(CrudRequestHandlerTestFixture, PostValidJsonReturns201) {
   auto req = make_request("POST", base_uri + "/Books", R"({"title":"Valid"})",
                           {{"Content-Type", "application/json"}});
 
   auto res = handler.handle_request(req);
-  EXPECT_EQ(res->status_code, 200);
-  EXPECT_EQ(res->status_message, "OK");
+  EXPECT_EQ(res->status_code, 201);
+  EXPECT_EQ(res->status_message, "Created");
+}
+
+TEST_F(CrudRequestHandlerTestFixture, PostWorksWithLowercaseHeader) {
+  auto req = make_request("POST", base_uri + "/Books", R"({"title":"Valid"})",
+                          {{"content-type", "application/json"}});
+
+  auto res = handler.handle_request(req);
+  EXPECT_EQ(res->status_code, 201);
+  EXPECT_EQ(res->status_message, "Created");
 }
 
 TEST_F(CrudRequestHandlerTestFixture, PostMissingContentTypeReturns415) {
@@ -228,7 +237,7 @@ TEST_F(CrudRequestHandlerTestFixture, CreateNonExistantEntityWithPUT){
 
   auto res = handler.handle_request(req);
 
-  EXPECT_EQ(res->status_code, 200);
+  EXPECT_EQ(res->status_code, 201);
 
   // Check file exists
   std::string file_path = test_dir + "/Movies/" + id;
@@ -244,7 +253,7 @@ TEST_F(CrudRequestHandlerTestFixture, UpdateExistingEntityWithPUT){
 
   auto res = handler.handle_request(req);
 
-  EXPECT_EQ(res->status_code, 200);
+  EXPECT_EQ(res->status_code, 201);
 
   req = make_request(
     "PUT", base_uri + "/Movies/" + id, R"({"title":"Cars", "rating": 9.2})", 
@@ -253,6 +262,7 @@ TEST_F(CrudRequestHandlerTestFixture, UpdateExistingEntityWithPUT){
   res = handler.handle_request(req);
 
   EXPECT_EQ(res->status_code, 200);
+  EXPECT_EQ(res->body,"");
 
   req = make_request("GET", base_uri + "/Movies/" + id);
   res = handler.handle_request(req);
@@ -289,7 +299,7 @@ TEST_F(CrudRequestHandlerTestFixture, DeleteExistingEntity) {
 
   auto res = handler.handle_request(req);
 
-  EXPECT_EQ(res->status_code, 200);
+  EXPECT_EQ(res->status_code, 201);
 
   // Check file exists
   std::string file_path = test_dir + "/Movies/" + id;
@@ -299,7 +309,7 @@ TEST_F(CrudRequestHandlerTestFixture, DeleteExistingEntity) {
 
   res = handler.handle_request(req);
 
-  EXPECT_EQ(res->status_code, 200);
+  EXPECT_EQ(res->status_code, 204);
 
   // Check file exists
   EXPECT_FALSE(std::filesystem::exists(file_path));

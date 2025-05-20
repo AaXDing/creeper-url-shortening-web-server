@@ -111,11 +111,19 @@ std::string CrudRequestHandler::list_ids(const std::string &entity_dir) const
   return oss.str();
 }
 
+std::string to_lower(const std::string& input) {
+    std::string result = input;
+    std::transform(result.begin(), result.end(), result.begin(),
+                   [](unsigned char c) { return std::tolower(c); });
+    return result;
+}
+
 bool is_json_content_type(const Request &req)
 {
   for (const auto &header : req.headers)
   {
-    if (header.name == "Content-Type")
+    // HTTP Headers are case-insensitive
+    if (to_lower(header.name) == to_lower("Content-Type"))
     {
       return header.value == "application/json";
     }
@@ -172,8 +180,8 @@ std::unique_ptr<Response> CrudRequestHandler::handle_post(const Request &req)
   ofs << boost::json::serialize(parsed);
   ofs.close();
 
-  res->status_code = 200;
-  res->status_message = "OK";
+  res->status_code = 201;
+  res->status_message = "Created";
   res->version = req.valid ? req.version : HTTP_VERSION;
   res->content_type = "application/json";
   res->body = "{\"id\": " + std::to_string(new_id) + "}";
@@ -272,8 +280,8 @@ std::unique_ptr<Response> CrudRequestHandler::handle_put(const Request &req)
 
     std::filesystem::create_directories(entity_dir);
     std::string filepath = entity_dir + "/" + id;
-
-    if (std::filesystem::exists(filepath))
+    bool file_previously_existed = std::filesystem::exists(filepath);
+    if (file_previously_existed)
     {
       LOG(info) << "File already exists at: " << filepath;
       LOG(info) << "Using full replace update mode";
@@ -305,10 +313,18 @@ std::unique_ptr<Response> CrudRequestHandler::handle_put(const Request &req)
       ofs << boost::json::serialize(parsed);
       ofs.close();
     }
-    res->status_code = 200;
-    res->status_message = "OK";
-    res->version = req.valid ? req.version : HTTP_VERSION;
-    LOG(info) << "Updated " << entity << " with ID " << id;
+    if(file_previously_existed) {
+      res->status_code = 200;
+      res->status_message = "OK";
+      res->version = req.valid ? req.version : HTTP_VERSION;
+      LOG(info) << "Updated " << entity << " with ID " << id;
+    }
+    else {
+      res->status_code = 201;
+      res->status_message = "Created";
+      res->version = req.valid ? req.version : HTTP_VERSION;
+      LOG(info) << "Created " << entity << " with ID " << id;
+    }
     return res;
   }
   // there's no ID
@@ -335,8 +351,8 @@ std::unique_ptr<Response> CrudRequestHandler::handle_delete(const Request &req)
     std::string filepath = entity_dir + "/" + id;
     if (std::filesystem::remove(filepath))
     {
-      res->status_code = 200;
-      res->status_message = "OK";
+      res->status_code = 204;
+      res->status_message = "No Content";
       res->version = req.valid ? req.version : HTTP_VERSION;
       LOG(info) << "Deleted " << entity << " with ID " << id;
     }

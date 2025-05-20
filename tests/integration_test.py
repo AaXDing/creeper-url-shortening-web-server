@@ -122,7 +122,7 @@ def compare_output(name, actual, expected):
     if actual == expected:
         return True
     else:
-        print(f"{name}: FAILED")
+        print(f"{name}: Actual vs Expected do not match.")
         with tempfile.NamedTemporaryFile(mode="wb", delete=False) as af:
             af.write(actual)
             actual_path = af.name
@@ -130,6 +130,7 @@ def compare_output(name, actual, expected):
             ef.write(expected)
             expected_path = ef.name
         subprocess.run(["diff", "-u", expected_path, actual_path])
+        sys.stdout.flush()
         return False
 
 
@@ -140,49 +141,114 @@ def run_test(name, method, expected_bytes, use_nc=False, crud_args=None):
     """
     print("======================================")
     print(f"Running test: {name}...")
-    test_result = False
+    sys.stdout.flush()
+    response_correct = False
     try:
         actual = run_nc_test(method) if use_nc else run_curl_test(method)
-        test_result = compare_output(name, actual, expected_bytes)
+        response_correct = compare_output(name, actual, expected_bytes)
     except subprocess.TimeoutExpired:
         print(f"{name}: TIMED OUT")
-        test_result = False
+        response_correct = False
     except subprocess.CalledProcessError as e:
         print(f"{name}: FAILED with subprocess error")
         print(e.output.decode())
-        test_result = False
+        response_correct = False
 
-    # Verify File Contents
+    # Verify File Contents in CRUD
     if not crud_args:
-        if test_result:
+        if response_correct:
             print(f"{name}: PASSED")
-        return test_result
+        else:
+            print(f"{name}: FAILED: Invalid Response Content")
+        return response_correct
+
+    test_result = False
     if crud_args["type"] == "POST":
-        file_created = os.path.isfile(crud_args["file_path"])
-
-        if file_created:
-            file_content_valid = validate_file_content(crud_args["file_path"], crud_args["expected_file_contents"])
-            file_is_json = is_valid_json(crud_args["file_path"])
-
-        if not file_created:
-            print(f"{name}: FAILED: file not created/found.")
-        if not file_content_valid:
-            print(f"{name}: FAILED: file content invalid.")
-        if not is_valid_json:
-            print(f"{name}: FAILED: file not valid json.")
-        test_result = test_result and file_created and file_content_valid and file_is_json
+        test_result = validate_POST(response_correct,crud_args)
+    elif crud_args["type"] == "GET":
+        test_result = validate_GET(response_correct,crud_args) 
+    elif crud_args["type"] == "PUT":
+        test_result = validate_PUT(response_correct,crud_args)
+    elif crud_args["type"] == "DELETE":
+        test_result = validate_DELETE(response_correct,crud_args)
     elif crud_args["type"] == "LIST":
-        # list json isn't consistent throughout tries
-        headers_actual, body_actual = split_HTTP_response(actual)
-        headers_expected, body_expected = split_HTTP_response(expected_bytes)
-        headers_match = compare_output(name, headers_actual, headers_expected)
+        test_result = validate_LIST(response_correct,crud_args,name,actual,expected_bytes)
 
-        body_match = json_arrays_equal_unordered(body_actual, body_expected)
-        test_result = headers_match and body_match
+
+    if not response_correct:
+        print(f"{name}: FAILED: Invalid Response Content")
 
     if test_result:
         print(f"{name}: PASSED")
+    else:
+        print(f"{name}: FAILED")
+    return test_result
 
+def validate_POST(response_correct, crud_args):
+    expect_write = crud_args["expect_write"]
+    file_exists = os.path.isfile(crud_args["file_path"])
+
+    if file_exists and crud_args["expect_write"]:
+        file_content_valid = validate_file_content(crud_args["file_path"], crud_args["expected_file_contents"])
+        file_is_json = is_valid_json(crud_args["file_path"])
+
+    if expect_write and not file_exists:
+        print(f"{name}: FAILED: file not created/found.")
+    if not expect_write and file_exists:
+        print(f"{name}: FAILED: file should not exist.")
+    if expect_write and not file_content_valid:
+        print(f"{name}: FAILED: file content invalid.")
+    if expect_write and not is_valid_json:
+        print(f"{name}: FAILED: file not valid json.")
+
+    if expect_write:
+        test_result = response_correct and file_exists and file_content_valid and file_is_json
+    else:
+        test_result = response_correct and not file_exists
+
+    return test_result
+
+def validate_GET(response_correct, crud_args):
+    test_result = response_correct # so far, we aren't expecting anything else.
+    return test_result
+
+def validate_PUT(response_correct, crud_args):
+    expect_write = crud_args["expect_write"]
+    file_exists = os.path.isfile(crud_args["file_path"])
+
+    if file_exists and expect_write:
+        file_content_valid = validate_file_content(crud_args["file_path"], crud_args["expected_file_contents"])
+        file_is_json = is_valid_json(crud_args["file_path"])
+
+    if expect_write and not file_exists:
+        print(f"{name}: FAILED: file not created/found.")
+    if not expect_write and file_exists:
+        print(f"{name}: FAILED: file should not exist.")
+    if expect_write and not file_content_valid:
+        print(f"{name}: FAILED: file content invalid.")
+    if expect_write and not is_valid_json:
+        print(f"{name}: FAILED: file not valid json.")
+
+    if expect_write:
+        test_result = response_correct and file_exists and file_content_valid and file_is_json
+    else:
+        test_result = response_correct and not file_exists
+
+    return test_result
+
+def validate_DELETE(response_correct, crud_args):
+    file_does_not_exist = not os.path.isfile(crud_args["file_path"])
+    test_result = file_does_not_exist
+    return test_result
+
+def validate_LIST(response_correct, crud_args, name, actual_bytes, expected_bytes):
+    headers_actual, body_actual = split_HTTP_response(actual_bytes)
+    headers_expected, body_expected = split_HTTP_response(expected_bytes)
+    headers_match = compare_output(name, headers_actual, headers_expected)
+
+    body_match = json_arrays_equal_unordered(body_actual, body_expected)
+    # response doesn't need to match since we recheck headers anyway
+    test_result = headers_match and body_match
     return test_result
 
 def validate_file_content(file_path, expected_content):
@@ -307,12 +373,39 @@ def define_tests():
              {
                  "name": "POST API Request Creates a File with Content",
                  "method": b"POST /api/Shoes HTTP/1.1\r\nHost: localhost\r\nContent-Type: application/json\r\nContent-Length: 26\r\n\r\n{\"message\":\"creeper test\"}",
-                 "expected": b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 9\r\n\r\n{\"id\": 1}",
+                 "expected": b"HTTP/1.1 201 Created\r\nContent-Type: application/json\r\nContent-Length: 9\r\n\r\n{\"id\": 1}",
                  "use_nc": True,
                  "crud_args": {
                      "type": "POST",
                      "file_path": TEMP_FILE_PATH + "Shoes/1",
                      "expected_file_contents": b'{"message":"creeper test"}',
+                     "expect_write": True
+                 }
+             },
+             {
+                 "name": "POST API Request w/ non-JSON content fails",
+                 "method": b"POST /api/Shoes HTTP/1.1\r\nHost: localhost\r\nContent-Type: application/json\r\nContent-Length: 20\r\n\r\n{\"invalid\" \"content\"}", # no ':'
+                 "expected": (
+                     b"HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\nContent-Length: 17\r\n\r\n"
+                     b"Invalid JSON body"
+                 ),
+                 "use_nc": True,
+                 "crud_args": {
+                     "type": "POST",
+                     "file_path": TEMP_FILE_PATH + "Shoes/2",
+                     "expect_write": False
+                 }
+             },
+             {
+                 "name": "Second POST API Request Creates + Returns Correct ID",
+                 "method": b"POST /api/Shoes HTTP/1.1\r\nHost: localhost\r\nContent-Type: application/json\r\nContent-Length: 29\r\n\r\n{\"message\":\"creeper test 2\"}",
+                 "expected": b"HTTP/1.1 201 Created\r\nContent-Type: application/json\r\nContent-Length: 9\r\n\r\n{\"id\": 2}",
+                 "use_nc": True,
+                 "crud_args": {
+                     "type": "POST",
+                     "file_path": TEMP_FILE_PATH + "Shoes/2",
+                     "expected_file_contents": b'{"message":"creeper test 2"}',
+                     "expect_write": True
                  }
              },
              {
@@ -334,17 +427,6 @@ def define_tests():
                  }
              },
              {
-                 "name": "Second POST API Request Creates + Returns Correct ID",
-                 "method": b"POST /api/Shoes HTTP/1.1\r\nHost: localhost\r\nContent-Type: application/json\r\nContent-Length: 29\r\n\r\n{\"message\":\"creeper test 2\"}",
-                 "expected": b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 9\r\n\r\n{\"id\": 2}",
-                 "use_nc": True,
-                 "crud_args": {
-                     "type": "POST",
-                     "file_path": TEMP_FILE_PATH + "Shoes/2",
-                     "expected_file_contents": b'{"message":"creeper test 2"}',
-                 }
-             },
-             {
                  "name": "LIST API Request returns a list of Valid IDs",
                  "method": b"GET /api/Shoes/ HTTP/1.1\r\nHost: localhost\r\nContent-Type: application/json\r\n\r\n",
                  "expected": b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 10\r\n\r\n[\"1\", \"2\"]",
@@ -352,7 +434,51 @@ def define_tests():
                  "crud_args": {
                      "type": "LIST",
                  }
-             }
+             },
+             {
+                 "name": "PUT Request Updates Current File",
+                 "method": b"PUT /api/Shoes/1 HTTP/1.1\r\nHost: localhost\r\nContent-Type: application/json\r\nContent-Length: 29\r\n\r\n{\"message\":\"creeper test 3\"}",
+                 "expected": b"HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n",
+                 "use_nc": True,
+                 "crud_args": {
+                     "type": "PUT",
+                     "file_path": TEMP_FILE_PATH + "Shoes/1",
+                     "expected_file_contents": b'{"message":"creeper test 3"}',
+                     "expect_write": True
+                 }
+             },
+             {
+                 "name": "PUT Request Creates New File",
+                 "method": b"PUT /api/Shoes/4 HTTP/1.1\r\nHost: localhost\r\nContent-Type: application/json\r\nContent-Length: 29\r\n\r\n{\"message\":\"creeper test 4\"}",
+                 "expected": b"HTTP/1.1 201 Created\r\nContent-Length: 0\r\n\r\n",
+                 "use_nc": True,
+                 "crud_args": {
+                     "type": "PUT",
+                     "file_path": TEMP_FILE_PATH + "Shoes/4",
+                     "expected_file_contents": b'{"message":"creeper test 4"}',
+                     "expect_write": True
+                 }
+             },
+             {
+                 "name": "DELETE API Request Deletes a File",
+                 "method": b"DELETE /api/Shoes/2 HTTP/1.1\r\nHost: localhost\r\n\r\n",
+                 "expected": b"HTTP/1.1 204 No Content\r\nContent-Length: 0\r\n\r\n",
+                 "use_nc": True,
+                 "crud_args": {
+                     "type": "DELETE",
+                     "file_path": TEMP_FILE_PATH + "Shoes/2",
+                 }
+             },
+             {
+                 "name": "DELETE API Request with invalid ID should 404",
+                 "method": b"DELETE /api/Shoes/DNE HTTP/1.1\r\nHost: localhost\r\n\r\n",
+                 "expected": b"HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nContent-Length: 12\r\n\r\nID not found",
+                 "use_nc": True,
+                 "crud_args": {
+                     "type": "DELETE",
+                     "file_path": TEMP_FILE_PATH + "Shoes/DNE",
+                 }
+             },
          ]
         }
     ]

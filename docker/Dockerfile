@@ -9,7 +9,7 @@ FROM creeper:base AS builder
 COPY . /usr/src/projects/creeper
 WORKDIR /usr/src/projects/creeper/build
 
-RUN apt-get update && apt-get install -y libboost-json-dev
+RUN apt-get update
 
 # Build and test
 RUN cmake ..

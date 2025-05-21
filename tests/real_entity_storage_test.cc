@@ -1,12 +1,13 @@
-#include "file_entity_storage.h"
+#include "real_entity_storage.h"
+
+#include <gtest/gtest.h>
 
 #include <filesystem>
-#include <gtest/gtest.h>
 
 namespace fs = std::filesystem;
 
-class FileEntityStorageTest : public ::testing::Test {
-protected:
+class RealEntityStorageTest : public ::testing::Test {
+ protected:
   std::string storage_root = "./test_storage_env";
 
   void SetUp() override {
@@ -17,8 +18,8 @@ protected:
   void TearDown() override { fs::remove_all(storage_root); }
 };
 
-TEST_F(FileEntityStorageTest, CanCreateAndReadEntityBack) {
-  FileEntityStorage backend(storage_root);
+TEST_F(RealEntityStorageTest, CanCreateAndReadEntityBack) {
+  RealEntityStorage backend(storage_root);
   auto result_id = backend.create("Books", "{\"title\":\"CS130\"}");
 
   ASSERT_TRUE(result_id.has_value());
@@ -28,8 +29,8 @@ TEST_F(FileEntityStorageTest, CanCreateAndReadEntityBack) {
   EXPECT_EQ(fetched.value(), "{\"title\":\"CS130\"}");
 }
 
-TEST_F(FileEntityStorageTest, OverwritesEntityDataOnUpdate) {
-  FileEntityStorage backend(storage_root);
+TEST_F(RealEntityStorageTest, OverwritesEntityDataOnUpdate) {
+  RealEntityStorage backend(storage_root);
   int id = backend.create("Notes", "draft").value();
 
   ASSERT_TRUE(backend.update("Notes", id, "final"));
@@ -39,8 +40,8 @@ TEST_F(FileEntityStorageTest, OverwritesEntityDataOnUpdate) {
   EXPECT_EQ(result.value(), "final");
 }
 
-TEST_F(FileEntityStorageTest, RemoveEntityMakesItUnretrievable) {
-  FileEntityStorage backend(storage_root);
+TEST_F(RealEntityStorageTest, RemoveEntityMakesItUnretrievable) {
+  RealEntityStorage backend(storage_root);
   int id = backend.create("Shoes", "nike").value();
 
   EXPECT_TRUE(backend.remove("Shoes", id));
@@ -49,8 +50,8 @@ TEST_F(FileEntityStorageTest, RemoveEntityMakesItUnretrievable) {
   EXPECT_FALSE(result.has_value());
 }
 
-TEST_F(FileEntityStorageTest, ListsAllEntityIds) {
-  FileEntityStorage backend(storage_root);
+TEST_F(RealEntityStorageTest, ListsAllEntityIds) {
+  RealEntityStorage backend(storage_root);
   backend.create("Cars", "Honda");
   backend.create("Cars", "Toyota");
 
@@ -61,8 +62,8 @@ TEST_F(FileEntityStorageTest, ListsAllEntityIds) {
   EXPECT_NE(std::find(found_ids.begin(), found_ids.end(), 2), found_ids.end());
 }
 
-TEST_F(FileEntityStorageTest, UpdateOnMissingIdCreatesIt) {
-  FileEntityStorage backend(storage_root);
+TEST_F(RealEntityStorageTest, UpdateOnMissingIdCreatesIt) {
+  RealEntityStorage backend(storage_root);
 
   // Simulate PUT to non-existent ID
   EXPECT_TRUE(backend.update("Magazines", 42, "Special Edition"));
@@ -72,23 +73,23 @@ TEST_F(FileEntityStorageTest, UpdateOnMissingIdCreatesIt) {
   EXPECT_EQ(fetched.value(), "Special Edition");
 }
 
-TEST_F(FileEntityStorageTest, RemoveNonExistentReturnsFalse) {
-  FileEntityStorage backend(storage_root);
+TEST_F(RealEntityStorageTest, RemoveNonExistentReturnsFalse) {
+  RealEntityStorage backend(storage_root);
 
-  bool result = backend.remove("Books", 999); // Should not exist
+  bool result = backend.remove("Books", 999);  // Should not exist
   EXPECT_FALSE(result);
 }
 
-TEST_F(FileEntityStorageTest, RetrieveNonExistentReturnsNullopt) {
-  FileEntityStorage backend(storage_root);
+TEST_F(RealEntityStorageTest, RetrieveNonExistentReturnsNullopt) {
+  RealEntityStorage backend(storage_root);
 
-  auto result = backend.retrieve("Shoes", 1234); // No such file
+  auto result = backend.retrieve("Shoes", 1234);  // No such file
   EXPECT_FALSE(result.has_value());
 }
 
-TEST_F(FileEntityStorageTest, ListOnMissingResourceReturnsEmpty) {
-  FileEntityStorage backend(storage_root);
+TEST_F(RealEntityStorageTest, ListOnMissingResourceReturnsEmpty) {
+  RealEntityStorage backend(storage_root);
 
-  std::vector<int> ids = backend.list("Aliens"); // Directory does not exist
+  std::vector<int> ids = backend.list("Aliens");  // Directory does not exist
   EXPECT_TRUE(ids.empty());
 }

@@ -16,14 +16,16 @@
 
 #include "config_parser.h"
 #include "logging.h"
-#include "server.h"
 #include "registry.h"
+#include "server.h"
 
 int main(int argc, char* argv[]) {
   logging::init_logging();
   LOG(info) << "Logging initialized (CREEPER_LOG_DEBUG="
-            << (std::getenv("CREEPER_LOG_DEBUG")? std::getenv("CREEPER_LOG_DEBUG") : "unset")
-            << ")"; 
+            << (std::getenv("CREEPER_LOG_DEBUG")
+                    ? std::getenv("CREEPER_LOG_DEBUG")
+                    : "unset")
+            << ")";
   try {
     if (argc != 2) {
       LOG(error) << "Wrong invocation, need exactly one argument";
@@ -41,7 +43,7 @@ int main(int argc, char* argv[]) {
       LOG(error) << "Error parsing config file: " << argv[1];
       throw std::runtime_error("Error parsing config file");
     }
-    
+
     LOG(info) << "Config parsed successfully";
 
     int port = config.get_port();
@@ -56,14 +58,13 @@ int main(int argc, char* argv[]) {
 
     boost::asio::signal_set signals(io_service, SIGINT, SIGTERM);
     signals.async_wait(
-      [&](const boost::system::error_code& ec, int signal_number) {
-        if (!ec) {
-          LOG(info) << "Signal " << signal_number
-                    << " received, shutting down server";
-          io_service.stop();
-        }
-      }
-    );
+        [&](const boost::system::error_code& ec, int signal_number) {
+          if (!ec) {
+            LOG(info) << "Signal " << signal_number
+                      << " received, shutting down server";
+            io_service.stop();
+          }
+        });
 
     io_service.run();
 
@@ -73,7 +74,7 @@ int main(int argc, char* argv[]) {
     std::cerr << "Exception: " << e.what() << "\n";
     return 1;
   }
-  
+
   LOG(trace) << "Exiting application";
   return 0;
 }

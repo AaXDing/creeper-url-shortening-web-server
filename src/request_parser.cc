@@ -14,10 +14,10 @@ std::string get_version(unsigned int version) {
 
 const std::unordered_set<std::string> allowed_methods = {
     "GET", "POST", "PUT",
-    "DELETE" // only GET, POST, PUT, DELETE  methods is allowed for now
-             /* future methods to be added:
-             "HEAD", "OPTIONS", "PATCH", "TRACE", "CONNECT"
-             */
+    "DELETE"  // only GET, POST, PUT, DELETE  methods is allowed for now
+              /* future methods to be added:
+              "HEAD", "OPTIONS", "PATCH", "TRACE", "CONNECT"
+              */
 };
 
 void RequestParser::parse(Request &req, const std::string &raw_request) {

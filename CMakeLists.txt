@@ -79,18 +79,18 @@ target_link_libraries(request_handler_dispatcher_lib PUBLIC http_header_lib conf
 add_library(logging_lib src/logging.cc)
 target_link_libraries(logging_lib PUBLIC Boost::log Boost::log_setup Boost::system Boost::filesystem)
 
-add_library(file_entity_storage_lib src/file_entity_storage.cc)
-target_link_libraries(file_entity_storage_lib logging_lib)
+add_library(real_entity_storage_lib src/real_entity_storage.cc)
+target_link_libraries(real_entity_storage_lib logging_lib)
 
 add_library(sim_entity_storage_lib src/sim_entity_storage.cc)
 target_link_libraries(sim_entity_storage_lib logging_lib)
 
 add_library(crud_request_handler_lib src/crud_request_handler.cc)
-target_link_libraries(crud_request_handler_lib PUBLIC http_header_lib logging_lib registry_lib file_entity_storage_lib sim_entity_storage_lib Boost::filesystem Boost::json)
+target_link_libraries(crud_request_handler_lib PUBLIC http_header_lib logging_lib registry_lib real_entity_storage_lib sim_entity_storage_lib Boost::filesystem Boost::json)
 
 # add main executable
 add_executable(server src/server_main.cc src/echo_request_handler.cc src/static_request_handler.cc src/not_found_request_handler.cc src/crud_request_handler.cc src/health_request_handler.cc)
-target_link_libraries(server server_lib session_lib http_header_lib request_parser_lib request_handler_dispatcher_lib config_parser_lib crud_request_handler_lib health_request_handler_lib file_entity_storage_lib sim_entity_storage_lib Boost::system)
+target_link_libraries(server server_lib session_lib http_header_lib request_parser_lib request_handler_dispatcher_lib config_parser_lib crud_request_handler_lib health_request_handler_lib real_entity_storage_lib sim_entity_storage_lib Boost::system)
 
 add_executable(request_parser_lib_test tests/request_parser_test.cc)
 target_link_libraries(request_parser_lib_test http_header_lib request_parser_lib gtest_main)
@@ -108,19 +108,19 @@ add_executable(health_request_handler_lib_test tests/health_request_handler_test
 target_link_libraries(health_request_handler_lib_test http_header_lib health_request_handler_lib config_parser_lib registry_lib logging_lib gtest_main)
 
 add_executable(config_parser_lib_test tests/config_parser_test.cc src/echo_request_handler.cc src/static_request_handler.cc src/not_found_request_handler.cc src/crud_request_handler.cc src/health_request_handler.cc)
-target_link_libraries(config_parser_lib_test config_parser_lib registry_lib echo_request_handler_lib static_request_handler_lib not_found_request_handler_lib crud_request_handler_lib health_request_handler_lib file_entity_storage_lib sim_entity_storage_lib gtest_main)
+target_link_libraries(config_parser_lib_test config_parser_lib registry_lib echo_request_handler_lib static_request_handler_lib not_found_request_handler_lib crud_request_handler_lib health_request_handler_lib real_entity_storage_lib sim_entity_storage_lib gtest_main)
 
 add_executable(server_lib_test tests/server_test.cc)
-target_link_libraries(server_lib_test server_lib session_lib http_header_lib request_parser_lib request_handler_dispatcher_lib file_entity_storage_lib sim_entity_storage_lib gtest_main gmock pthread)
+target_link_libraries(server_lib_test server_lib session_lib http_header_lib request_parser_lib request_handler_dispatcher_lib real_entity_storage_lib sim_entity_storage_lib gtest_main gmock pthread)
 
 add_executable(session_lib_test tests/session_test.cc src/echo_request_handler.cc src/static_request_handler.cc src/not_found_request_handler.cc src/crud_request_handler.cc src/health_request_handler.cc)
-target_link_libraries(session_lib_test session_lib http_header_lib request_parser_lib request_handler_dispatcher_lib crud_request_handler_lib config_parser_lib file_entity_storage_lib sim_entity_storage_lib health_request_handler_lib gtest_main gmock pthread)
+target_link_libraries(session_lib_test session_lib http_header_lib request_parser_lib request_handler_dispatcher_lib crud_request_handler_lib config_parser_lib real_entity_storage_lib sim_entity_storage_lib health_request_handler_lib gtest_main gmock pthread)
 
 add_executable(logging_lib_test tests/logging_test.cc)
 target_link_libraries(logging_lib_test logging_lib gtest_main)
 
 add_executable(request_handler_dispatcher_lib_test tests/request_handler_dispatcher_test.cc src/echo_request_handler.cc src/static_request_handler.cc src/not_found_request_handler.cc src/crud_request_handler.cc src/health_request_handler.cc)
-target_link_libraries(request_handler_dispatcher_lib_test request_handler_dispatcher_lib http_header_lib request_parser_lib crud_request_handler_lib file_entity_storage_lib sim_entity_storage_lib config_parser_lib health_request_handler_lib gtest_main)
+target_link_libraries(request_handler_dispatcher_lib_test request_handler_dispatcher_lib http_header_lib request_parser_lib crud_request_handler_lib real_entity_storage_lib sim_entity_storage_lib config_parser_lib health_request_handler_lib gtest_main)
 
 add_executable(http_header_test tests/http_header_test.cc)
 target_link_libraries(http_header_test http_header_lib gtest_main)
@@ -131,8 +131,8 @@ target_link_libraries(registry_lib_test registry_lib echo_request_handler_lib gt
 add_executable(crud_request_handler_lib_test tests/crud_request_handler_test.cc)
 target_link_libraries(crud_request_handler_lib_test crud_request_handler_lib http_header_lib config_parser_lib registry_lib logging_lib gtest_main)
 
-add_executable(file_entity_storage_test tests/file_entity_storage_test.cc)
-target_link_libraries(file_entity_storage_test file_entity_storage_lib gtest_main Boost::log_setup Boost::log)
+add_executable(real_entity_storage_test tests/real_entity_storage_test.cc)
+target_link_libraries(real_entity_storage_test real_entity_storage_lib gtest_main Boost::log_setup Boost::log)
 
 add_executable(sim_entity_storage_test tests/sim_entity_storage_test.cc)
 target_link_libraries(sim_entity_storage_test sim_entity_storage_lib gtest_main Boost::log_setup Boost::log)
@@ -149,7 +149,7 @@ gtest_discover_tests(not_found_request_handler_lib_test WORKING_DIRECTORY ${CMAK
 gtest_discover_tests(request_handler_dispatcher_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(registry_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(crud_request_handler_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-gtest_discover_tests(file_entity_storage_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+gtest_discover_tests(real_entity_storage_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(sim_entity_storage_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(health_request_handler_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 # --- Coverage support for unit tests only ---
@@ -170,6 +170,8 @@ generate_coverage_report(
         logging_lib
         request_handler_dispatcher_lib
         registry_lib
+        real_entity_storage_lib
+        sim_entity_storage_lib
         server
     TESTS
         http_header_test
@@ -185,7 +187,7 @@ generate_coverage_report(
         logging_lib_test
         request_handler_dispatcher_lib_test
         registry_lib_test
-        file_entity_storage_test
+        real_entity_storage_test
         sim_entity_storage_test
 )
 

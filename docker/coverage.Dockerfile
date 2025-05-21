@@ -6,7 +6,7 @@ FROM creeper:base AS coverage
 COPY . /usr/src/projects/creeper
 WORKDIR /usr/src/projects/creeper/build
 
-RUN apt-get update && apt-get install -y libboost-json-dev
+RUN apt-get update
 
 # Configure for coverage
 RUN cmake -DCMAKE_BUILD_TYPE=Coverage ..

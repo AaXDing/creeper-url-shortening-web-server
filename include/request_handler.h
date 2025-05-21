@@ -1,10 +1,10 @@
 #ifndef REQUEST_HANDLER_H
 #define REQUEST_HANDLER_H
 
+#include <memory>
 #include <string>
 
 #include "http_header.h"
-#include <memory>
 class RequestHandler {
   /*
       This is an abstract class that defines the interface for handling
@@ -12,14 +12,14 @@ class RequestHandler {
       be implemented by any derived class. The function is responsible for
       processing the request and generating a response.
   */
-public:
+ public:
   enum class HandlerType {
     ECHO_REQUEST_HANDLER,
     STATIC_REQUEST_HANDLER,
     NOT_FOUND_REQUEST_HANDLER,
     CRUD_REQUEST_HANDLER,
     HEALTH_REQUEST_HANDLER,
-  }; // Enum to represent the type of handler
+  };  // Enum to represent the type of handler
 
   static std::string handler_type_to_string(HandlerType type) {
     switch (type) {

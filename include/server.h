@@ -18,8 +18,8 @@ class Server {
  public:
   Server(boost::asio::io_service& io, short port, const NginxConfig& config,
          SessionFactory fac = nullptr);
-  
-  friend class ServerTest;  
+
+  friend class ServerTest;
 
  private:
   void start_accept();
@@ -32,7 +32,6 @@ class Server {
 };
 
 #endif  // SERVER_H
-
 
 // The following is a comment block that contains a stylized ASCII art
 // adopted from https://gist.github.com/edokeh/7580064

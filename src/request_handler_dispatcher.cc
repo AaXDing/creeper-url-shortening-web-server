@@ -61,7 +61,8 @@ std::unique_ptr<RequestHandler> RequestHandlerDispatcher::get_handler(
   std::string url = req.uri;
   std::string location = longest_prefix_match(url);
 
-  RequestHandlerFactoryAndWorkersPtr factory_and_workers_ptr = routes_[location];
+  RequestHandlerFactoryAndWorkersPtr factory_and_workers_ptr =
+      routes_[location];
   RequestHandlerFactoryPtr factory_ptr = std::get<0>(*factory_and_workers_ptr);
   std::string uri = std::get<1>(*factory_and_workers_ptr);
   std::string root = std::get<2>(*factory_and_workers_ptr);

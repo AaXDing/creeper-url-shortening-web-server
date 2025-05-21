@@ -26,7 +26,7 @@ struct Request {
   std::string version;
   std::vector<Header> headers;
   std::string body;
-  bool valid = false; // default valid to false
+  bool valid = false;  // default valid to false
 
   std::string to_string() const;
 };
@@ -56,4 +56,4 @@ const std::unordered_map<unsigned int, Response> STOCK_RESPONSE = {
                    "500 Internal Server Error")},
 };
 
-#endif // HTTP_HEADER_H
+#endif  // HTTP_HEADER_H

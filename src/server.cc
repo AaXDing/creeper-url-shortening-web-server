@@ -1,8 +1,8 @@
 // server.cc ---------------------------------------------------------------
 #include "server.h"
 
-#include <boost/bind/bind.hpp>
 #include <boost/asio/placeholders.hpp>
+#include <boost/bind/bind.hpp>
 
 #include "config_parser.h"
 #include "logging.h"
@@ -36,7 +36,7 @@ void Server::start_accept() {
   acceptor_.async_accept(session->socket(),                   // tcp::socket&
                          boost::bind(&Server::handle_accept,  // member fn
                                      this,                    // Server*
-                                     session,                 // keep session alive
+                                     session,  // keep session alive
                                      error));
 }
 

@@ -82,8 +82,6 @@ The project requires the following dependencies besides CS130 Dev environment:
 
 ### Build & Test
 
-Need to manually install libboost-json-dev besides from CS130 dev environment
-
 1. Create a build directory:
 ```bash
 mkdir build
@@ -138,6 +136,26 @@ CREEPER_LOG_DEBUG=trace bin/server ../my_config
 # Debug run
 CREEPER_LOG_DEBUG=debug bin/server ../my_config
 ```
+
+### Code Formatting
+
+The project uses clang-format for consistent code formatting. To use it:
+
+1. Install clang-format:
+```bash
+sudo apt-get install clang-format
+```
+
+2. Format all source files:
+```bash
+make format .clang-format
+```
+
+The project uses the following clang-format style:
+- Based on Google style
+- 2 space indentation
+- 100 character line length
+- Spaces for indentation
 
 ### Sample Client Request
 

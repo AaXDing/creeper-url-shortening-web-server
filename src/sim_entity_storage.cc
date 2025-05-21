@@ -37,6 +37,7 @@ std::optional<int> SimEntityStorage::create(const std::string &resource, const s
     // If the resource path does not exist, create a new resource
     if (it == storage.end())
     {
+        LOG(debug) << "Creating new resource: " << resource;
         std::map<int, std::string> entity;
         entity[nextid] = data;
         storage[resource] = entity;
@@ -48,6 +49,7 @@ std::optional<int> SimEntityStorage::create(const std::string &resource, const s
     // Add data at id
     storage[resource][nextid] = data;
     LOG(info) << "Creating new entity " << resource << "/" << std::to_string(nextid);
+    LOG(debug) << "Creating new entity " << resource << "/" << std::to_string(nextid);
 
     return nextid;
 }

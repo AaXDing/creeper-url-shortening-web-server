@@ -6,6 +6,8 @@
 #include "config_parser.h"
 #include "logging.h"
 #include "registry.h"
+#include "file_entity_storage.h"
+#include "ientity_storage.h"
 #include <boost/filesystem.hpp>
 
 #include <boost/json.hpp>
@@ -14,10 +16,31 @@
 #include <regex>
 #include <sstream>
 
-REGISTER_HANDLER("CrudHandler", CrudRequestHandler);
+// REGISTER_HANDLER("CrudHandler", CrudRequestHandler);
+static const bool _CrudRequestHandler_registered = 
+Registry::register_handler(
+    "CrudHandler",
+    [](const std::string &uri, const std::string &root) {
+        auto storage = std::make_shared<FileEntityStorage>(root);
+        return std::make_unique<CrudRequestHandler>(uri, root, storage);
+    },
+    [](std::shared_ptr<NginxConfigStatement> statement, NginxLocation &location) {
+        return CrudRequestHandler::check_location(statement, location);
+    });
+
+// _CrudRequestHandler_registered();
 
 CrudRequestHandler::CrudRequestHandler(const std::string &base_uri,
                                        const std::string &data_path)
+{
+  base_uri_ = base_uri;
+  data_path_path_ = data_path;
+  std::filesystem::create_directories(data_path_path_);
+}
+
+CrudRequestHandler::CrudRequestHandler(const std::string &base_uri,
+                                       const std::string &data_path,
+                                       std::shared_ptr<IEntityStorage> storage) : storage_(std::move(storage))
 {
   base_uri_ = base_uri;
   data_path_path_ = data_path;
@@ -46,6 +69,19 @@ enum HTTP_Method CrudRequestHandler::get_method(const std::string &method) const
   {
     return INVALID_METHOD;
   }
+}
+
+bool isValidInteger(const std::string& input, int& outValue) {
+    try {
+        size_t idx;
+        outValue = std::stoi(input, &idx);
+        // Check if the entire string was used
+        return idx == input.size();
+    } catch (const std::invalid_argument&) {
+        return false;
+    } catch (const std::out_of_range&) {
+        return false;
+    }
 }
 
 std::string CrudRequestHandler::extract_entity(const std::string &uri) const
@@ -92,6 +128,22 @@ int CrudRequestHandler::get_next_available_id(
   }
 
   return max_id + 1;
+}
+
+std::string vector_to_json(const std::vector<int> &ids)
+{
+  std::ostringstream oss;
+  oss << "[";
+  for (size_t i = 0; i < ids.size(); ++i)
+  {
+    oss << "\"" << ids[i] << "\"";
+    if (i < ids.size() - 1)
+    {
+      oss << ",";
+    }
+  }
+  oss << "]";
+  return oss.str();
 }
 
 // Return JSON list of IDs (filenames) in a directory
@@ -163,29 +215,14 @@ std::unique_ptr<Response> CrudRequestHandler::handle_post(const Request &req)
     return res;
   }
 
-  std::filesystem::create_directories(entity_dir);
-  int new_id = get_next_available_id(entity_dir);
-  std::string filepath = entity_dir + "/" + std::to_string(new_id);
-
-  std::ofstream ofs(filepath);
-  if (!ofs)
-  {
-    LOG(error) << "Failed to create file: " << filepath;
-    *res = STOCK_RESPONSE.at(500);
-    res->body = "Failed to create storage file";
-    return res;
-  }
-
-  // Write normalized JSON to file
-  ofs << boost::json::serialize(parsed);
-  ofs.close();
+  auto result = storage_->create(entity, req.body);
 
   res->status_code = 201;
   res->status_message = "Created";
   res->version = req.valid ? req.version : HTTP_VERSION;
   res->content_type = "application/json";
-  res->body = "{\"id\": " + std::to_string(new_id) + "}";
-  LOG(info) << "Created new " << entity << " with ID " << new_id;
+  res->body = "{\"id\": " + std::to_string(result.value()) + "}";
+  LOG(info) << "Created new " << entity << " with ID " << result.value();
   return res;
 }
 
@@ -199,9 +236,21 @@ std::unique_ptr<Response> CrudRequestHandler::handle_get(const Request &req)
   // get an entity
   if (!id.empty())
   {
+    LOG(debug) << "ID Present, searching for entity: " << entity << " with ID: " << id;
+
     std::string filepath = entity_dir + "/" + id;
-    std::ifstream ifs(filepath);
-    if (!ifs)
+
+    int id_int;
+    if (!isValidInteger(id, id_int))
+    {
+      LOG(warning) << "GET failed, ID not found: " << id;
+      *res = STOCK_RESPONSE.at(404);
+      res->body = "ID not found";
+      return res;
+    }
+
+    auto result = storage_->retrieve(entity, std::stoi(id));
+    if (!result.has_value())
     {
       LOG(warning) << "GET failed: file not found at " << filepath;
       *res = STOCK_RESPONSE.at(404);
@@ -209,13 +258,11 @@ std::unique_ptr<Response> CrudRequestHandler::handle_get(const Request &req)
       return res;
     }
 
-    std::ostringstream raw_stream;
-    raw_stream << ifs.rdbuf();
-    std::string raw_json = raw_stream.str();
+    LOG(info) << "GET result: " << result.value();
 
     // Attempt to parse and re-serialize using Boost.JSON
     boost::json::error_code ec;
-    boost::json::value parsed = boost::json::parse(raw_json, ec);
+    boost::json::value parsed = boost::json::parse(result.value(), ec);
     if (ec)
     {
       LOG(warning) << "Failed to parse JSON from file: " << filepath << " — " << ec.message();
@@ -236,15 +283,19 @@ std::unique_ptr<Response> CrudRequestHandler::handle_get(const Request &req)
   // there's no id so we're in list mode
   else
   {
-    if (!std::filesystem::exists(entity_dir))
+    LOG(debug) << "ID not present, listing entity: " << entity;
+    std::vector<int> ids = storage_->list(entity);
+    if (ids.empty())
     {
+      LOG(warning) << "GET failed: Entity type not found for " << entity;
       *res = STOCK_RESPONSE.at(404);
       res->body = "Entity type not found";
       return res;
     }
     res->status_code = 200;
     res->content_type = "application/json";
-    res->body = list_ids(entity_dir);
+    // res->body = list_ids(entity_dir);
+    res->body = vector_to_json(ids);
     res->version = req.valid ? req.version : HTTP_VERSION;
     res->status_message = "OK";
     return res;
@@ -278,40 +329,15 @@ std::unique_ptr<Response> CrudRequestHandler::handle_put(const Request &req)
       return res;
     }
 
-    std::filesystem::create_directories(entity_dir);
-    std::string filepath = entity_dir + "/" + id;
-    bool file_previously_existed = std::filesystem::exists(filepath);
-    if (file_previously_existed)
+    bool file_previously_existed = storage_->retrieve(entity, std::stoi(id)).has_value();
+    bool result = storage_->update(entity, std::stoi(id), req.body);
+    if (!result)
     {
-      LOG(info) << "File already exists at: " << filepath;
-      LOG(info) << "Using full replace update mode";
-      std::ofstream ofs(filepath, std::ios::trunc);
-      if (!ofs)
-      {
-        LOG(error) << "Failed to open/overwrite: " << filepath;
-        *res = STOCK_RESPONSE.at(500);
-        res->body = "Failed to update storage file";
-        return res;
-      }
-      // Write normalized JSON to file
-      ofs << boost::json::serialize(parsed);
-      ofs.close();
-    }
-    else
-    {
-      LOG(info) << "Creating new file at: " << filepath;
-      std::ofstream ofs(filepath);
-      if (!ofs)
-      {
-        LOG(error) << "Failed to create file: " << filepath;
-        *res = STOCK_RESPONSE.at(500);
-        res->body = "Failed to create storage file";
-        return res;
-      }
-
-      // Write normalized JSON to file
-      ofs << boost::json::serialize(parsed);
-      ofs.close();
+      // result should always be true because the default is to create
+      LOG(warning) << "PUT failed with " << entity_dir + "/" + id;
+      *res = STOCK_RESPONSE.at(500);
+      res->body = "PUT failed";
+      return res;
     }
     if(file_previously_existed) {
       res->status_code = 200;
@@ -348,19 +374,30 @@ std::unique_ptr<Response> CrudRequestHandler::handle_delete(const Request &req)
 
   if (!id.empty())
   {
-    std::string filepath = entity_dir + "/" + id;
-    if (std::filesystem::remove(filepath))
+    // Validate ID
+    int id_int;
+    if (!isValidInteger(id, id_int))
+    {
+      LOG(warning) << "DELETE failed: invalid ID: " << id;
+      *res = STOCK_RESPONSE.at(404);
+      // res->body = "Invalid ID";
+      res->body = "ID not found";
+      return res;
+    }
+    bool result = storage_->remove(entity, std::stoi(id));
+    if (!result)
+    {
+      LOG(warning) << "DELETE failed: file not found at " << entity_dir + "/" + id;
+      *res = STOCK_RESPONSE.at(404);
+      res->body = "ID not found";
+      return res;
+    }
+    else
     {
       res->status_code = 204;
       res->status_message = "No Content";
       res->version = req.valid ? req.version : HTTP_VERSION;
       LOG(info) << "Deleted " << entity << " with ID " << id;
-    }
-    else
-    {
-      LOG(warning) << "DELETE failed: file not found at " << filepath;
-      *res = STOCK_RESPONSE.at(404);
-      res->body = "ID not found";
     }
   }
   else

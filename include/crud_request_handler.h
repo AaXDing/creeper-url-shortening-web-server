@@ -6,8 +6,10 @@
 #include "config_parser.h"
 #include "http_header.h"
 #include "request_handler.h"
+#include "ientity_storage.h"
 
-enum HTTP_Method {
+enum HTTP_Method
+{
   POST,
   GET,
   PUT,
@@ -15,8 +17,10 @@ enum HTTP_Method {
   INVALID_METHOD
 };
 
-class CrudRequestHandler : public RequestHandler {
+class CrudRequestHandler : public RequestHandler
+{
 public:
+  CrudRequestHandler(const std::string &base_uri, const std::string &data_path, std::shared_ptr<IEntityStorage> storage);
   CrudRequestHandler(const std::string &base_uri, const std::string &data_path);
   std::unique_ptr<Response> handle_request(const Request &req) override;
   static bool check_location(std::shared_ptr<NginxConfigStatement> statement,
@@ -36,6 +40,7 @@ public:
 private:
   std::string data_path_path_;
   std::string base_uri_;
+  std::shared_ptr<IEntityStorage> storage_;
 };
 
 #endif

@@ -429,7 +429,7 @@ def define_tests():
              {
                  "name": "LIST API Request returns a list of Valid IDs",
                  "method": b"GET /api/Shoes/ HTTP/1.1\r\nHost: localhost\r\nContent-Type: application/json\r\n\r\n",
-                 "expected": b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 10\r\n\r\n[\"1\", \"2\"]",
+                 "expected": b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 9\r\n\r\n[\"1\",\"2\"]",
                  "use_nc": True,
                  "crud_args": {
                      "type": "LIST",

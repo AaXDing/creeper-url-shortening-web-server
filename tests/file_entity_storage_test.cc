@@ -71,3 +71,24 @@ TEST_F(FileEntityStorageTest, UpdateOnMissingIdCreatesIt) {
   ASSERT_TRUE(fetched.has_value());
   EXPECT_EQ(fetched.value(), "Special Edition");
 }
+
+TEST_F(FileEntityStorageTest, RemoveNonExistentReturnsFalse) {
+  FileEntityStorage backend(storage_root);
+
+  bool result = backend.remove("Books", 999); // Should not exist
+  EXPECT_FALSE(result);
+}
+
+TEST_F(FileEntityStorageTest, RetrieveNonExistentReturnsNullopt) {
+  FileEntityStorage backend(storage_root);
+
+  auto result = backend.retrieve("Shoes", 1234); // No such file
+  EXPECT_FALSE(result.has_value());
+}
+
+TEST_F(FileEntityStorageTest, ListOnMissingResourceReturnsEmpty) {
+  FileEntityStorage backend(storage_root);
+
+  std::vector<int> ids = backend.list("Aliens"); // Directory does not exist
+  EXPECT_TRUE(ids.empty());
+}

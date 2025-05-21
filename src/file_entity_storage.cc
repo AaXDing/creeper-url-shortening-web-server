@@ -37,13 +37,13 @@ int FileEntityStorage::get_next_available_id(
 // Returns the full directory path for a specific entity
 std::string
 FileEntityStorage::make_entity_dir(const std::string &resource) const {
-  return root_ + "/" + resource;
+  return (fs::path(root_) / resource).string();
 }
 
 // Returns the full path for a specific entity and ID
 std::string FileEntityStorage::make_entity_path(const std::string &resource,
                                                 int id) const {
-  return make_entity_dir(resource) + "/" + std::to_string(id);
+  return (fs::path(root_) / resource / std::to_string(id)).string();
 }
 
 // Create: a new entity assign lowest unused ID, write data to file, return new
@@ -69,27 +69,27 @@ std::optional<int> FileEntityStorage::create(const std::string &resource,
 // Retrieve: the content for a given entity and ID
 std::optional<std::string>
 FileEntityStorage::retrieve(const std::string &resource, int id) const {
-
-  std::ifstream file(make_entity_path(resource, id));
+  fs::path filepath = make_entity_path(resource, id);
+  std::ifstream file(filepath);
   if (!file)
     return std::nullopt;
 
-  std::ostringstream ss;
-  ss << file.rdbuf(); // Read entire file into string
-  return ss.str();
+  std::ostringstream buffer;
+  buffer << file.rdbuf();
+  return buffer.str();
 }
 
 // Update or create: an entity at a specific ID with new data, returns true on
 // success
 bool FileEntityStorage::update(const std::string &resource, int id,
                                const std::string &data) {
-
   fs::create_directories(make_entity_dir(resource));
-  std::ofstream file(
-      make_entity_path(resource, id)); // Creates file if it doesn't exist
 
+  fs::path filepath = make_entity_path(resource, id);
+  std::ofstream file(filepath); // truncates or creates
   if (!file)
     return false;
+
   file << data;
   return true;
 }
@@ -97,27 +97,31 @@ bool FileEntityStorage::update(const std::string &resource, int id,
 // Delete: the file associated with the given entity and ID, returns true on
 // success
 bool FileEntityStorage::remove(const std::string &resource, int id) {
-  return fs::remove(make_entity_path(resource, id));
+  fs::path filepath = make_entity_path(resource, id);
+  return fs::remove(filepath); // is false if no file was removed.
 }
 
 // List: all valid integer IDs for the given entity type by enumerating
 // filenames
 std::vector<int> FileEntityStorage::list(const std::string &resource) const {
-
   std::vector<int> ids;
-  const std::string dir = make_entity_dir(resource);
-  if (!fs::exists(dir))
-    return ids;
+  fs::path entity_dir = make_entity_dir(resource);
 
-  for (const auto &entry : fs::directory_iterator(dir)) {
-    if (entry.is_regular_file()) {
-      try {
-        // Only consider files with integer names
-        ids.push_back(std::stoi(entry.path().filename().string()));
-      } catch (...) {
-        continue; // Skip non-integer or malformed filenames
-      }
+  if (!fs::exists(entity_dir) || !fs::is_directory(entity_dir)) {
+    return ids;
+  }
+
+  for (const auto &entry : fs::directory_iterator(entity_dir)) {
+    if (!entry.is_regular_file())
+      continue;
+
+    const auto filename = entry.path().filename().string();
+    try {
+      ids.push_back(std::stoi(filename));
+    } catch (const std::exception &) {
+      // Skip non-integer filenames
     }
   }
+
   return ids;
 }

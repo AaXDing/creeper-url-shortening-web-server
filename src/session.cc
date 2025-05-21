@@ -91,10 +91,21 @@ std::string Session::handle_response(size_t bytes_transferred) {
   if (!req.valid) {
     // If the request is invalid, return a 400 Bad Request response
     LOG(warning) << "Invalid request → 400";
+    // Log response metrics for invalid request
+    LOG(info) << "[ResponseMetrics] status_code=400 path=\"" << req.uri << "\" ip=\"" 
+              << remote_endpoint().address().to_string() << "\" handler=\"InvalidRequest\"";
     return STOCK_RESPONSE.at(400).to_string();
   }
 
-  res = dispatcher_->handle_request(req);
+  // Get handler and response
+  std::unique_ptr<RequestHandler> handler = dispatcher_->get_handler(req);
+  res = handler->handle_request(req);
+
+  // Log response metrics in machine-parsable format
+  LOG(info) << "[ResponseMetrics] status_code=" << res->status_code 
+            << " path=\"" << req.uri << "\" ip=\"" 
+            << remote_endpoint().address().to_string() << "\" handler=\"" 
+            << RequestHandler::handler_type_to_string(handler->get_type()) << "\"";
 
   return res->to_string();
 }

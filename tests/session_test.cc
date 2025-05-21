@@ -34,6 +34,11 @@ class SessionTest : public Session {
     if (deleted_flag_) *deleted_flag_ = true;
   }
 
+  // Override remote_endpoint to return a test-friendly endpoint
+  tcp::endpoint remote_endpoint() override {
+    return tcp::endpoint(asio::ip::address::from_string("127.0.0.1"), 4242);
+  }
+
   // helpers to reach the protected/private bits
   std::string call_handle_response(std::size_t n) {
     return Session::handle_response(n);

@@ -56,38 +56,17 @@ bool RequestHandlerDispatcher::add_route(const NginxLocation& location) {
   return true;
 }
 
-std::unique_ptr<Response> RequestHandlerDispatcher::handle_request(
-    const Request& req) {
-  std::unique_ptr<RequestHandler> h = get_handler(req);
-
-  LOG(info) << "Dispatching to handler for uri=" << req.uri;
-  return h->handle_request(req);
-}
-
 std::unique_ptr<RequestHandler> RequestHandlerDispatcher::get_handler(
     const Request& req) {
   std::string url = req.uri;
-
   std::string location = longest_prefix_match(url);
 
-  if (routes_.find(location) == routes_.end()) {
-    LOG(warning) << "No handler found for URI \"" << location << "\"";
-    return nullptr;  // No handler found
-  }
-
-  RequestHandlerFactoryAndWorkersPtr factory_and_workers_ptr =
-      routes_[location];
+  RequestHandlerFactoryAndWorkersPtr factory_and_workers_ptr = routes_[location];
   RequestHandlerFactoryPtr factory_ptr = std::get<0>(*factory_and_workers_ptr);
   std::string uri = std::get<1>(*factory_and_workers_ptr);
   std::string root = std::get<2>(*factory_and_workers_ptr);
 
-  if (factory_ptr == nullptr) {
-    LOG(warning) << "No handler found for URI \"" << location << "\"";
-    return nullptr;  // No handler found
-  }
-
-  std::unique_ptr<RequestHandler> handler = (*factory_ptr)(uri, root);
-  return handler;
+  return (*factory_ptr)(uri, root);
 }
 
 std::string RequestHandlerDispatcher::longest_prefix_match(

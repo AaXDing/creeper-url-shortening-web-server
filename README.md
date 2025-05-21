@@ -28,6 +28,8 @@ creeper/
    - `echo_request_handler.h/cc`: Echoes back the request
    - `static_request_handler.h/cc`: Serves static files
    - `not_found_request_handler.h/cc`: Returns 404 Not Found response when no other handler can handle a request (Need to setup config file correctly)
+   - `crud_request_handler.h/cc`: Handles CRUD operations (Create, Retrieve, Update, Delete) for data persistence
+   - `health_request_handler.h/cc`: Returns 200 OK response to indicate server is healthy
 5. **Request Handler Dispatcher (`request_handler_dispatcher.h/cc`)**: Routes requests to appropriate handlers
 6. **Configuration Parser (`config_parser.h/cc`)**: Parses server configuration
 7. **Registry (`registry.h/cc`)**: Manages request handler registration
@@ -54,6 +56,8 @@ creeper/
                                 echo_request_handler.cc      (impl) 
                                 static_request_handler.cc    (impl)
                                 not_found_request_handler.cc (impl)
+                                crud_request_handler.cc      (impl)
+                                health_request_handler.cc    (impl)
 
 Utility Modules:
 ----------------
@@ -66,7 +70,19 @@ Factory & Registration:
 
 ## Building and Running
 
+### Prerequisites
+
+The project requires the following dependencies besides CS130 Dev environment:
+- Boost JSON library (libboost-json-dev)
+  ```bash
+  # Install Boost JSON library
+  sudo apt-get install libboost-json-dev
+  ```
+
+
 ### Build & Test
+
+Need to manually install libboost-json-dev besides from CS130 dev environment
 
 1. Create a build directory:
 ```bash
@@ -89,9 +105,6 @@ ctest
 ### Coverage Build
 
 ```bash
-mkdir build_coverage
-cd build_coverage
-cmake -DCMAKE_BUILD_TYPE=Coverage ..
 make coverage
 ```
 
@@ -100,10 +113,7 @@ make coverage
 1. Build:
 
 ```bash
-mkdir build
-cd build
-cmake ..
-make
+make build
 ```
 
 2. Run:
@@ -148,6 +158,10 @@ To handle static files, you need to move all your static files to `data` directo
 ```bash
 docker build -t creeper:base -f docker/base.Dockerfile .
 docker build -f docker/coverage.Dockerfile -t creeper-coverage .
+```
+or
+```bash
+make docker
 ```
 
 ### GCloud Manual Submit
@@ -223,6 +237,22 @@ enum class HandlerType {
     NOT_FOUND_REQUEST_HANDLER,
     NEW_REQUEST_HANDLER,  // Add your handler type
 };
+
+// Add your handler type to the handler_type_to_string function
+static std::string handler_type_to_string(HandlerType type) {
+    switch (type) {
+        case HandlerType::ECHO_REQUEST_HANDLER:
+            return "EchoHandler";
+        case HandlerType::STATIC_REQUEST_HANDLER:
+            return "StaticHandler";
+        case HandlerType::NOT_FOUND_REQUEST_HANDLER:
+            return "NotFoundHandler";
+        case HandlerType::NEW_REQUEST_HANDLER:  // Add your handler type
+            return "NewHandler";
+        default:
+            return "UnknownHandler";
+    }
+}
 ```
 
 4. Update CMakeLists.txt:
@@ -324,5 +354,8 @@ location /static StaticHandler {
     # no trailing slash after path
     # relative-path and absolute path supported
     root ../data;
+}
+
+location /health HealthHandler {
 }
 ```

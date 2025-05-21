@@ -1,6 +1,7 @@
 #ifndef REQUEST_HANDLER_DISPATCHER_H
 #define REQUEST_HANDLER_DISPATCHER_H
 
+#include <memory>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -13,6 +14,7 @@
 
 using RequestHandlerFactoryPtr = std::shared_ptr<RequestHandlerFactory>;
 
+// Tuple contains: (factory_ptr, uri, root_path)
 using RequestHandlerFactoryAndWorkersPtr = std::shared_ptr<
     std::tuple<RequestHandlerFactoryPtr, std::string, std::string>>;
 

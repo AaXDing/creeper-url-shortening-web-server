@@ -13,3 +13,6 @@ location /static StaticHandler {
 location /api CrudHandler {
   data_path ../data;
 }
+
+location /health HealthHandler {
+}

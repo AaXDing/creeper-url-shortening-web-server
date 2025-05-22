@@ -47,16 +47,16 @@ void init_logging(std::ostream* console_stream,
              expr::attr<boost::log::trivial::severity_level>("Severity") %
              expr::smessage;
 
-  // Console sink (Error and above)
+  // Console sink (Info and above)
   if (console_stream) {
     typedef sinks::synchronous_sink<sinks::text_ostream_backend> ostream_sink;
     auto sink = boost::make_shared<ostream_sink>();
     sink->locked_backend()->add_stream(
         boost::shared_ptr<std::ostream>(console_stream, [](void*) {}));
     sink->set_formatter(fmt);
-    // filter: only errors and above to console
+    // filter: only info and above to console
     sink->set_filter(expr::attr<severity_level>("Severity") >=
-                     severity_level::error);
+                     severity_level::info);
     core->add_sink(sink);
   }
 

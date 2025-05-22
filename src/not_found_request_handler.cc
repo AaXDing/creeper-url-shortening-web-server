@@ -3,20 +3,23 @@
 #include "logging.h"
 #include "registry.h"
 
-REGISTER_HANDLER("NotFoundHandler", NotFoundRequestHandler, NotFoundRequestHandlerArgs);
+REGISTER_HANDLER("NotFoundHandler", NotFoundRequestHandler,
+                 NotFoundRequestHandlerArgs);
 
 NotFoundRequestHandlerArgs::NotFoundRequestHandlerArgs() {}
 
-std::shared_ptr<NotFoundRequestHandlerArgs> NotFoundRequestHandlerArgs::create_from_config(
+std::shared_ptr<NotFoundRequestHandlerArgs>
+NotFoundRequestHandlerArgs::create_from_config(
     std::shared_ptr<NginxConfigStatement> statement) {
   if (statement->child_block_->statements_.size() != 0) {
     LOG(error) << "NotFoundHandler must have no arguments";
     return nullptr;
   }
-  return std::make_unique<NotFoundRequestHandlerArgs>();
+  return std::make_shared<NotFoundRequestHandlerArgs>();
 }
 
-NotFoundRequestHandler::NotFoundRequestHandler(std::string base_uri, std::shared_ptr<NotFoundRequestHandlerArgs> args) {}
+NotFoundRequestHandler::NotFoundRequestHandler(
+    std::string base_uri, std::shared_ptr<NotFoundRequestHandlerArgs> args) {}
 
 std::unique_ptr<Response> NotFoundRequestHandler::handle_request(
     const Request& req) {

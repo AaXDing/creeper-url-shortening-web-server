@@ -7,7 +7,8 @@
 
 class HealthRequestHandlerTest : public HealthRequestHandler {
  public:
-  HealthRequestHandlerTest(const std::string& a, const std::shared_ptr<HealthRequestHandlerArgs>& b)
+  HealthRequestHandlerTest(const std::string& a,
+                           const std::shared_ptr<HealthRequestHandlerArgs>& b)
       : HealthRequestHandler(a, b) {}
 
   Response call_handle_request(Request& req) {
@@ -19,7 +20,9 @@ class HealthRequestHandlerTest : public HealthRequestHandler {
 class HealthRequestHandlerTestFixture : public ::testing::Test {
  protected:
   std::shared_ptr<HealthRequestHandlerTest> handler =
-      std::make_shared<HealthRequestHandlerTest>("", std::make_shared<HealthRequestHandlerArgs>());
+      std::make_shared<HealthRequestHandlerTest>(
+          "", std::make_shared<HealthRequestHandlerArgs>());
+  std::shared_ptr<HealthRequestHandlerArgs> args;
   Request req;
   Response res;
   std::string request_str;
@@ -43,4 +46,25 @@ TEST_F(HealthRequestHandlerTestFixture, ValidHealthRequest) {
   EXPECT_EQ(res.version, "HTTP/1.1");
   EXPECT_EQ(res.content_type, "text/plain");
   EXPECT_EQ(res.body, "OK");
+}
+
+TEST_F(HealthRequestHandlerTestFixture, ValidHealthRequestWithArgs) {
+  bool success =
+      parser.parse("request_handler_testcases/valid_health_config", &config);
+  EXPECT_TRUE(success);
+  args = HealthRequestHandlerArgs::create_from_config(config.statements_[0]);
+  EXPECT_NE(args, nullptr);
+}
+
+TEST_F(HealthRequestHandlerTestFixture, InvalidHealthRequestWithArgs) {
+  bool success =
+      parser.parse("request_handler_testcases/invalid_health_config", &config);
+  EXPECT_TRUE(success);
+  args = HealthRequestHandlerArgs::create_from_config(config.statements_[0]);
+  EXPECT_EQ(args, nullptr);
+}
+
+TEST_F(HealthRequestHandlerTestFixture, GetType) {
+  EXPECT_EQ(handler->get_type(),
+            RequestHandler::HandlerType::HEALTH_REQUEST_HANDLER);
 }

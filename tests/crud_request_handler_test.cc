@@ -21,6 +21,11 @@ Request make_request(const std::string &method, const std::string &uri,
 }
 
 class CrudRequestHandlerTestFixture : public ::testing::Test {
+ public:
+  std::shared_ptr<CrudRequestHandlerArgs> test_args;
+  NginxConfigParser parser = NginxConfigParser();
+  NginxConfig config;
+
  protected:
   std::shared_ptr<SimEntityStorage> sim_entity_storage;
   std::string test_dir = "./test_crud_data";
@@ -329,4 +334,65 @@ TEST_F(CrudRequestHandlerTestFixture, DeleteNoID) {
   auto res = handler->handle_request(req);
 
   EXPECT_EQ(res->status_code, 405);
+}
+
+TEST_F(CrudRequestHandlerTestFixture, ValidAbsolutePathArgs) {
+  bool success = parser.parse(
+      "request_handler_testcases/crud_config_absolute_path", &config);
+  EXPECT_TRUE(success);
+  args = CrudRequestHandlerArgs::create_from_config(config.statements_[0]);
+  EXPECT_EQ(args->get_data_path(), "/usr/src/projects/creeper/data");
+}
+
+TEST_F(CrudRequestHandlerTestFixture, ValidRelativePathArgs) {
+  bool success = parser.parse(
+      "request_handler_testcases/crud_config_relative_path", &config);
+  EXPECT_TRUE(success);
+  args = CrudRequestHandlerArgs::create_from_config(config.statements_[0]);
+  EXPECT_EQ(args->get_data_path(), "/usr/src/projects/creeper/data");
+}
+
+TEST_F(CrudRequestHandlerTestFixture, InvalidAbsolutePathArgs) {
+  bool success = parser.parse(
+      "request_handler_testcases/crud_config_path_not_exist_absolute", &config);
+  EXPECT_TRUE(success);
+  args = CrudRequestHandlerArgs::create_from_config(config.statements_[0]);
+  EXPECT_EQ(args, nullptr);
+}
+
+TEST_F(CrudRequestHandlerTestFixture, InvalidRelativePathArgs) {
+  bool success = parser.parse(
+      "request_handler_testcases/crud_config_path_not_exist_relative", &config);
+  EXPECT_TRUE(success);
+  args = CrudRequestHandlerArgs::create_from_config(config.statements_[0]);
+  EXPECT_EQ(args, nullptr);
+}
+
+TEST_F(CrudRequestHandlerTestFixture, InvalidPathArgs) {
+  bool success = parser.parse(
+      "request_handler_testcases/crud_config_invalid_path", &config);
+  EXPECT_TRUE(success);
+  args = CrudRequestHandlerArgs::create_from_config(config.statements_[0]);
+  EXPECT_EQ(args, nullptr);
+}
+
+TEST_F(CrudRequestHandlerTestFixture, MissingPathArgs) {
+  bool success = parser.parse(
+      "request_handler_testcases/crud_config_missing_path", &config);
+  EXPECT_TRUE(success);
+  args = CrudRequestHandlerArgs::create_from_config(config.statements_[0]);
+  EXPECT_EQ(args, nullptr);
+}
+
+TEST_F(CrudRequestHandlerTestFixture, InvalidTrailingSlashArgs) {
+  bool success = parser.parse(
+      "request_handler_testcases/crud_config_trailing_slash", &config);
+  EXPECT_TRUE(success);
+  args = CrudRequestHandlerArgs::create_from_config(config.statements_[0]);
+  EXPECT_EQ(args, nullptr);
+}
+
+TEST_F(CrudRequestHandlerTestFixture, GetType) {
+  EXPECT_EQ(handler->get_type(),
+            RequestHandler::HandlerType::CRUD_REQUEST_HANDLER);
 }

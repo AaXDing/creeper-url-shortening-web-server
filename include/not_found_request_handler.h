@@ -17,10 +17,9 @@ class NotFoundRequestHandlerArgs : public RequestHandlerArgs {
 
 class NotFoundRequestHandler : public RequestHandler {
  public:
-  NotFoundRequestHandler(std::string base_uri, std::shared_ptr<NotFoundRequestHandlerArgs> args);
+  NotFoundRequestHandler(std::string base_uri,
+                         std::shared_ptr<NotFoundRequestHandlerArgs> args);
   std::unique_ptr<Response> handle_request(const Request& req) override;
-  static bool check_location(std::shared_ptr<NginxConfigStatement> statement,
-                             NginxLocation& location);
   RequestHandler::HandlerType get_type() const override;
 };
 

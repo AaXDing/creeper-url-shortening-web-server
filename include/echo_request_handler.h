@@ -23,10 +23,9 @@ class EchoRequestHandler : public RequestHandler {
       It inherits from RequestHandler and implements the handle_request method.
   */
  public:
-  EchoRequestHandler(std::string base_uri, std::shared_ptr<EchoRequestHandlerArgs> args);
+  EchoRequestHandler(std::string base_uri,
+                     std::shared_ptr<EchoRequestHandlerArgs> args);
   std::unique_ptr<Response> handle_request(const Request& req) override;
-  static bool check_location(std::shared_ptr<NginxConfigStatement> statement,
-                             NginxLocation& location);
   RequestHandler::HandlerType get_type() const override;
   friend class EchoRequestHandlerTest;
 };

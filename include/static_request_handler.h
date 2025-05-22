@@ -21,11 +21,10 @@ class StaticRequestHandlerArgs : public RequestHandlerArgs {
 };
 class StaticRequestHandler : public RequestHandler {
  public:
-  StaticRequestHandler(std::string base_uri, std::shared_ptr<StaticRequestHandlerArgs> args);
+  StaticRequestHandler(std::string base_uri,
+                       std::shared_ptr<StaticRequestHandlerArgs> args);
   // Handle the Request and return Response
   std::unique_ptr<Response> handle_request(const Request& req) override;
-  static bool check_location(std::shared_ptr<NginxConfigStatement> statement,
-                             NginxLocation& location);
   RequestHandler::HandlerType get_type() const override;
 
   friend class StaticRequestHandlerTest;

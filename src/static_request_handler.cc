@@ -8,7 +8,8 @@
 #include "registry.h"
 #include "request_handler.h"
 
-REGISTER_HANDLER("StaticHandler", StaticRequestHandler, StaticRequestHandlerArgs);
+REGISTER_HANDLER("StaticHandler", StaticRequestHandler,
+                 StaticRequestHandlerArgs);
 
 StaticRequestHandlerArgs::StaticRequestHandlerArgs(std::string root_path)
     : root_path_(std::move(root_path)) {}
@@ -51,7 +52,7 @@ StaticRequestHandlerArgs::create_from_config(
         return nullptr;
       }
     }
-    return std::make_unique<StaticRequestHandlerArgs>(root_path);
+    return std::make_shared<StaticRequestHandlerArgs>(root_path);
   }
 
   LOG(error) << "StaticHandler must have exactly one argument with "
@@ -63,9 +64,10 @@ std::string StaticRequestHandlerArgs::get_root_path() const {
   return root_path_;
 }
 
-StaticRequestHandler::StaticRequestHandler(std::string base_uri,
-                                           std::shared_ptr<StaticRequestHandlerArgs> args)
-    : base_uri_(std::move(base_uri)), root_path_(std::move(args->get_root_path())) {}
+StaticRequestHandler::StaticRequestHandler(
+    std::string base_uri, std::shared_ptr<StaticRequestHandlerArgs> args)
+    : base_uri_(std::move(base_uri)),
+      root_path_(std::move(args->get_root_path())) {}
 
 std::unique_ptr<Response> StaticRequestHandler::handle_request(
     const Request &req) {

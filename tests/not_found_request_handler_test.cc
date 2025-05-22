@@ -7,7 +7,9 @@
 
 class NotFoundRequestHandlerTest : public NotFoundRequestHandler {
  public:
-  NotFoundRequestHandlerTest(const std::string& a, const std::shared_ptr<NotFoundRequestHandlerArgs>& b)
+  NotFoundRequestHandlerTest(
+      const std::string& a,
+      const std::shared_ptr<NotFoundRequestHandlerArgs>& b)
       : NotFoundRequestHandler(a, b) {}
 
   Response call_handle_request(Request& req) {
@@ -19,7 +21,9 @@ class NotFoundRequestHandlerTest : public NotFoundRequestHandler {
 class NotFoundRequestHandlerTestFixture : public ::testing::Test {
  protected:
   std::shared_ptr<NotFoundRequestHandlerTest> handler =
-      std::make_shared<NotFoundRequestHandlerTest>("", std::make_shared<NotFoundRequestHandlerArgs>());
+      std::make_shared<NotFoundRequestHandlerTest>(
+          "", std::make_shared<NotFoundRequestHandlerArgs>());
+  std::shared_ptr<NotFoundRequestHandlerArgs> args;
   Request req;
   Response res;
   NginxConfigParser parser = NginxConfigParser();
@@ -60,6 +64,22 @@ TEST_F(NotFoundRequestHandlerTestFixture, InvalidRequestNotFound) {
             HTTP_VERSION);  // Should use default version for invalid requests
   EXPECT_EQ(res.content_type, "text/plain");
   EXPECT_EQ(res.body, "404 Not Found");
+}
+
+TEST_F(NotFoundRequestHandlerTestFixture, ValidRequestNotFoundArgs) {
+  bool success =
+      parser.parse("request_handler_testcases/valid_not_found_config", &config);
+  EXPECT_TRUE(success);
+  args = NotFoundRequestHandlerArgs::create_from_config(config.statements_[0]);
+  EXPECT_NE(args, nullptr);
+}
+
+TEST_F(NotFoundRequestHandlerTestFixture, InvalidRequestNotFoundArgs) {
+  bool success = parser.parse(
+      "request_handler_testcases/invalid_not_found_config", &config);
+  EXPECT_TRUE(success);
+  args = NotFoundRequestHandlerArgs::create_from_config(config.statements_[0]);
+  EXPECT_EQ(args, nullptr);
 }
 
 TEST_F(NotFoundRequestHandlerTestFixture, GetType) {

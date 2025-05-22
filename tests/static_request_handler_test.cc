@@ -8,7 +8,9 @@
 class StaticRequestHandlerTest : public StaticRequestHandler {
  public:
   StaticRequestHandlerTest(std::string base_uri, std::string root_path)
-      : StaticRequestHandler(std::move(base_uri), std::make_shared<StaticRequestHandlerArgs>(root_path)) {}
+      : StaticRequestHandler(
+            std::move(base_uri),
+            std::make_shared<StaticRequestHandlerArgs>(root_path)) {}
 
   Response call_handle_request(Request& req) {
     std::unique_ptr<Response> p = handle_request(req);
@@ -29,6 +31,7 @@ class StaticRequestHandlerTestFixture : public ::testing::Test {
   std::string base_uri = "/static";
   std::string root_path = "../data";
   std::unique_ptr<StaticRequestHandler> handler;
+  std::shared_ptr<StaticRequestHandlerArgs> args;
   StaticRequestHandlerTest test_handler =
       StaticRequestHandlerTest(base_uri, root_path);
   Request req;
@@ -200,4 +203,62 @@ TEST_F(StaticRequestHandlerTestFixture, FilePathPdfFile) {
 TEST_F(StaticRequestHandlerTestFixture, GetType) {
   EXPECT_EQ(test_handler.get_type(),
             RequestHandler::HandlerType::STATIC_REQUEST_HANDLER);
+}
+
+TEST_F(StaticRequestHandlerTestFixture, ValidAbsolutePathArgs) {
+  bool success = parser.parse(
+      "request_handler_testcases/static_config_absolute_root", &config);
+  EXPECT_TRUE(success);
+  args = StaticRequestHandlerArgs::create_from_config(config.statements_[0]);
+  EXPECT_EQ(args->get_root_path(), "/usr/src/projects/creeper/data");
+}
+
+TEST_F(StaticRequestHandlerTestFixture, ValidRelativePathArgs) {
+  bool success = parser.parse(
+      "request_handler_testcases/static_config_relative_root", &config);
+  EXPECT_TRUE(success);
+  args = StaticRequestHandlerArgs::create_from_config(config.statements_[0]);
+  EXPECT_EQ(args->get_root_path(), "/usr/src/projects/creeper/data");
+}
+
+TEST_F(StaticRequestHandlerTestFixture, InvalidAbsolutePathArgs) {
+  bool success = parser.parse(
+      "request_handler_testcases/static_config_path_not_exist_absolute",
+      &config);
+  EXPECT_TRUE(success);
+  args = StaticRequestHandlerArgs::create_from_config(config.statements_[0]);
+  EXPECT_EQ(args, nullptr);
+}
+
+TEST_F(StaticRequestHandlerTestFixture, InvalidRelativePathArgs) {
+  bool success = parser.parse(
+      "request_handler_testcases/static_config_path_not_exist_relative",
+      &config);
+  EXPECT_TRUE(success);
+  args = StaticRequestHandlerArgs::create_from_config(config.statements_[0]);
+  EXPECT_EQ(args, nullptr);
+}
+
+TEST_F(StaticRequestHandlerTestFixture, InvalidRootArgs) {
+  bool success = parser.parse(
+      "request_handler_testcases/static_config_invalid_root", &config);
+  EXPECT_TRUE(success);
+  args = StaticRequestHandlerArgs::create_from_config(config.statements_[0]);
+  EXPECT_EQ(args, nullptr);
+}
+
+TEST_F(StaticRequestHandlerTestFixture, MissingRootArgs) {
+  bool success = parser.parse(
+      "request_handler_testcases/static_config_missing_root", &config);
+  EXPECT_TRUE(success);
+  args = StaticRequestHandlerArgs::create_from_config(config.statements_[0]);
+  EXPECT_EQ(args, nullptr);
+}
+
+TEST_F(StaticRequestHandlerTestFixture, InvalidTrailingSlashArgs) {
+  bool success = parser.parse(
+      "request_handler_testcases/static_config_trailing_slash", &config);
+  EXPECT_TRUE(success);
+  args = StaticRequestHandlerArgs::create_from_config(config.statements_[0]);
+  EXPECT_EQ(args, nullptr);
 }

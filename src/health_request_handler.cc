@@ -4,20 +4,23 @@
 #include "logging.h"
 #include "registry.h"
 
-REGISTER_HANDLER("HealthHandler", HealthRequestHandler, HealthRequestHandlerArgs);
+REGISTER_HANDLER("HealthHandler", HealthRequestHandler,
+                 HealthRequestHandlerArgs);
 
 HealthRequestHandlerArgs::HealthRequestHandlerArgs() {}
 
-std::shared_ptr<HealthRequestHandlerArgs> HealthRequestHandlerArgs::create_from_config(
+std::shared_ptr<HealthRequestHandlerArgs>
+HealthRequestHandlerArgs::create_from_config(
     std::shared_ptr<NginxConfigStatement> statement) {
   if (statement->child_block_->statements_.size() != 0) {
     LOG(error) << "HealthHandler must have no arguments";
     return nullptr;
   }
-  return std::make_unique<HealthRequestHandlerArgs>();
+  return std::make_shared<HealthRequestHandlerArgs>();
 }
 
-HealthRequestHandler::HealthRequestHandler(std::string base_uri, std::shared_ptr<HealthRequestHandlerArgs> args) {}
+HealthRequestHandler::HealthRequestHandler(
+    std::string base_uri, std::shared_ptr<HealthRequestHandlerArgs> args) {}
 
 std::unique_ptr<Response> HealthRequestHandler::handle_request(
     const Request& req) {

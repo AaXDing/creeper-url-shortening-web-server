@@ -1,0 +1,3 @@
+location /health HealthHandler {
+    root ../data;
+}

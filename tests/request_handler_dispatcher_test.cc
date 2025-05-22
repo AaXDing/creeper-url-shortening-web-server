@@ -39,8 +39,7 @@ TEST_F(RequestHandlerDispatcherTestFixtrue, StaticHandler) {
   parser.parse("dispatcher_testcases/static_handler", &config);
   dispatcher = std::make_shared<RequestHandlerDispatcher>(config);
   auto handler_type = dispatcher->get_handler(req)->get_type();
-  EXPECT_EQ(handler_type,
-            RequestHandler::HandlerType::STATIC_REQUEST_HANDLER);
+  EXPECT_EQ(handler_type, RequestHandler::HandlerType::STATIC_REQUEST_HANDLER);
 }
 
 TEST_F(RequestHandlerDispatcherTestFixtrue, EchoHandlerWithTrailingSlash) {

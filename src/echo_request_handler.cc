@@ -10,16 +10,18 @@ REGISTER_HANDLER("EchoHandler", EchoRequestHandler, EchoRequestHandlerArgs);
 
 EchoRequestHandlerArgs::EchoRequestHandlerArgs() {}
 
-std::shared_ptr<EchoRequestHandlerArgs> EchoRequestHandlerArgs::create_from_config(
+std::shared_ptr<EchoRequestHandlerArgs>
+EchoRequestHandlerArgs::create_from_config(
     std::shared_ptr<NginxConfigStatement> statement) {
   if (statement->child_block_->statements_.size() != 0) {
     LOG(error) << "EchoHandler must have no arguments";
     return nullptr;
   }
-  return std::make_unique<EchoRequestHandlerArgs>();
+  return std::make_shared<EchoRequestHandlerArgs>();
 }
 
-EchoRequestHandler::EchoRequestHandler(std::string base_uri, std::shared_ptr<EchoRequestHandlerArgs> args) {}
+EchoRequestHandler::EchoRequestHandler(
+    std::string base_uri, std::shared_ptr<EchoRequestHandlerArgs> args) {}
 
 std::unique_ptr<Response> EchoRequestHandler::handle_request(
     const Request& req) {

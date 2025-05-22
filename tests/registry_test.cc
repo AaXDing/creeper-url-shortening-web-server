@@ -11,7 +11,8 @@ typedef std::function<std::shared_ptr<RequestHandlerArgs>(
     std::shared_ptr<NginxConfigStatement>)>
     CreateFromConfigFactory;
 typedef std::unordered_map<std::string, RequestHandlerFactory> FactoryMap;
-typedef std::unordered_map<std::string, CreateFromConfigFactory> CreateFromConfigMap;
+typedef std::unordered_map<std::string, CreateFromConfigFactory>
+    CreateFromConfigMap;
 
 class RegistryTest : public ::testing::Test {};
 

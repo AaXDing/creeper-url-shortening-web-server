@@ -21,11 +21,10 @@ REGISTER_HANDLER("CrudHandler", CrudRequestHandler, CrudRequestHandlerArgs);
 CrudRequestHandlerArgs::CrudRequestHandlerArgs(std::string data_path)
     : data_path_(std::move(data_path)) {}
 
-std::string CrudRequestHandlerArgs::get_data_path() const {
-  return data_path_;
-}
+std::string CrudRequestHandlerArgs::get_data_path() const { return data_path_; }
 
-std::shared_ptr<CrudRequestHandlerArgs> CrudRequestHandlerArgs::create_from_config(
+std::shared_ptr<CrudRequestHandlerArgs>
+CrudRequestHandlerArgs::create_from_config(
     std::shared_ptr<NginxConfigStatement> statement) {
   if (!(statement->child_block_ &&
         statement->child_block_->statements_.size() == 1)) {
@@ -46,23 +45,38 @@ std::shared_ptr<CrudRequestHandlerArgs> CrudRequestHandlerArgs::create_from_conf
     return nullptr;
   }
 
-  // Normalize to absolute path
-  boost::filesystem::path abs_path =
-      boost::filesystem::absolute(data_path);
-
-  // If path exists, ensure it's a directory
-  if (boost::filesystem::exists(abs_path)) {
-    if (!boost::filesystem::is_directory(abs_path)) {
-      LOG(error) << "CrudHandler data_path exists but is not a directory: "
-                 << abs_path;
+  // normalize path if it is a relative path
+  if (boost::filesystem::path(data_path).is_relative()) {
+    try {
+      data_path = boost::filesystem::canonical(data_path).string();
+    } catch (const boost::filesystem::filesystem_error &e) {
+      LOG(error) << "Data path does not exist: " << data_path;
+      return nullptr;
+    }
+  } else {
+    try {
+      // Check if absolute path exists and is accessible
+      if (!boost::filesystem::exists(data_path)) {
+        LOG(error) << "Data path does not exist: " << data_path;
+        return nullptr;
+      }
+      // Convert to canonical form to resolve any symlinks and normalize
+      // the path
+      data_path = boost::filesystem::canonical(data_path).string();
+    } catch (const boost::filesystem::filesystem_error &e) {
+      LOG(error) << "Error accessing data path: " << data_path << " - "
+                 << e.what();
       return nullptr;
     }
   }
-  return std::make_unique<CrudRequestHandlerArgs>(abs_path.string());
+
+  return std::make_shared<CrudRequestHandlerArgs>(data_path);
 }
 
-CrudRequestHandler::CrudRequestHandler(std::string base_uri, std::shared_ptr<CrudRequestHandlerArgs> args)
-    : base_uri_(std::move(base_uri)), data_path_(std::move(args->get_data_path())) {
+CrudRequestHandler::CrudRequestHandler(
+    std::string base_uri, std::shared_ptr<CrudRequestHandlerArgs> args)
+    : base_uri_(std::move(base_uri)),
+      data_path_(std::move(args->get_data_path())) {
   std::filesystem::create_directories(data_path_);
   storage_ = std::make_shared<RealEntityStorage>(data_path_);
 }

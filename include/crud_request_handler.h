@@ -23,10 +23,9 @@ class CrudRequestHandlerArgs : public RequestHandlerArgs {
 };
 class CrudRequestHandler : public RequestHandler {
  public:
-  CrudRequestHandler(std::string base_uri, std::shared_ptr<CrudRequestHandlerArgs> args);
+  CrudRequestHandler(std::string base_uri,
+                     std::shared_ptr<CrudRequestHandlerArgs> args);
   std::unique_ptr<Response> handle_request(const Request &req) override;
-  static bool check_location(std::shared_ptr<NginxConfigStatement> statement,
-                             NginxLocation &location);
   RequestHandler::HandlerType get_type() const override;
 
   std::string extract_entity(const std::string &uri) const;

@@ -50,11 +50,10 @@ bool RequestHandlerDispatcher::add_route(const NginxLocation& location) {
   RequestHandlerFactoryPtr factory_ptr =
       Registry::get_handler_factory(handler_type);
 
-  routes_[uri] =
-      std::make_shared<std::tuple<std::shared_ptr<RequestHandlerFactory>,
-                                   std::string,
-                                   std::shared_ptr<RequestHandlerArgs>>>(
-          std::make_tuple(factory_ptr, uri, location.args));
+  routes_[uri] = std::make_shared<
+      std::tuple<std::shared_ptr<RequestHandlerFactory>, std::string,
+                 std::shared_ptr<RequestHandlerArgs>>>(
+      std::make_tuple(factory_ptr, uri, location.args));
   return true;
 }
 
@@ -68,7 +67,8 @@ std::unique_ptr<RequestHandler> RequestHandlerDispatcher::get_handler(
   RequestHandlerFactoryPtr factory_ptr = std::get<0>(*factory_and_workers_ptr);
   LOG(debug) << "Factory: " << factory_ptr;
   std::string uri = std::get<1>(*factory_and_workers_ptr);
-  std::shared_ptr<RequestHandlerArgs> args = std::get<2>(*factory_and_workers_ptr);
+  std::shared_ptr<RequestHandlerArgs> args =
+      std::get<2>(*factory_and_workers_ptr);
   LOG(debug) << "Args: " << args;
   return (*factory_ptr)(uri, args);
 }

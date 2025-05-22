@@ -8,9 +8,16 @@
 #include "http_header.h"
 #include "request_handler.h"
 
+class HealthRequestHandlerArgs : public RequestHandlerArgs {
+ public:
+  HealthRequestHandlerArgs();
+  static std::shared_ptr<HealthRequestHandlerArgs> create_from_config(
+      std::shared_ptr<NginxConfigStatement> statement);
+};
+
 class HealthRequestHandler : public RequestHandler {
  public:
-  HealthRequestHandler(const std::string& arg1, const std::string& arg2);
+  HealthRequestHandler(std::string base_uri, std::shared_ptr<HealthRequestHandlerArgs> args);
   std::unique_ptr<Response> handle_request(const Request& req) override;
   static bool check_location(std::shared_ptr<NginxConfigStatement> statement,
                              NginxLocation& location);

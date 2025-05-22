@@ -7,7 +7,7 @@
 
 class NotFoundRequestHandlerTest : public NotFoundRequestHandler {
  public:
-  NotFoundRequestHandlerTest(const std::string& a, const std::string& b)
+  NotFoundRequestHandlerTest(const std::string& a, const std::shared_ptr<NotFoundRequestHandlerArgs>& b)
       : NotFoundRequestHandler(a, b) {}
 
   Response call_handle_request(Request& req) {
@@ -19,7 +19,7 @@ class NotFoundRequestHandlerTest : public NotFoundRequestHandler {
 class NotFoundRequestHandlerTestFixture : public ::testing::Test {
  protected:
   std::shared_ptr<NotFoundRequestHandlerTest> handler =
-      std::make_shared<NotFoundRequestHandlerTest>("", "");
+      std::make_shared<NotFoundRequestHandlerTest>("", std::make_shared<NotFoundRequestHandlerArgs>());
   Request req;
   Response res;
   NginxConfigParser parser = NginxConfigParser();
@@ -66,22 +66,4 @@ TEST_F(NotFoundRequestHandlerTestFixture, GetType) {
   // Test the get_type method
   EXPECT_TRUE(handler->get_type() ==
               RequestHandler::HandlerType::NOT_FOUND_REQUEST_HANDLER);
-}
-
-TEST_F(NotFoundRequestHandlerTestFixture, CheckLocationValid) {
-  bool success =
-      parser.parse("request_handler_testcases/valid_not_found_config", &config);
-  EXPECT_TRUE(success);
-  NginxLocation location;
-  EXPECT_TRUE(
-      NotFoundRequestHandler::check_location(config.statements_[0], location));
-}
-
-TEST_F(NotFoundRequestHandlerTestFixture, CheckLocationInvalid) {
-  bool success = parser.parse(
-      "request_handler_testcases/invalid_not_found_config", &config);
-  EXPECT_TRUE(success);
-  NginxLocation location;
-  EXPECT_FALSE(
-      NotFoundRequestHandler::check_location(config.statements_[0], location));
 }

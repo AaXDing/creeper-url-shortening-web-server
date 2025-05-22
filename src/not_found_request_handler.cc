@@ -3,10 +3,20 @@
 #include "logging.h"
 #include "registry.h"
 
-REGISTER_HANDLER("NotFoundHandler", NotFoundRequestHandler);
+REGISTER_HANDLER("NotFoundHandler", NotFoundRequestHandler, NotFoundRequestHandlerArgs);
 
-NotFoundRequestHandler::NotFoundRequestHandler(const std::string& arg1,
-                                               const std::string& arg2) {}
+NotFoundRequestHandlerArgs::NotFoundRequestHandlerArgs() {}
+
+std::shared_ptr<NotFoundRequestHandlerArgs> NotFoundRequestHandlerArgs::create_from_config(
+    std::shared_ptr<NginxConfigStatement> statement) {
+  if (statement->child_block_->statements_.size() != 0) {
+    LOG(error) << "NotFoundHandler must have no arguments";
+    return nullptr;
+  }
+  return std::make_unique<NotFoundRequestHandlerArgs>();
+}
+
+NotFoundRequestHandler::NotFoundRequestHandler(std::string base_uri, std::shared_ptr<NotFoundRequestHandlerArgs> args) {}
 
 std::unique_ptr<Response> NotFoundRequestHandler::handle_request(
     const Request& req) {
@@ -22,16 +32,6 @@ std::unique_ptr<Response> NotFoundRequestHandler::handle_request(
   res->body = "404 Not Found";
 
   return res;
-}
-
-bool NotFoundRequestHandler::check_location(
-    std::shared_ptr<NginxConfigStatement> statement, NginxLocation& location) {
-  // NotFoundHandler doesn't require any configuration
-  if (statement->child_block_->statements_.size() != 0) {
-    LOG(error) << "NotFoundHandler must have no arguments";
-    return false;
-  }
-  return true;
 }
 
 RequestHandler::HandlerType NotFoundRequestHandler::get_type() const {

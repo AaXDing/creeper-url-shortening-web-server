@@ -8,9 +8,16 @@
 #include "http_header.h"
 #include "request_handler.h"
 
+class NotFoundRequestHandlerArgs : public RequestHandlerArgs {
+ public:
+  NotFoundRequestHandlerArgs();
+  static std::shared_ptr<NotFoundRequestHandlerArgs> create_from_config(
+      std::shared_ptr<NginxConfigStatement> statement);
+};
+
 class NotFoundRequestHandler : public RequestHandler {
  public:
-  NotFoundRequestHandler(const std::string& arg1, const std::string& arg2);
+  NotFoundRequestHandler(std::string base_uri, std::shared_ptr<NotFoundRequestHandlerArgs> args);
   std::unique_ptr<Response> handle_request(const Request& req) override;
   static bool check_location(std::shared_ptr<NginxConfigStatement> statement,
                              NginxLocation& location);

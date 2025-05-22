@@ -6,11 +6,20 @@
 #include "logging.h"
 #include "registry.h"
 
-REGISTER_HANDLER("EchoHandler", EchoRequestHandler);
+REGISTER_HANDLER("EchoHandler", EchoRequestHandler, EchoRequestHandlerArgs);
 
-// dummy constructor
-EchoRequestHandler::EchoRequestHandler(const std::string& arg1,
-                                       const std::string& arg2) {}
+EchoRequestHandlerArgs::EchoRequestHandlerArgs() {}
+
+std::shared_ptr<EchoRequestHandlerArgs> EchoRequestHandlerArgs::create_from_config(
+    std::shared_ptr<NginxConfigStatement> statement) {
+  if (statement->child_block_->statements_.size() != 0) {
+    LOG(error) << "EchoHandler must have no arguments";
+    return nullptr;
+  }
+  return std::make_unique<EchoRequestHandlerArgs>();
+}
+
+EchoRequestHandler::EchoRequestHandler(std::string base_uri, std::shared_ptr<EchoRequestHandlerArgs> args) {}
 
 std::unique_ptr<Response> EchoRequestHandler::handle_request(
     const Request& req) {
@@ -31,15 +40,7 @@ std::unique_ptr<Response> EchoRequestHandler::handle_request(
   return res;  // Return the response
 }
 
-bool EchoRequestHandler::check_location(
-    std::shared_ptr<NginxConfigStatement> statement, NginxLocation& location) {
-  if (statement->child_block_->statements_.size() != 0) {
-    LOG(error) << "EchoHandler must have no arguments";
-    return false;
-  }
-  return true;
-}
-
 RequestHandler::HandlerType EchoRequestHandler::get_type() const {
+  LOG(debug) << "EchoRequestHandler::get_type";
   return RequestHandler::HandlerType::ECHO_REQUEST_HANDLER;
 }

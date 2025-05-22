@@ -8,6 +8,13 @@
 #include "http_header.h"
 #include "request_handler.h"
 
+class EchoRequestHandlerArgs : public RequestHandlerArgs {
+ public:
+  EchoRequestHandlerArgs();
+  static std::shared_ptr<EchoRequestHandlerArgs> create_from_config(
+      std::shared_ptr<NginxConfigStatement> statement);
+};
+
 class EchoRequestHandlerTest;  // forward declaration for test fixture
 
 class EchoRequestHandler : public RequestHandler {
@@ -16,7 +23,7 @@ class EchoRequestHandler : public RequestHandler {
       It inherits from RequestHandler and implements the handle_request method.
   */
  public:
-  EchoRequestHandler(const std::string& arg1, const std::string& arg2);
+  EchoRequestHandler(std::string base_uri, std::shared_ptr<EchoRequestHandlerArgs> args);
   std::unique_ptr<Response> handle_request(const Request& req) override;
   static bool check_location(std::shared_ptr<NginxConfigStatement> statement,
                              NginxLocation& location);

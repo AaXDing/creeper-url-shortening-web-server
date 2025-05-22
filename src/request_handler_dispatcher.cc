@@ -30,6 +30,7 @@ bool RequestHandlerDispatcher::add_routes(const NginxConfig& config) {
       LOG(warning) << "Dispatcher failed to add route for URI "
                    << location.path;
     }
+    LOG(info) << "Added route: " << location.path;
   }
   return true;
 }
@@ -51,8 +52,9 @@ bool RequestHandlerDispatcher::add_route(const NginxLocation& location) {
 
   routes_[uri] =
       std::make_shared<std::tuple<std::shared_ptr<RequestHandlerFactory>,
-                                  std::string, std::string>>(
-          std::make_tuple(factory_ptr, uri, location.root.value_or("")));
+                                   std::string,
+                                   std::shared_ptr<RequestHandlerArgs>>>(
+          std::make_tuple(factory_ptr, uri, location.args));
   return true;
 }
 
@@ -60,14 +62,15 @@ std::unique_ptr<RequestHandler> RequestHandlerDispatcher::get_handler(
     const Request& req) {
   std::string url = req.uri;
   std::string location = longest_prefix_match(url);
-
+  LOG(debug) << "Location: " << location;
   RequestHandlerFactoryAndWorkersPtr factory_and_workers_ptr =
       routes_[location];
   RequestHandlerFactoryPtr factory_ptr = std::get<0>(*factory_and_workers_ptr);
+  LOG(debug) << "Factory: " << factory_ptr;
   std::string uri = std::get<1>(*factory_and_workers_ptr);
-  std::string root = std::get<2>(*factory_and_workers_ptr);
-
-  return (*factory_ptr)(uri, root);
+  std::shared_ptr<RequestHandlerArgs> args = std::get<2>(*factory_and_workers_ptr);
+  LOG(debug) << "Args: " << args;
+  return (*factory_ptr)(uri, args);
 }
 
 std::string RequestHandlerDispatcher::longest_prefix_match(

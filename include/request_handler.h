@@ -5,6 +5,12 @@
 #include <string>
 
 #include "http_header.h"
+
+class RequestHandlerArgs {
+ public:
+  virtual ~RequestHandlerArgs() = default;
+};
+
 class RequestHandler {
   /*
       This is an abstract class that defines the interface for handling

@@ -4,14 +4,14 @@
 #include "gtest/gtest.h"
 
 // Type aliases to improve readability
-typedef std::function<std::unique_ptr<RequestHandler>(const std::string&,
-                                                      const std::string&)>
-    HandlerFactory;
-typedef std::function<bool(std::shared_ptr<NginxConfigStatement>,
-                           NginxLocation&)>
-    LocationCheckFn;
-typedef std::unordered_map<std::string, HandlerFactory> FactoryMap;
-typedef std::unordered_map<std::string, LocationCheckFn> CheckLocationMap;
+typedef std::function<std::unique_ptr<RequestHandler>(
+    const std::string&, std::shared_ptr<RequestHandlerArgs>)>
+    RequestHandlerFactory;
+typedef std::function<std::shared_ptr<RequestHandlerArgs>(
+    std::shared_ptr<NginxConfigStatement>)>
+    CreateFromConfigFactory;
+typedef std::unordered_map<std::string, RequestHandlerFactory> FactoryMap;
+typedef std::unordered_map<std::string, CreateFromConfigFactory> CreateFromConfigMap;
 
 class RegistryTest : public ::testing::Test {};
 
@@ -22,43 +22,43 @@ class RegistryTest : public ::testing::Test {};
 TEST_F(RegistryTest, MapSizes) {
   // Get maps
   const FactoryMap& factory_map = Registry::get_factory_map();
-  const CheckLocationMap& check_location_map =
-      Registry::get_check_location_map();
+  const CreateFromConfigMap& create_from_config_map =
+      Registry::get_create_from_config_map();
 
   // Maps should have at least one entry (EchoHandler)
   EXPECT_GE(factory_map.size(), 1);
-  EXPECT_GE(check_location_map.size(), 1);
+  EXPECT_GE(create_from_config_map.size(), 1);
 
   // Maps should have the same number of entries
-  EXPECT_EQ(factory_map.size(), check_location_map.size());
+  EXPECT_EQ(factory_map.size(), create_from_config_map.size());
 }
 
 TEST_F(RegistryTest, BuiltInFactoryRegistration) {
-  std::shared_ptr<HandlerFactory> factory =
+  std::shared_ptr<RequestHandlerFactory> factory =
       Registry::get_handler_factory("EchoHandler");
   ASSERT_NE(factory, nullptr);
 }
 
-TEST_F(RegistryTest, BuiltInCheckLocationRegistration) {
-  std::shared_ptr<LocationCheckFn> check_fn =
-      Registry::get_check_location("EchoHandler");
-  ASSERT_NE(check_fn, nullptr);
+TEST_F(RegistryTest, BuiltInCreateFromConfigRegistration) {
+  std::shared_ptr<CreateFromConfigFactory> create_from_config_fn =
+      Registry::get_create_from_config("EchoHandler");
+  ASSERT_NE(create_from_config_fn, nullptr);
 }
 
 TEST_F(RegistryTest, NonexistentFactory) {
   EXPECT_EQ(Registry::get_handler_factory("NoSuchHandler"), nullptr);
 }
 
-TEST_F(RegistryTest, NonexistentCheckLocation) {
-  EXPECT_EQ(Registry::get_check_location("NoSuchHandler"), nullptr);
+TEST_F(RegistryTest, NonexistentCreateFromConfig) {
+  EXPECT_EQ(Registry::get_create_from_config("NoSuchHandler"), nullptr);
 }
 
 TEST_F(RegistryTest, SingletonMaps) {
   // Both maps are singletons
   const FactoryMap& fm1 = Registry::get_factory_map();
   const FactoryMap& fm2 = Registry::get_factory_map();
-  const CheckLocationMap& cm1 = Registry::get_check_location_map();
-  const CheckLocationMap& cm2 = Registry::get_check_location_map();
+  const CreateFromConfigMap& cm1 = Registry::get_create_from_config_map();
+  const CreateFromConfigMap& cm2 = Registry::get_create_from_config_map();
 
   EXPECT_EQ(&fm1, &fm2);
   EXPECT_EQ(&cm1, &cm2);

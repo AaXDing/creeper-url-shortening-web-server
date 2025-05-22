@@ -16,12 +16,53 @@
 #include "real_entity_storage.h"
 #include "registry.h"
 
-REGISTER_HANDLER("CrudHandler", CrudRequestHandler);
+REGISTER_HANDLER("CrudHandler", CrudRequestHandler, CrudRequestHandlerArgs);
 
-CrudRequestHandler::CrudRequestHandler(const std::string &base_uri,
-                                       const std::string &data_path) {
-  base_uri_ = base_uri;
-  data_path_ = data_path;
+CrudRequestHandlerArgs::CrudRequestHandlerArgs(std::string data_path)
+    : data_path_(std::move(data_path)) {}
+
+std::string CrudRequestHandlerArgs::get_data_path() const {
+  return data_path_;
+}
+
+std::shared_ptr<CrudRequestHandlerArgs> CrudRequestHandlerArgs::create_from_config(
+    std::shared_ptr<NginxConfigStatement> statement) {
+  if (!(statement->child_block_ &&
+        statement->child_block_->statements_.size() == 1)) {
+    LOG(error) << "CrudHandler must have exactly one child statement: "
+                  "data_path <path>;";
+    return nullptr;
+  }
+  auto data_path_stmt = statement->child_block_->statements_[0];
+  if (!(data_path_stmt->tokens_.size() == 2 &&
+        data_path_stmt->tokens_[0] == "data_path")) {
+    LOG(error) << "CrudHandler must have child statement: data_path <path>;";
+    return nullptr;
+  }
+  std::string data_path = data_path_stmt->tokens_[1];
+  // Error if data_path path has trailing slash (except for "/")
+  if (data_path.back() == '/' && data_path != "/") {
+    LOG(error) << "CrudHandler data_path path cannot have trailing slash";
+    return nullptr;
+  }
+
+  // Normalize to absolute path
+  boost::filesystem::path abs_path =
+      boost::filesystem::absolute(data_path);
+
+  // If path exists, ensure it's a directory
+  if (boost::filesystem::exists(abs_path)) {
+    if (!boost::filesystem::is_directory(abs_path)) {
+      LOG(error) << "CrudHandler data_path exists but is not a directory: "
+                 << abs_path;
+      return nullptr;
+    }
+  }
+  return std::make_unique<CrudRequestHandlerArgs>(abs_path.string());
+}
+
+CrudRequestHandler::CrudRequestHandler(std::string base_uri, std::shared_ptr<CrudRequestHandlerArgs> args)
+    : base_uri_(std::move(base_uri)), data_path_(std::move(args->get_data_path())) {
   std::filesystem::create_directories(data_path_);
   storage_ = std::make_shared<RealEntityStorage>(data_path_);
 }
@@ -373,43 +414,6 @@ std::unique_ptr<Response> CrudRequestHandler::handle_request(
       res->body = "Unsupported operation or malformed request";
       return res;
   }
-}
-
-bool CrudRequestHandler::check_location(
-    std::shared_ptr<NginxConfigStatement> statement, NginxLocation &location) {
-  if (!(statement->child_block_ &&
-        statement->child_block_->statements_.size() == 1)) {
-    LOG(error) << "CrudHandler must have exactly one child statement: "
-                  "data_path <path>;";
-    return false;
-  }
-  auto data_path_stmt = statement->child_block_->statements_[0];
-  if (!(data_path_stmt->tokens_.size() == 2 &&
-        data_path_stmt->tokens_[0] == "data_path")) {
-    LOG(error) << "CrudHandler must have child statement: data_path <path>;";
-    return false;
-  }
-  location.root = data_path_stmt->tokens_[1];
-  // Error if data_path path has trailing slash (except for "/")
-  if (location.root.value().back() == '/' && location.root.value() != "/") {
-    LOG(error) << "CrudHandler data_path path cannot have trailing slash";
-    return false;
-  }
-
-  // Normalize to absolute path
-  boost::filesystem::path abs_path =
-      boost::filesystem::absolute(location.root.value());
-  location.root = abs_path.string();
-
-  // If path exists, ensure it's a directory
-  if (boost::filesystem::exists(abs_path)) {
-    if (!boost::filesystem::is_directory(abs_path)) {
-      LOG(error) << "CrudHandler data_path exists but is not a directory: "
-                 << abs_path;
-      return false;
-    }
-  }
-  return true;
 }
 
 RequestHandler::HandlerType CrudRequestHandler::get_type() const {

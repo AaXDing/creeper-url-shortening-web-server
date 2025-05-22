@@ -25,13 +25,15 @@ class CrudRequestHandlerTestFixture : public ::testing::Test {
   std::shared_ptr<SimEntityStorage> sim_entity_storage;
   std::string test_dir = "./test_crud_data";
   std::string base_uri = "/api";
+  std::shared_ptr<CrudRequestHandlerArgs> args;
   std::unique_ptr<CrudRequestHandler> handler;
 
   void SetUp() override {
     std::filesystem::remove_all(test_dir);
     std::filesystem::create_directories(test_dir);
     sim_entity_storage = std::make_shared<SimEntityStorage>();
-    handler = std::make_unique<CrudRequestHandler>(base_uri, test_dir);
+    args = std::make_shared<CrudRequestHandlerArgs>(test_dir);
+    handler = std::make_unique<CrudRequestHandler>(base_uri, args);
     handler->set_storage(sim_entity_storage);
   }
 

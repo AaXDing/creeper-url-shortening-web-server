@@ -7,7 +7,7 @@
 
 class HealthRequestHandlerTest : public HealthRequestHandler {
  public:
-  HealthRequestHandlerTest(const std::string& a, const std::string& b)
+  HealthRequestHandlerTest(const std::string& a, const std::shared_ptr<HealthRequestHandlerArgs>& b)
       : HealthRequestHandler(a, b) {}
 
   Response call_handle_request(Request& req) {
@@ -19,7 +19,7 @@ class HealthRequestHandlerTest : public HealthRequestHandler {
 class HealthRequestHandlerTestFixture : public ::testing::Test {
  protected:
   std::shared_ptr<HealthRequestHandlerTest> handler =
-      std::make_shared<HealthRequestHandlerTest>("", "");
+      std::make_shared<HealthRequestHandlerTest>("", std::make_shared<HealthRequestHandlerArgs>());
   Request req;
   Response res;
   std::string request_str;

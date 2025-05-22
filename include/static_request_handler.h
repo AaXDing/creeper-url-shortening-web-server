@@ -9,9 +9,19 @@
 #include "request_handler.h"
 class StaticRequestHandlerTest;  // forward declaration for test fixture
 
+class StaticRequestHandlerArgs : public RequestHandlerArgs {
+ public:
+  StaticRequestHandlerArgs(std::string root_path);
+  static std::shared_ptr<StaticRequestHandlerArgs> create_from_config(
+      std::shared_ptr<NginxConfigStatement> statement);
+  std::string get_root_path() const;
+
+ private:
+  std::string root_path_;
+};
 class StaticRequestHandler : public RequestHandler {
  public:
-  StaticRequestHandler(std::string base_uri, std::string root_path);
+  StaticRequestHandler(std::string base_uri, std::shared_ptr<StaticRequestHandlerArgs> args);
   // Handle the Request and return Response
   std::unique_ptr<Response> handle_request(const Request& req) override;
   static bool check_location(std::shared_ptr<NginxConfigStatement> statement,

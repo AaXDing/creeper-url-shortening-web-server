@@ -8,6 +8,8 @@
 #include <string>
 #include <vector>
 
+#include "request_handler.h"
+
 class NginxConfig;
 
 // The parsed representation of a single config statement.
@@ -21,7 +23,7 @@ class NginxConfigStatement {
 struct NginxLocation {
   std::string path;
   std::string handler;
-  std::optional<std::string> root;
+  std::shared_ptr<RequestHandlerArgs> args;
 };
 
 struct NginxLocationResult {

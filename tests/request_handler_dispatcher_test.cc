@@ -23,8 +23,8 @@ TEST_F(RequestHandlerDispatcherTestFixtrue, EchoHandler) {
   req.uri = "/echo";
   parser.parse("dispatcher_testcases/echo_handler", &config);
   dispatcher = std::make_shared<RequestHandlerDispatcher>(config);
-  EXPECT_EQ(dispatcher->get_handler(req)->get_type(),
-            RequestHandler::HandlerType::ECHO_REQUEST_HANDLER);
+  auto handler_type = dispatcher->get_handler(req)->get_type();
+  EXPECT_EQ(handler_type, RequestHandler::HandlerType::ECHO_REQUEST_HANDLER);
 }
 
 TEST_F(RequestHandlerDispatcherTestFixtrue, InvalidHandler) {
@@ -38,7 +38,8 @@ TEST_F(RequestHandlerDispatcherTestFixtrue, StaticHandler) {
   req.uri = "/static1";
   parser.parse("dispatcher_testcases/static_handler", &config);
   dispatcher = std::make_shared<RequestHandlerDispatcher>(config);
-  EXPECT_EQ(dispatcher->get_handler(req)->get_type(),
+  auto handler_type = dispatcher->get_handler(req)->get_type();
+  EXPECT_EQ(handler_type,
             RequestHandler::HandlerType::STATIC_REQUEST_HANDLER);
 }
 

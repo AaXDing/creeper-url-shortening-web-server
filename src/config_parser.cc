@@ -105,19 +105,22 @@ NginxLocationResult NginxConfig::get_locations() const {
         }
       }
 
-      auto check_location_func = Registry::get_check_location(location.handler);
-      if (!check_location_func) {
+      auto create_from_config_func = Registry::get_create_from_config(location.handler);
+      if (!create_from_config_func) {
         LOG(error) << "Location handler not found: " << location.handler;
         result.valid = false;
         return result;
       }
 
-      if (!(*check_location_func)(statement, location)) {
+      auto args = (*create_from_config_func)(statement);
+      if (!args) {
         result.valid = false;
         return result;
       }
+
+      location.args = args;
       locations.push_back(location);
-      continue;
+      LOG(info) << "Added location: " << location.path << " with handler: " << location.handler;
     } else if (statement->tokens_.size() >= 1 &&
                statement->tokens_[0] == "location") {
       LOG(error) << "Invalid location handler: " << statement->to_string(0);
@@ -129,6 +132,7 @@ NginxLocationResult NginxConfig::get_locations() const {
 
   result.valid = true;
   result.locations = locations;
+  LOG(info) << "Locations: " << result.locations.size();
   return result;
 }
 

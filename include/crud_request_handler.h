@@ -10,9 +10,20 @@
 
 enum HTTP_Method { POST, GET, PUT, DELETE, INVALID_METHOD };
 
+class CrudRequestHandlerArgs : public RequestHandlerArgs {
+ public:
+  CrudRequestHandlerArgs(std::string data_path);
+  static std::shared_ptr<CrudRequestHandlerArgs> create_from_config(
+      std::shared_ptr<NginxConfigStatement> statement);
+  std::string get_data_path() const;
+
+ private:
+  std::string data_path_;
+  std::shared_ptr<IEntityStorage> storage_;
+};
 class CrudRequestHandler : public RequestHandler {
  public:
-  CrudRequestHandler(const std::string &base_uri, const std::string &data_path);
+  CrudRequestHandler(std::string base_uri, std::shared_ptr<CrudRequestHandlerArgs> args);
   std::unique_ptr<Response> handle_request(const Request &req) override;
   static bool check_location(std::shared_ptr<NginxConfigStatement> statement,
                              NginxLocation &location);

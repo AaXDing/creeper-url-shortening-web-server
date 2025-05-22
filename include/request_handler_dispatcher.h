@@ -16,7 +16,7 @@ using RequestHandlerFactoryPtr = std::shared_ptr<RequestHandlerFactory>;
 
 // Tuple contains: (factory_ptr, uri, root_path)
 using RequestHandlerFactoryAndWorkersPtr = std::shared_ptr<
-    std::tuple<RequestHandlerFactoryPtr, std::string, std::string>>;
+    std::tuple<RequestHandlerFactoryPtr, std::string, std::shared_ptr<RequestHandlerArgs>>>;
 
 class RequestHandlerDispatcher {
  public:

@@ -42,6 +42,14 @@ TEST_F(RequestHandlerDispatcherTestFixtrue, StaticHandler) {
   EXPECT_EQ(handler_type, RequestHandler::HandlerType::STATIC_REQUEST_HANDLER);
 }
 
+TEST_F(RequestHandlerDispatcherTestFixtrue, BlockingHandler) {
+  req.uri = "/sleep";
+  parser.parse("dispatcher_testcases/blocking_handler", &config);
+  dispatcher = std::make_shared<RequestHandlerDispatcher>(config);
+  auto handler_type = dispatcher->get_handler(req)->get_type();
+  EXPECT_EQ(handler_type, RequestHandler::HandlerType::BLOCKING_REQUEST_HANDLER);
+}
+
 TEST_F(RequestHandlerDispatcherTestFixtrue, EchoHandlerWithTrailingSlash) {
   req.uri = "/echo";
   parser.parse("dispatcher_testcases/echo_with_trailing_slashes_handler",

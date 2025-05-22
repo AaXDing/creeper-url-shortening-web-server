@@ -16,3 +16,6 @@ location /api CrudHandler {
 
 location /health HealthHandler {
 }
+
+location /sleep BlockingHandler {
+}

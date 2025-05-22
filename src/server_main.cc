@@ -13,6 +13,7 @@
 #include <boost/asio/signal_set.hpp>
 #include <cstdlib>
 #include <iostream>
+#include <boost/thread.hpp>
 
 #include "config_parser.h"
 #include "logging.h"
@@ -56,17 +57,42 @@ int main(int argc, char* argv[]) {
     Server s(io_service, port, config);
     LOG(info) << "Server object constructed";
 
-    boost::asio::signal_set signals(io_service, SIGINT, SIGTERM);
-    signals.async_wait(
-        [&](const boost::system::error_code& ec, int signal_number) {
-          if (!ec) {
-            LOG(info) << "Signal " << signal_number
-                      << " received, shutting down server";
-            io_service.stop();
-          }
-        });
+    // Create a pool of threads to run the io_service
+    std::vector<boost::thread> threads;
+    unsigned int num_threads = std::thread::hardware_concurrency();
+    if (num_threads == 0) {
+      num_threads =
+          4;  // Default to 4 threads if hardware_concurrency() returns 0
+    }
+    LOG(info) << "Starting " << num_threads << " worker threads";
 
-    io_service.run();
+    for (unsigned int i = 0; i < num_threads; ++i) {
+      threads.emplace_back([&io_service]() {
+        // io_service is captured by reference (&) because:
+        // 1. All threads need to share the same io_service instance to coordinate work
+        // 2. io_service is created in main() scope and outlives the threads
+        // 3. We need to be able to stop the io_service from any thread
+        try {
+          io_service.run();
+          boost::asio::signal_set signals(io_service, SIGINT, SIGTERM);
+          signals.async_wait(
+              [&](const boost::system::error_code& ec, int signal_number) {
+                if (!ec) {
+                  LOG(info) << "Signal " << signal_number
+                            << " received, shutting down server";
+                  io_service.stop();
+                }
+              });
+        } catch (const std::exception& e) {
+          LOG(error) << "Thread exception: " << e.what();
+        }
+      });
+    }
+
+    // Wait for all threads to complete
+    for (auto& thread : threads) {
+      thread.join();
+    }
 
     LOG(info) << "Server terminated cleanly";
   } catch (std::exception& e) {

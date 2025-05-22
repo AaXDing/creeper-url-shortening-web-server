@@ -25,6 +25,7 @@ class RequestHandler {
     NOT_FOUND_REQUEST_HANDLER,
     CRUD_REQUEST_HANDLER,
     HEALTH_REQUEST_HANDLER,
+    BLOCKING_REQUEST_HANDLER
   };  // Enum to represent the type of handler
 
   static std::string handler_type_to_string(HandlerType type) {
@@ -39,6 +40,8 @@ class RequestHandler {
         return "CrudHandler";
       case HandlerType::HEALTH_REQUEST_HANDLER:
         return "HealthHandler";
+      case HandlerType::BLOCKING_REQUEST_HANDLER:
+        return "BlockingHandler";
       default:
         return "UnknownHandler";
     }

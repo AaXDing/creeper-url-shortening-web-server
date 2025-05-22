@@ -50,12 +50,12 @@ TEST_F(LoggingConsoleTest, FatalSeverityIsCaptured) {
   EXPECT_NE(output.find("<fatal>"), std::string::npos);
 }
 
-TEST_F(LoggingConsoleTest, InfoAndWarningNotCaptured) {
-  BOOST_LOG_TRIVIAL(info) << "InfoIgnored";
-  BOOST_LOG_TRIVIAL(warning) << "WarnIgnored";
+TEST_F(LoggingConsoleTest, InfoAndWarningAreCaptured) {
+  BOOST_LOG_TRIVIAL(info) << "InfoCaptured";
+  BOOST_LOG_TRIVIAL(warning) << "WarningCaptured";
   std::string output = capture_stream.str();
-  EXPECT_EQ(output.find("InfoIgnored"), std::string::npos);
-  EXPECT_EQ(output.find("WarnIgnored"), std::string::npos);
+  EXPECT_NE(output.find("InfoCaptured"), std::string::npos);
+  EXPECT_NE(output.find("WarningCaptured"), std::string::npos);
 }
 
 // --------------------

@@ -2,7 +2,7 @@
 
 #include "logging.h"
 
-int SimEntityStorage::generateId(const std::string &resource) {
+int SimEntityStorage::get_next_available_id(const std::string &resource) {
   // find the largest ID in the resource path and return that ID + 1
   // search for the resource path in storage
   auto it = storage.find(resource);
@@ -22,13 +22,18 @@ int SimEntityStorage::generateId(const std::string &resource) {
     LOG(error) << "Exceeded maximum ID value: cannot assign new ID";
     return -1;  // or throw, or handle differently if needed
   }
+
   return maxID + 1;
 }
 
 std::optional<int> SimEntityStorage::create(const std::string &resource,
                                             const std::string &data) {
   // check of resource path exists in storage
-  int nextid = generateId(resource);
+  int nextid = get_next_available_id(resource);
+  if (nextid == -1) {
+    LOG(error) << "Failed to create entity: ID out of range";
+    return std::nullopt;
+  }
   auto it = storage.find(resource);
   // If the resource path does not exist, create a new resource
   if (it == storage.end()) {

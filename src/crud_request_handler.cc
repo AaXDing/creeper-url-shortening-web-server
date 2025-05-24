@@ -100,7 +100,7 @@ enum HTTP_Method CrudRequestHandler::get_method(
   }
 }
 
-bool isValidInteger(const std::string &input, int &outValue) {
+bool is_valid_integer(const std::string &input, int &outValue) {
   try {
     size_t idx;
     outValue = std::stoi(input, &idx);
@@ -127,27 +127,6 @@ std::string CrudRequestHandler::extract_id(const std::string &uri) const {
   return (std::regex_search(uri, match, re) && match.size() > 1)
              ? match[1].str()
              : "";
-}
-
-// Generate next available integer ID by checking existing filenames
-int CrudRequestHandler::get_next_available_id(
-    const std::string &entity_dir) const {
-  int max_id = 0;
-  for (const auto &entry : std::filesystem::directory_iterator(entity_dir)) {
-    try {
-      int id = std::stoi(entry.path().filename().string());
-      if (id > max_id) max_id = id;
-    } catch (...) {
-      continue;  // skip files that can't be parsed as integers
-    }
-  }
-
-  if (max_id >= INT_MAX) {
-    LOG(error) << "Exceeded maximum ID value: cannot assign new ID";
-    return -1;  // or throw, or handle differently if needed
-  }
-
-  return max_id + 1;
 }
 
 std::string vector_to_json(const std::vector<int> &ids) {
@@ -194,12 +173,6 @@ bool is_json_content_type(const Request &req) {
   return false;  // Missing header = invalid
 }
 
-bool is_valid_json(const std::string &body) {
-  boost::json::error_code ec;
-  boost::json::parse(body, ec);
-  return !ec;
-}
-
 std::unique_ptr<Response> CrudRequestHandler::handle_post(const Request &req) {
   // Validate content type and JSON structure
   auto res = std::make_unique<Response>();
@@ -222,7 +195,15 @@ std::unique_ptr<Response> CrudRequestHandler::handle_post(const Request &req) {
     return res;
   }
 
-  auto result = storage_->create(entity, req.body);
+  std::string normalized = boost::json::serialize(parsed);
+
+  auto result = storage_->create(entity, normalized);
+
+  if (!result) {
+    *res = STOCK_RESPONSE.at(500);
+    res->body = "Failed to create entity";
+    return res;
+  }
 
   res->status_code = 201;
   res->status_message = "Created";
@@ -247,7 +228,7 @@ std::unique_ptr<Response> CrudRequestHandler::handle_get(const Request &req) {
     std::string filepath = entity_dir + "/" + id;
 
     int id_int;
-    if (!isValidInteger(id, id_int)) {
+    if (!is_valid_integer(id, id_int)) {
       LOG(warning) << "GET failed, ID not found: " << id;
       *res = STOCK_RESPONSE.at(404);
       res->body = "ID not found";
@@ -255,7 +236,7 @@ std::unique_ptr<Response> CrudRequestHandler::handle_get(const Request &req) {
     }
 
     auto result = storage_->retrieve(entity, std::stoi(id));
-    if (!result.has_value()) {
+    if (!result) {
       LOG(warning) << "GET failed: file not found at " << filepath;
       *res = STOCK_RESPONSE.at(404);
       res->body = "ID not found";
@@ -310,7 +291,16 @@ std::unique_ptr<Response> CrudRequestHandler::handle_put(const Request &req) {
   const std::string entity = extract_entity(uri);
   const std::string id = extract_id(uri);
   const std::string entity_dir = data_path_ + "/" + entity;
+
   if (!id.empty()) {
+    int id_int;
+    if (!is_valid_integer(id, id_int)) {
+      LOG(warning) << "PUT failed, ID not found: " << id;
+      *res = STOCK_RESPONSE.at(404);
+      res->body = "ID invalid";
+      return res;
+    }
+
     // Validate content type and JSON structure
     if (!is_json_content_type(req)) {
       *res = STOCK_RESPONSE.at(415);  // Unsupported Media Type
@@ -328,8 +318,11 @@ std::unique_ptr<Response> CrudRequestHandler::handle_put(const Request &req) {
     }
 
     bool file_previously_existed =
-        storage_->retrieve(entity, std::stoi(id)).has_value();
-    bool result = storage_->update(entity, std::stoi(id), req.body);
+        storage_->retrieve(entity, id_int).has_value();
+
+    std::string normalized = boost::json::serialize(parsed);
+    bool result = storage_->update(entity, id_int, normalized);
+
     if (!result) {
       // result should always be true because the default is to create
       LOG(warning) << "PUT failed with " << entity_dir + "/" + id;
@@ -371,14 +364,14 @@ std::unique_ptr<Response> CrudRequestHandler::handle_delete(
   if (!id.empty()) {
     // Validate ID
     int id_int;
-    if (!isValidInteger(id, id_int)) {
+    if (!is_valid_integer(id, id_int)) {
       LOG(warning) << "DELETE failed: invalid ID: " << id;
       *res = STOCK_RESPONSE.at(404);
-      // res->body = "Invalid ID";
-      res->body = "ID not found";
+      res->body = "Invalid ID";
       return res;
     }
-    bool result = storage_->remove(entity, std::stoi(id));
+    bool result = storage_->remove(entity, id_int);
+    
     if (!result) {
       LOG(warning) << "DELETE failed: file not found at "
                    << entity_dir + "/" + id;

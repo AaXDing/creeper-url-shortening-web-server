@@ -27,7 +27,7 @@ class SimEntityStorage : public IEntityStorage {
   // Simulated Storage: map resource paths to pairs of ID and data
   std::map<std::string, std::map<int, std::string>> storage;
   // Helper function to generate a new ID
-  int generateId(const std::string &resource);
+  int get_next_available_id(const std::string &resource);
 };
 
 #endif

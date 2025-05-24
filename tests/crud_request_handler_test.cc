@@ -45,6 +45,8 @@ class CrudRequestHandlerTestFixture : public ::testing::Test {
   void TearDown() override { std::filesystem::remove_all(test_dir); }
 };
 
+// HELPER FUNCTIONS
+
 TEST_F(CrudRequestHandlerTestFixture, ExtractEntityParsesCorrectly) {
   EXPECT_EQ(handler->extract_entity(base_uri + "/Books/3"), "Books");
   EXPECT_EQ(handler->extract_entity(base_uri + "/Shoes"), "Shoes");
@@ -61,26 +63,6 @@ TEST_F(CrudRequestHandlerTestFixture, ExtractIdParsesCorrectly) {
   EXPECT_EQ(handler->extract_id("/notapi/Shoes/1"), "");
 }
 
-TEST_F(CrudRequestHandlerTestFixture, GetNextAvailableIdSkipsNonNumeric) {
-  std::string entity_dir = test_dir + "/Hats";
-  std::filesystem::create_directories(entity_dir);
-  std::ofstream(entity_dir + "/1") << "{}";
-  std::ofstream(entity_dir + "/7") << "{}";
-  std::ofstream(entity_dir + "/abc") << "{}";  // should be skipped
-  std::ofstream(entity_dir + "/999") << "{}";
-
-  int next_id = handler->get_next_available_id(entity_dir);
-  EXPECT_EQ(next_id, 1000);
-}
-
-TEST_F(CrudRequestHandlerTestFixture, GetNextAvailableIdHandlesEmptyDir) {
-  std::string entity_dir = test_dir + "/Empty";
-  std::filesystem::create_directories(entity_dir);
-
-  int next_id = handler->get_next_available_id(entity_dir);
-  EXPECT_EQ(next_id, 1);
-}
-
 TEST_F(CrudRequestHandlerTestFixture, ListIdsReturnsAllFilenamesAsJsonArray) {
   std::string entity_dir = test_dir + "/Games";
   std::filesystem::create_directories(entity_dir);
@@ -93,6 +75,17 @@ TEST_F(CrudRequestHandlerTestFixture, ListIdsReturnsAllFilenamesAsJsonArray) {
   EXPECT_TRUE(result.find("\"42\"") != std::string::npos);
   EXPECT_TRUE(result.find("\"hello.txt\"") != std::string::npos);
 }
+
+// handle_request() TESTS
+
+TEST_F(CrudRequestHandlerTestFixture, MethodNotAllowed) {
+  auto req = make_request("FETCH", base_uri + "/Books/1");
+  auto res = handler->handle_request(req);
+  EXPECT_EQ(res->status_code, 400);
+  EXPECT_EQ(res->body, "Unsupported operation or malformed request");
+}
+
+// POST TESTS
 
 TEST_F(CrudRequestHandlerTestFixture, PostValidJsonReturns201) {
   auto req = make_request("POST", base_uri + "/Books", R"({"title":"Valid"})",
@@ -146,6 +139,25 @@ TEST_F(CrudRequestHandlerTestFixture, PostMalformedJsonReturns400) {
   EXPECT_EQ(res->status_code, 400);
   EXPECT_EQ(res->status_message, "Bad Request");
 }
+
+TEST_F(CrudRequestHandlerTestFixture, PostNumberOutOfRange) {
+  std::string INT_MAX_STR = "2147483647";
+  auto req =
+      make_request("PUT", base_uri + "/Books/" + INT_MAX_STR,
+                   R"({"title":"A"})", {{"Content-Type", "application/json"}});
+  auto res = handler->handle_request(req);
+  EXPECT_EQ(res->status_code, 201);
+  EXPECT_EQ(res->status_message, "Created");
+
+  req = make_request("POST", base_uri + "/Books", R"({"title":"B"})",
+                     {{"Content-Type", "application/json"}});
+  res = handler->handle_request(req);
+  EXPECT_EQ(res->status_code, 500);
+  EXPECT_EQ(res->status_message, "Internal Server Error");
+  EXPECT_EQ(res->body, "Failed to create entity");
+}
+
+// GET TESTS
 
 TEST_F(CrudRequestHandlerTestFixture, GetReturnsEntityContents) {
   auto req = make_request("POST", base_uri + "/Shoes", R"({"size":42})",
@@ -228,6 +240,16 @@ TEST_F(CrudRequestHandlerTestFixture, GetNonexistentEntityListReturns404) {
   EXPECT_EQ(res->body, "Entity type not found");
 }
 
+TEST_F(CrudRequestHandlerTestFixture, GetInvalidEntityTypeReturns404) {
+  auto req = make_request("GET", base_uri + "/");
+  auto res = handler->handle_request(req);
+  EXPECT_EQ(res->status_code, 400);
+  EXPECT_EQ(res->status_message, "Bad Request");
+  EXPECT_EQ(res->body, "Invalid URI: missing entity");
+}
+
+// PUT TESTS
+
 TEST_F(CrudRequestHandlerTestFixture, CreateNonExistantEntityWithPUT) {
   std::string id = "420";
   auto req = make_request("PUT", base_uri + "/Movies/" + id,
@@ -271,6 +293,25 @@ TEST_F(CrudRequestHandlerTestFixture, UpdateExistingEntityWithPUT) {
   EXPECT_EQ(res->content_type, "application/json");
   EXPECT_EQ(res->body, R"({"title":"Cars","rating":9.2E0})");
 }
+  
+TEST_F(CrudRequestHandlerTestFixture, PutInvalidContentTypeReturns415) {
+  auto req = make_request("PUT", base_uri + "/Movies/69",
+                          R"({"title":"Up", "rating": 9.5})",
+                          {{"Content-Type", "text/plain"}});
+
+  auto res = handler->handle_request(req);
+  EXPECT_EQ(res->status_code, 415);
+}
+
+TEST_F(CrudRequestHandlerTestFixture, PutNumberOutOfRange) {
+  std::string INT_MAX_PLUS_1 = "2147483648";
+  auto req =
+      make_request("PUT", base_uri + "/Books/" + INT_MAX_PLUS_1,
+                   R"({"title":"A"})", {{"Content-Type", "application/json"}});
+  auto res = handler->handle_request(req);
+  EXPECT_EQ(res->status_code, 404);
+  EXPECT_EQ(res->status_message, "Not Found");
+}
 
 TEST_F(CrudRequestHandlerTestFixture, PutMalformedJsonReturns400) {
   auto req = make_request("PUT", base_uri + "/Movies/69", "{ bad json",
@@ -289,6 +330,8 @@ TEST_F(CrudRequestHandlerTestFixture, PutNoIDReturns405) {
   auto res = handler->handle_request(req);
   EXPECT_EQ(res->status_code, 405);
 }
+
+// DELETE TESTS
 
 TEST_F(CrudRequestHandlerTestFixture, DeleteExistingEntity) {
   std::string id = "420";
@@ -335,6 +378,17 @@ TEST_F(CrudRequestHandlerTestFixture, DeleteNoID) {
 
   EXPECT_EQ(res->status_code, 405);
 }
+
+TEST_F(CrudRequestHandlerTestFixture, DeleteIDNotInt) {
+  auto req = make_request("DELETE", base_uri + "/Movies/notanint");
+
+  auto res = handler->handle_request(req);
+
+  EXPECT_EQ(res->status_code, 404);
+  EXPECT_EQ(res->body, "Invalid ID");
+}
+
+// Args Builder TESTS
 
 TEST_F(CrudRequestHandlerTestFixture, ValidAbsolutePathArgs) {
   bool success = parser.parse(
@@ -391,6 +445,8 @@ TEST_F(CrudRequestHandlerTestFixture, InvalidTrailingSlashArgs) {
   args = CrudRequestHandlerArgs::create_from_config(config.statements_[0]);
   EXPECT_EQ(args, nullptr);
 }
+
+// GetType() TESTS
 
 TEST_F(CrudRequestHandlerTestFixture, GetType) {
   EXPECT_EQ(handler->get_type(),

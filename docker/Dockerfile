@@ -24,6 +24,10 @@ FROM ubuntu:noble AS deploy
 # Make directory for app and static
 RUN mkdir -p /app
 RUN mkdir -p /data
+# Create storage directory for CRUD operations
+RUN mkdir -p /mnt/storage/crud && \
+    chmod 755 /mnt/storage/crud
+    
 # Copy server output binary to "/app"
 COPY --from=builder /usr/src/projects/creeper/build/bin/server /app/
 # Copy config file as well

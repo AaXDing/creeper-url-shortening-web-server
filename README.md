@@ -171,6 +171,15 @@ To test static file request, you need to create a `data` directory and put your 
 printf "GET /static/test.html HTTP/1.1\r\nHost: host:port\r\nConnection: close\r\n\r\n" | nc localhost 80
 ```
 
+#### CRUD operations
+To create a new entity:
+```bash
+curl -X POST http://34.105.32.190:80/api/Name \
+     -H "Content-Type: application/json" \
+     -d '{"name": "Joe Bruin"}'
+```
+
+
 ### Docker Build
 To handle static files, you need to move all your static files to `data` directory before building the docker image.
 ```bash

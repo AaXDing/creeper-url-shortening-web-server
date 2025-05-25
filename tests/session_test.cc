@@ -24,9 +24,9 @@ class SessionTest : public Session {
   explicit SessionTest(asio::io_service& io)
       : Session(io, std::make_shared<RequestHandlerDispatcher>(NginxConfig())),
         deleted_flag_(nullptr) {
-    // re-initialise dispatcher with an actual config file
+    // Use mock configuration for tests
     NginxConfig cfg;
-    NginxConfigParser().parse("../my_config", &cfg);
+    NginxConfigParser().parse("../tests/mock_config", &cfg);
     dispatcher_ = std::make_shared<RequestHandlerDispatcher>(cfg);
   }
 

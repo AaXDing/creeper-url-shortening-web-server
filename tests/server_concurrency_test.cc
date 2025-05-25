@@ -16,7 +16,7 @@ class ServerConcurrencyTest : public ::testing::Test {
     // Create a config with a blocking handler
     NginxConfig config;
     NginxConfigParser parser;
-    parser.parse("../my_config", &config);
+    parser.parse("mock_config", &config);
 
     // Start the server with multiple worker threads
     io_service_ = std::make_shared<boost::asio::io_service>();

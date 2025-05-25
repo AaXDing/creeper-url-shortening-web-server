@@ -1,21 +1,21 @@
-port 80; # port my server listens on
+port 80;
 
 location / NotFoundHandler {
 }
 
-location /echo EchoHandler { # no arguments
+location /echo EchoHandler {
 }
 
 location /static StaticHandler {
-  root ../data; # supports relative paths
+  root ../data;
 }
 
 location /api CrudHandler {
-  data_path /mnt/storage/crud;
+  data_path ../data;
 }
 
 location /health HealthHandler {
-}
+} 
 
 location /sleep BlockingHandler {
 }

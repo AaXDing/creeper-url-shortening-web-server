@@ -345,8 +345,8 @@ def define_tests():
                  "use_nc": True
              },
          ]},
-        {"config": "my_config",
-         "integration_test_folder": False,
+        {"config": "mock_config",
+         "integration_test_folder": True,
          "tests": [
              {
                  "name": "Valid echo request on deploy config",

@@ -18,6 +18,27 @@ class RealEntityStorageTest : public ::testing::Test {
   void TearDown() override { fs::remove_all(storage_root); }
 };
 
+TEST_F(RealEntityStorageTest, GetsId2ForSecondCreate) {
+  RealEntityStorage backend(storage_root);
+  backend.create("Books", "{\"title\":\"CS130\"}");
+  int id = backend.get_next_available_id(storage_root + "/Books");
+  EXPECT_EQ(id, 2);
+}
+
+TEST_F(RealEntityStorageTest, GetIDExceedsMaxInt) {
+  RealEntityStorage backend(storage_root);
+  backend.update("Books", 2147483647, "{\"title\":\"CS130\"}");
+  int id = backend.get_next_available_id(storage_root + "/Books");
+  EXPECT_EQ(id, -1);
+}
+
+TEST_F(RealEntityStorageTest, GetIDFolderNoInt) {
+  std::string root = "../data";
+  RealEntityStorage backend(root);
+  int id = backend.get_next_available_id(root);
+  EXPECT_EQ(id, 1);
+}
+
 TEST_F(RealEntityStorageTest, CanCreateAndReadEntityBack) {
   RealEntityStorage backend(storage_root);
   auto result_id = backend.create("Books", "{\"title\":\"CS130\"}");
@@ -60,6 +81,13 @@ TEST_F(RealEntityStorageTest, ListsAllEntityIds) {
   EXPECT_EQ(found_ids.size(), 2);
   EXPECT_NE(std::find(found_ids.begin(), found_ids.end(), 1), found_ids.end());
   EXPECT_NE(std::find(found_ids.begin(), found_ids.end(), 2), found_ids.end());
+}
+
+TEST_F(RealEntityStorageTest, ListOnFolderWithNoInts) {
+  std::string root = "../data";
+  RealEntityStorage backend(root);
+  std::vector<int> found_ids = backend.list(root);
+  EXPECT_EQ(found_ids.size(), 0);
 }
 
 TEST_F(RealEntityStorageTest, UpdateOnMissingIdCreatesIt) {

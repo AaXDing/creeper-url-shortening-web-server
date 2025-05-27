@@ -20,6 +20,8 @@
 #include "registry.h"
 #include "server.h"
 
+#define NUM_THREADS 4
+
 int main(int argc, char* argv[]) {
   logging::init_logging();
   LOG(info) << "Logging initialized (CREEPER_LOG_DEBUG="
@@ -59,14 +61,9 @@ int main(int argc, char* argv[]) {
 
     // Create a pool of threads to run the io_service
     std::vector<boost::thread> threads;
-    unsigned int num_threads = std::thread::hardware_concurrency();
-    if (num_threads == 0) {
-      num_threads =
-          4;  // Default to 4 threads if hardware_concurrency() returns 0
-    }
-    LOG(info) << "Starting " << num_threads << " worker threads";
+    LOG(info) << "Starting " << NUM_THREADS << " worker threads";
 
-    for (unsigned int i = 0; i < num_threads; ++i) {
+    for (unsigned int i = 0; i < NUM_THREADS; ++i) {
       threads.emplace_back([&io_service]() {
         // io_service is captured by reference (&) because:
         // 1. All threads need to share the same io_service instance to coordinate work

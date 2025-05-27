@@ -23,10 +23,7 @@ class ServerConcurrencyTest : public ::testing::Test {
     server_ = std::make_unique<Server>(*io_service_, 8080, config);
     
     // Create a pool of worker threads
-    unsigned int num_threads = std::thread::hardware_concurrency();
-    if (num_threads == 0) {
-        num_threads = 4; // Default to 4 threads if hardware_concurrency() returns 0
-    }
+    unsigned int num_threads = 4;
     
     std::vector<boost::thread> worker_threads;
     for (unsigned int i = 0; i < num_threads; ++i) {
@@ -102,36 +99,36 @@ TEST_F(ServerConcurrencyTest, ConcurrentRequests) {
   EXPECT_NE(slow_future.get().find("200 OK"), std::string::npos);
 }
 
-// TEST_F(ServerConcurrencyTest, MultipleConcurrentRequests) {
-//     constexpr int k_slow = 2;
-//     constexpr int k_fast = 3;
+TEST_F(ServerConcurrencyTest, MultipleConcurrentRequests) {
+    constexpr int k_slow = 2;
+    constexpr int k_fast = 2;
 
-//     std::vector<std::future<std::string>> slow_futures;
-//     std::vector<std::future<std::string>> fast_futures;
+    std::vector<std::future<std::string>> slow_futures;
+    std::vector<std::future<std::string>> fast_futures;
 
-//     // fire-and-forget five blocking /sleep requests
-//     for (int i = 0; i < k_slow; ++i)
-//         slow_futures.emplace_back(std::async(std::launch::async,
-//             [this]{ return make_request("/sleep"); }));
+    // fire-and-forget five blocking /sleep requests
+    for (int i = 0; i < k_slow; ++i)
+        slow_futures.emplace_back(std::async(std::launch::async,
+            [this]{ return make_request("/sleep"); }));
 
-//     std::this_thread::sleep_for(std::chrono::milliseconds(100)); // give them time to enter the queue
+    std::this_thread::sleep_for(std::chrono::milliseconds(100)); // give them time to enter the queue
 
-//     // launch five /health requests and assert each finishes quickly
-//     for (int i = 0; i < k_fast; ++i)
-//         fast_futures.emplace_back(std::async(std::launch::async, [this]{
-//             auto t0 = std::chrono::steady_clock::now();
-//             auto resp = make_request("/health");
-//             auto t1 = std::chrono::steady_clock::now();
-//             EXPECT_LT(std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count(),
-//                       1000);
-//             return resp;
-//         }));
+    // launch five /health requests and assert each finishes quickly
+    for (int i = 0; i < k_fast; ++i)
+        fast_futures.emplace_back(std::async(std::launch::async, [this]{
+            auto t0 = std::chrono::steady_clock::now();
+            auto resp = make_request("/health");
+            auto t1 = std::chrono::steady_clock::now();
+            EXPECT_LT(std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count(),
+                      1000);
+            return resp;
+        }));
 
-//     // verify fast responses first
-//     for (auto& f : fast_futures)
-//         EXPECT_NE(f.get().find("200 OK"), std::string::npos);
+    // verify fast responses first
+    for (auto& f : fast_futures)
+        EXPECT_NE(f.get().find("200 OK"), std::string::npos);
 
-//     // then wait for the slow ones so the threads cleanly finish
-//     for (auto& f : slow_futures)
-//         EXPECT_NE(f.get().find("200 OK"), std::string::npos);
-// }
+    // then wait for the slow ones so the threads cleanly finish
+    for (auto& f : slow_futures)
+        EXPECT_NE(f.get().find("200 OK"), std::string::npos);
+}

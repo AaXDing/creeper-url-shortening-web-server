@@ -30,6 +30,7 @@ creeper/
    - `not_found_request_handler.h/cc`: Returns 404 Not Found response when no other handler can handle a request (Need to setup config file correctly)
    - `crud_request_handler.h/cc`: Handles CRUD operations (Create, Retrieve, Update, Delete) for data persistence
    - `health_request_handler.h/cc`: Returns 200 OK response to indicate server is healthy
+   - blocking_request_handler.h/cc: Blocks the request for 3 seconds and return 200 OK
 5. **Request Handler Dispatcher (`request_handler_dispatcher.h/cc`)**: Routes requests to appropriate handlers
 6. **Configuration Parser (`config_parser.h/cc`)**: Parses server configuration
 7. **Registry (`registry.h/cc`)**: Manages request handler registration
@@ -58,6 +59,7 @@ creeper/
                                 not_found_request_handler.cc (impl)
                                 crud_request_handler.cc      (impl)
                                 health_request_handler.cc    (impl)
+                                blocking_request_handler.cc  (impl)
 
 Utility Modules:
 ----------------
@@ -384,5 +386,8 @@ location /static StaticHandler {
 }
 
 location /health HealthHandler {
+}
+
+location /sleep BlockingHandler{
 }
 ```

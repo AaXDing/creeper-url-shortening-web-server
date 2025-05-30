@@ -33,7 +33,7 @@ TEST_F(HttpHeaderTestFixture, ResponseToString) {
   res.status_code = 200;
   res.status_message = "OK";
   res.version = "HTTP/1.1";
-  res.content_type = "text/plain";
+  res.headers.push_back({"Content-Type", "text/plain"});
   res.body = "Hello, World!";
   response_str = res.to_string();
 
@@ -49,7 +49,7 @@ TEST_F(HttpHeaderTestFixture, ResponseToStringEmptyBody) {
   res.status_code = 204;
   res.status_message = "No Content";
   res.version = "HTTP/1.1";
-  res.content_type = "text/plain";
+  res.headers.push_back({"Content-Type", "text/plain"});
   res.body = "";
   response_str = res.to_string();
 
@@ -61,10 +61,12 @@ TEST_F(HttpHeaderTestFixture, ResponseToStringEmptyBody) {
 }
 
 TEST_F(HttpHeaderTestFixture, RepsonseConstructor) {
-  res = Response("HTTP/1.1", 200, "OK", "text/plain", "Hello, World!");
+  res = Response("HTTP/1.1", 200, "OK", {{"Content-Type", "text/plain"}},
+                 "Hello, World!");
   EXPECT_EQ(res.status_code, 200);
   EXPECT_EQ(res.status_message, "OK");
   EXPECT_EQ(res.version, "HTTP/1.1");
-  EXPECT_EQ(res.content_type, "text/plain");
+  EXPECT_EQ(res.headers[0].name, "Content-Type");
+  EXPECT_EQ(res.headers[0].value, "text/plain");
   EXPECT_EQ(res.body, "Hello, World!");
 }

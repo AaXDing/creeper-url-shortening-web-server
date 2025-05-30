@@ -8,7 +8,8 @@ build:
 
 coverage:
 	mkdir -p build_coverage
-	cd build_coverage && cmake -DCMAKE_BUILD_TYPE=Coverage .. && make coverage
+	cd build_coverage && cmake -DCMAKE_BUILD_TYPE=Coverage .. 
+	make coverage
 
 test:
 	mkdir -p build

@@ -6,6 +6,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 
 # Update the base image and install build environment
 RUN apt-get update && apt-get install -y \
+    git \
     build-essential \
     cmake \
     curl \
@@ -16,5 +17,15 @@ RUN apt-get update && apt-get install -y \
     libboost-json-dev \
     libgmock-dev \
     libgtest-dev \
+    libhiredis-dev \
     netcat-openbsd \
-    gcovr
+    gcovr && \
+    git clone https://github.com/sewenew/redis-plus-plus.git && \
+    cd redis-plus-plus && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    make && \
+    make install && \
+    cd ../.. && \
+    rm -rf redis-plus-plus

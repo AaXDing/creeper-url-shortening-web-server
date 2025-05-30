@@ -44,7 +44,8 @@ TEST_F(EchoRequestHandlerTestFixture, ValidEchoRequest) {
   EXPECT_EQ(res.status_code, 200);
   EXPECT_EQ(res.status_message, "OK");
   EXPECT_EQ(res.version, "HTTP/1.1");
-  EXPECT_EQ(res.content_type, "text/plain");
+  EXPECT_EQ(res.headers[0].name, "Content-Type");
+  EXPECT_EQ(res.headers[0].value, "text/plain");
   EXPECT_EQ(res.body,
             "GET /echo HTTP/1.1\r\n"
             "Host: www.example.com\r\n"
@@ -66,7 +67,8 @@ TEST_F(EchoRequestHandlerTestFixture, InvalidEchoRequest) {
   EXPECT_EQ(res.status_code, 400);
   EXPECT_EQ(res.status_message, "Bad Request");
   EXPECT_EQ(res.version, "HTTP/1.1");
-  EXPECT_EQ(res.content_type, "text/plain");
+  EXPECT_EQ(res.headers[0].name, "Content-Type");
+  EXPECT_EQ(res.headers[0].value, "text/plain");
   EXPECT_EQ(res.body, "400 Bad Request");
 }
 

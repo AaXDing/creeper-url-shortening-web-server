@@ -44,7 +44,8 @@ TEST_F(NotFoundRequestHandlerTestFixture, ValidRequestNotFound) {
   EXPECT_EQ(res.status_code, 404);
   EXPECT_EQ(res.status_message, "Not Found");
   EXPECT_EQ(res.version, "HTTP/1.1");
-  EXPECT_EQ(res.content_type, "text/plain");
+  EXPECT_EQ(res.headers[0].name, "Content-Type");
+  EXPECT_EQ(res.headers[0].value, "text/plain");
   EXPECT_EQ(res.body, "404 Not Found");
 }
 
@@ -62,7 +63,8 @@ TEST_F(NotFoundRequestHandlerTestFixture, InvalidRequestNotFound) {
   EXPECT_EQ(res.status_message, "Not Found");
   EXPECT_EQ(res.version,
             HTTP_VERSION);  // Should use default version for invalid requests
-  EXPECT_EQ(res.content_type, "text/plain");
+  EXPECT_EQ(res.headers[0].name, "Content-Type");
+  EXPECT_EQ(res.headers[0].value, "text/plain");
   EXPECT_EQ(res.body, "404 Not Found");
 }
 

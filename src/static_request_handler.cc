@@ -100,7 +100,7 @@ std::unique_ptr<Response> StaticRequestHandler::handle_request(
     res->version = req.valid ? req.version : HTTP_VERSION;
     res->status_code = 200;
     res->status_message = "OK";
-    res->content_type = get_file_content_type(file_path);
+    res->headers = {{"Content-Type", get_file_content_type(file_path)}};
     // Read the file content into the response body
     std::string body((std::istreambuf_iterator<char>(file)),
                      std::istreambuf_iterator<char>());

@@ -47,7 +47,8 @@ TEST_F(RequestHandlerDispatcherTestFixtrue, BlockingHandler) {
   parser.parse("dispatcher_testcases/blocking_handler", &config);
   dispatcher = std::make_shared<RequestHandlerDispatcher>(config);
   auto handler_type = dispatcher->get_handler(req)->get_type();
-  EXPECT_EQ(handler_type, RequestHandler::HandlerType::BLOCKING_REQUEST_HANDLER);
+  EXPECT_EQ(handler_type,
+            RequestHandler::HandlerType::BLOCKING_REQUEST_HANDLER);
 }
 
 TEST_F(RequestHandlerDispatcherTestFixtrue, EchoHandlerWithTrailingSlash) {

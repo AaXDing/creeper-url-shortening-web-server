@@ -208,7 +208,7 @@ std::unique_ptr<Response> CrudRequestHandler::handle_post(const Request &req) {
   res->status_code = 201;
   res->status_message = "Created";
   res->version = req.valid ? req.version : HTTP_VERSION;
-  res->content_type = "application/json";
+  res->headers = {{"Content-Type", "application/json"}};
   res->body = "{\"id\": " + std::to_string(result.value()) + "}";
   LOG(info) << "Created new " << entity << " with ID " << result.value();
   return res;
@@ -259,7 +259,7 @@ std::unique_ptr<Response> CrudRequestHandler::handle_get(const Request &req) {
     std::string normalized = boost::json::serialize(parsed);
 
     res->status_code = 200;
-    res->content_type = "application/json";
+    res->headers = {{"Content-Type", "application/json"}};
     res->body = normalized;
     res->version = req.valid ? req.version : HTTP_VERSION;
     res->status_message = "OK";
@@ -276,7 +276,7 @@ std::unique_ptr<Response> CrudRequestHandler::handle_get(const Request &req) {
       return res;
     }
     res->status_code = 200;
-    res->content_type = "application/json";
+    res->headers = {{"Content-Type", "application/json"}};
     // res->body = list_ids(entity_dir);
     res->body = vector_to_json(ids);
     res->version = req.valid ? req.version : HTTP_VERSION;
@@ -371,7 +371,7 @@ std::unique_ptr<Response> CrudRequestHandler::handle_delete(
       return res;
     }
     bool result = storage_->remove(entity, id_int);
-    
+
     if (!result) {
       LOG(warning) << "DELETE failed: file not found at "
                    << entity_dir + "/" + id;

@@ -32,7 +32,7 @@ std::unique_ptr<Response> EchoRequestHandler::handle_request(
     res->status_code = 200;
     res->status_message = "OK";
     res->version = req.valid ? req.version : HTTP_VERSION;
-    res->content_type = "text/plain";
+    res->headers = {{"Content-Type", "text/plain"}};
     res->body = req.to_string();  // Convert the request to a string
   } else {  // If the request is invalid, return a 400 Bad Request response
     LOG(warning) << "Invalid echo request → returning 400 Bad Request";

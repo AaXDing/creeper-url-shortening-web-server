@@ -31,7 +31,7 @@ std::unique_ptr<Response> NotFoundRequestHandler::handle_request(
   res->version = req.valid ? req.version : HTTP_VERSION;
   res->status_code = 404;
   res->status_message = "Not Found";
-  res->content_type = "text/plain";
+  res->headers = {{"Content-Type", "text/plain"}};
   res->body = "404 Not Found";
 
   return res;

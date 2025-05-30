@@ -30,7 +30,8 @@ creeper/
    - `not_found_request_handler.h/cc`: Returns 404 Not Found response when no other handler can handle a request (Need to setup config file correctly)
    - `crud_request_handler.h/cc`: Handles CRUD operations (Create, Retrieve, Update, Delete) for data persistence
    - `health_request_handler.h/cc`: Returns 200 OK response to indicate server is healthy
-   - blocking_request_handler.h/cc: Blocks the request for 3 seconds and return 200 OK
+   - `blocking_request_handler.h/cc`: Blocks the request for 3 seconds and return 200 OK
+   - `shorten_request_hanlder.h/cc`: Shortens URL and resolve URL
 5. **Request Handler Dispatcher (`request_handler_dispatcher.h/cc`)**: Routes requests to appropriate handlers
 6. **Configuration Parser (`config_parser.h/cc`)**: Parses server configuration
 7. **Registry (`registry.h/cc`)**: Manages request handler registration
@@ -60,6 +61,7 @@ creeper/
                                 crud_request_handler.cc      (impl)
                                 health_request_handler.cc    (impl)
                                 blocking_request_handler.cc  (impl)
+                                shorten_request_handler.cc   (impl)
 
 Utility Modules:
 ----------------
@@ -81,6 +83,19 @@ The project requires the following dependencies besides CS130 Dev environment:
   sudo apt-get install libboost-json-dev
   ```
 
+- Redis Server (redis-server, hiredis)
+ ```bash
+ sudo apt-get install redis-server libhiredis-dev
+ git clone https://github.com/sewenew/redis-plus-plus.git
+ cd redis-plus-plus
+ mkdir build
+ cd build
+ cmake ..
+ make
+ make install
+ cd ../..
+ rm -rf redis-plus-plus
+ ```
 
 ### Build & Test
 
@@ -96,7 +111,12 @@ cmake ..
 make
 ```
 
-3. Testing:
+3. Start Redis
+```bash
+redis-server ../redis.conf
+```
+
+4. Testing:
 ```bash
 ctest
 ```
@@ -116,7 +136,12 @@ make coverage
 make build
 ```
 
-2. Run:
+2. Run Redis:
+```bash
+redis-server ../redis.conf --daemonize yes
+```
+
+3. Run Server:
 
 The server can be run in different logging modes:
 
@@ -176,11 +201,21 @@ printf "GET /static/test.html HTTP/1.1\r\nHost: host:port\r\nConnection: close\r
 #### CRUD operations
 To create a new entity:
 ```bash
-curl -X POST http://34.105.32.190:80/api/Name \
+curl -X POST localhost:80/api/Name \
      -H "Content-Type: application/json" \
      -d '{"name": "Joe Bruin"}'
 ```
 
+#### Shorten URL
+To create a new short URL:
+```bash
+curl -X POST localhost:80/shorten \
+     -H "Content-Type: text/plain" \
+     -d 'https://code.cs130.org'
+# must be a full url
+curl -X GET localhost:80/shorten/fjnuNs
+# will get https://code.cs130.org
+```
 
 ### Docker Build
 To handle static files, you need to move all your static files to `data` directory before building the docker image.

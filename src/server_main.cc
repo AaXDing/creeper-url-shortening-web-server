@@ -11,9 +11,9 @@
 
 #include <boost/asio.hpp>
 #include <boost/asio/signal_set.hpp>
+#include <boost/thread.hpp>
 #include <cstdlib>
 #include <iostream>
-#include <boost/thread.hpp>
 
 #include "config_parser.h"
 #include "logging.h"
@@ -66,7 +66,8 @@ int main(int argc, char* argv[]) {
     for (unsigned int i = 0; i < NUM_THREADS; ++i) {
       threads.emplace_back([&io_service]() {
         // io_service is captured by reference (&) because:
-        // 1. All threads need to share the same io_service instance to coordinate work
+        // 1. All threads need to share the same io_service instance to
+        // coordinate work
         // 2. io_service is created in main() scope and outlives the threads
         // 3. We need to be able to stop the io_service from any thread
         try {

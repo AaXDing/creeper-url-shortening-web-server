@@ -169,7 +169,8 @@ TEST_F(CrudRequestHandlerTestFixture, GetReturnsEntityContents) {
   res = handler->handle_request(req);
 
   EXPECT_EQ(res->status_code, 200);
-  EXPECT_EQ(res->content_type, "application/json");
+  EXPECT_EQ(res->headers[0].name, "Content-Type");
+  EXPECT_EQ(res->headers[0].value, "application/json");
   EXPECT_EQ(res->body, R"({"size":42})");
 }
 
@@ -188,7 +189,8 @@ TEST_F(CrudRequestHandlerTestFixture, GetReturnsListOfEntityIds) {
   res = handler->handle_request(req);
 
   EXPECT_EQ(res->status_code, 200);
-  EXPECT_EQ(res->content_type, "application/json");
+  EXPECT_EQ(res->headers[0].name, "Content-Type");
+  EXPECT_EQ(res->headers[0].value, "application/json");
 
   // Check that expected IDs are in the returned list
   std::string body = res->body;
@@ -290,10 +292,11 @@ TEST_F(CrudRequestHandlerTestFixture, UpdateExistingEntityWithPUT) {
   res = handler->handle_request(req);
 
   EXPECT_EQ(res->status_code, 200);
-  EXPECT_EQ(res->content_type, "application/json");
+  EXPECT_EQ(res->headers[0].name, "Content-Type");
+  EXPECT_EQ(res->headers[0].value, "application/json");
   EXPECT_EQ(res->body, R"({"title":"Cars","rating":9.2E0})");
 }
-  
+
 TEST_F(CrudRequestHandlerTestFixture, PutInvalidContentTypeReturns415) {
   auto req = make_request("PUT", base_uri + "/Movies/69",
                           R"({"title":"Up", "rating": 9.5})",

@@ -30,7 +30,7 @@ std::unique_ptr<Response> HealthRequestHandler::handle_request(
   res->status_code = 200;
   res->status_message = "OK";
   res->version = req.valid ? req.version : HTTP_VERSION;
-  res->content_type = "text/plain";
+  res->headers = {{"Content-Type", "text/plain"}};
   res->body = "OK";
 
   LOG(info) << "Health check request handled successfully";

@@ -57,7 +57,8 @@ TEST_F(StaticRequestHandlerTestFixture, ValidStaticRequest) {
   EXPECT_EQ(res.status_code, 200);
   EXPECT_EQ(res.status_message, "OK");
   EXPECT_EQ(res.version, "HTTP/1.1");
-  EXPECT_EQ(res.content_type, "text/plain");
+  EXPECT_EQ(res.headers[0].name, "Content-Type");
+  EXPECT_EQ(res.headers[0].value, "text/plain");
   EXPECT_EQ(res.body, "line1\nline2\n\nline4");
 }
 
@@ -72,7 +73,8 @@ TEST_F(StaticRequestHandlerTestFixture, ValidStaticRequestWithExtraSlashes) {
   EXPECT_EQ(res.status_code, 404);
   EXPECT_EQ(res.status_message, "Not Found");
   EXPECT_EQ(res.version, "HTTP/1.1");
-  EXPECT_EQ(res.content_type, "text/plain");
+  EXPECT_EQ(res.headers[0].name, "Content-Type");
+  EXPECT_EQ(res.headers[0].value, "text/plain");
   EXPECT_EQ(res.body, "404 Not Found");
 }
 
@@ -87,7 +89,8 @@ TEST_F(StaticRequestHandlerTestFixture, PdfFileRequest) {
   EXPECT_EQ(res.status_code, 200);
   EXPECT_EQ(res.status_message, "OK");
   EXPECT_EQ(res.version, "HTTP/1.1");
-  EXPECT_EQ(res.content_type, "application/pdf");
+  EXPECT_EQ(res.headers[0].name, "Content-Type");
+  EXPECT_EQ(res.headers[0].value, "application/pdf");
 }
 
 TEST_F(StaticRequestHandlerTestFixture, ZipFileRequest) {
@@ -101,7 +104,8 @@ TEST_F(StaticRequestHandlerTestFixture, ZipFileRequest) {
   EXPECT_EQ(res.status_code, 200);
   EXPECT_EQ(res.status_message, "OK");
   EXPECT_EQ(res.version, "HTTP/1.1");
-  EXPECT_EQ(res.content_type, "application/zip");
+  EXPECT_EQ(res.headers[0].name, "Content-Type");
+  EXPECT_EQ(res.headers[0].value, "application/zip");
 }
 
 TEST_F(StaticRequestHandlerTestFixture, JPEGFileRequest) {
@@ -115,7 +119,8 @@ TEST_F(StaticRequestHandlerTestFixture, JPEGFileRequest) {
   EXPECT_EQ(res.status_code, 200);
   EXPECT_EQ(res.status_message, "OK");
   EXPECT_EQ(res.version, "HTTP/1.1");
-  EXPECT_EQ(res.content_type, "image/jpeg");
+  EXPECT_EQ(res.headers[0].name, "Content-Type");
+  EXPECT_EQ(res.headers[0].value, "image/jpeg");
 }
 
 TEST_F(StaticRequestHandlerTestFixture, HTMLFileRequest) {
@@ -129,7 +134,8 @@ TEST_F(StaticRequestHandlerTestFixture, HTMLFileRequest) {
   EXPECT_EQ(res.status_code, 200);
   EXPECT_EQ(res.status_message, "OK");
   EXPECT_EQ(res.version, "HTTP/1.1");
-  EXPECT_EQ(res.content_type, "text/html");
+  EXPECT_EQ(res.headers[0].name, "Content-Type");
+  EXPECT_EQ(res.headers[0].value, "text/html");
 }
 
 TEST_F(StaticRequestHandlerTestFixture, FileNotSupported) {
@@ -143,7 +149,8 @@ TEST_F(StaticRequestHandlerTestFixture, FileNotSupported) {
   EXPECT_EQ(res.status_code, 200);
   EXPECT_EQ(res.status_message, "OK");
   EXPECT_EQ(res.version, "HTTP/1.1");
-  EXPECT_EQ(res.content_type, "application/octet-stream");
+  EXPECT_EQ(res.headers[0].name, "Content-Type");
+  EXPECT_EQ(res.headers[0].value, "application/octet-stream");
 }
 
 TEST_F(StaticRequestHandlerTestFixture, InvalidRequestOnFolder) {
@@ -157,7 +164,8 @@ TEST_F(StaticRequestHandlerTestFixture, InvalidRequestOnFolder) {
   EXPECT_EQ(res.status_code, 404);
   EXPECT_EQ(res.status_message, "Not Found");
   EXPECT_EQ(res.version, "HTTP/1.1");
-  EXPECT_EQ(res.content_type, "text/plain");
+  EXPECT_EQ(res.headers[0].name, "Content-Type");
+  EXPECT_EQ(res.headers[0].value, "text/plain");
   EXPECT_EQ(res.body, "404 Not Found");
 }
 
@@ -172,7 +180,8 @@ TEST_F(StaticRequestHandlerTestFixture, FileDoesNotExist) {
   EXPECT_EQ(res.status_code, 404);
   EXPECT_EQ(res.status_message, "Not Found");
   EXPECT_EQ(res.version, "HTTP/1.1");
-  EXPECT_EQ(res.content_type, "text/plain");
+  EXPECT_EQ(res.headers[0].name, "Content-Type");
+  EXPECT_EQ(res.headers[0].value, "text/plain");
   EXPECT_EQ(res.body, "404 Not Found");
 }
 

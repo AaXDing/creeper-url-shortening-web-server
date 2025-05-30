@@ -168,15 +168,15 @@ TEST_F(NginxConfigParserTestFixture, GetMultipleValidLocations) {
     }
     if (loc.path == "/static" && loc.handler == "StaticHandler") {
       found_static = true;
-      static_args = std::static_pointer_cast<StaticRequestHandlerArgs>(
-          loc.args);
+      static_args =
+          std::static_pointer_cast<StaticRequestHandlerArgs>(loc.args);
       EXPECT_EQ(static_args->get_root_path(),
                 boost::filesystem::canonical("../data/test1").string());
     }
     if (loc.path == "/static1" && loc.handler == "StaticHandler") {
       found_static1 = true;
-      static_args = std::static_pointer_cast<StaticRequestHandlerArgs>(
-          loc.args);
+      static_args =
+          std::static_pointer_cast<StaticRequestHandlerArgs>(loc.args);
       EXPECT_EQ(static_args->get_root_path(),
                 boost::filesystem::canonical("../data/test2").string());
     }
@@ -259,8 +259,7 @@ TEST_F(NginxConfigParserTestFixture, ValidGetLocationsWithAbsoluteRootPath) {
   EXPECT_EQ(result.locations.size(), 1);
   static_args = std::static_pointer_cast<StaticRequestHandlerArgs>(
       result.locations[0].args);
-  EXPECT_EQ(static_args->get_root_path(),
-            "/usr/src/projects/creeper/data");
+  EXPECT_EQ(static_args->get_root_path(), "/usr/src/projects/creeper/data");
 }
 
 TEST_F(NginxConfigParserTestFixture, InvalidGetLocationsWithAbsoluteRootPath) {

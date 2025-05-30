@@ -44,7 +44,8 @@ TEST_F(HealthRequestHandlerTestFixture, ValidHealthRequest) {
   EXPECT_EQ(res.status_code, 200);
   EXPECT_EQ(res.status_message, "OK");
   EXPECT_EQ(res.version, "HTTP/1.1");
-  EXPECT_EQ(res.content_type, "text/plain");
+  EXPECT_EQ(res.headers[0].name, "Content-Type");
+  EXPECT_EQ(res.headers[0].value, "text/plain");
   EXPECT_EQ(res.body, "OK");
 }
 

@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.10.0)
 project(creeper)
 
+# <---------- set c++ standard ------------->
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 # Enable Python for integration test
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 
@@ -42,6 +46,15 @@ find_package(Boost 1.50 REQUIRED
 )
 message(STATUS "Boost version: ${Boost_VERSION}")
 
+# <------------ add hiredis dependency --------------->
+find_path(HIREDIS_HEADER hiredis)
+find_library(HIREDIS_LIB hiredis)
+
+# <------------ add redis-plus-plus dependency -------------->
+# NOTE: this should be *sw* NOT *redis++*
+find_path(REDIS_PLUS_PLUS_HEADER sw)
+find_library(REDIS_PLUS_PLUS_LIB redis++)
+
 include_directories(include)
 
 # add libraries
@@ -78,6 +91,8 @@ target_link_libraries(blocking_request_handler_lib PUBLIC http_header_lib loggin
 
 add_library(shorten_request_handler_lib src/shorten_request_handler.cc)
 target_link_libraries(shorten_request_handler_lib PUBLIC http_header_lib logging_lib registry_lib)
+target_include_directories(shorten_request_handler_lib PUBLIC ${HIREDIS_HEADER} ${REDIS_PLUS_PLUS_HEADER})
+target_link_libraries(shorten_request_handler_lib PUBLIC ${HIREDIS_LIB} ${REDIS_PLUS_PLUS_LIB})
 
 add_library(request_handler_dispatcher_lib src/request_handler_dispatcher.cc)
 target_link_libraries(request_handler_dispatcher_lib PUBLIC http_header_lib config_parser_lib registry_lib logging_lib)

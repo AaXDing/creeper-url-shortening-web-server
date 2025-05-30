@@ -1,11 +1,12 @@
 #include <gtest/gtest.h>
 
 #include <boost/asio.hpp>
+#include <boost/thread.hpp>
 #include <chrono>
 #include <future>
 #include <thread>
 #include <vector>
-#include <boost/thread.hpp>
+
 #include "blocking_request_handler.h"
 #include "config_parser.h"
 #include "server.h"
@@ -21,17 +22,15 @@ class ServerConcurrencyTest : public ::testing::Test {
     // Start the server with multiple worker threads
     io_service_ = std::make_shared<boost::asio::io_service>();
     server_ = std::make_unique<Server>(*io_service_, 8080, config);
-    
+
     // Create a pool of worker threads
     unsigned int num_threads = 4;
-    
+
     std::vector<boost::thread> worker_threads;
     for (unsigned int i = 0; i < num_threads; ++i) {
-        worker_threads.emplace_back([this]() {
-            io_service_->run();
-        });
+      worker_threads.emplace_back([this]() { io_service_->run(); });
     }
-    
+
     // Store worker threads in class member for cleanup
     server_threads_ = std::move(worker_threads);
   }
@@ -92,7 +91,7 @@ TEST_F(ServerConcurrencyTest, ConcurrentRequests) {
 
   EXPECT_LT(
       std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count(),
-      1000); // 1000ms is the threshold for the health check
+      1000);  // 1000ms is the threshold for the health check
   EXPECT_NE(fast_response.find("200 OK"), std::string::npos);
 
   // Now wait for the sleeper so we don’t kill it early
@@ -100,35 +99,37 @@ TEST_F(ServerConcurrencyTest, ConcurrentRequests) {
 }
 
 TEST_F(ServerConcurrencyTest, MultipleConcurrentRequests) {
-    constexpr int k_slow = 2;
-    constexpr int k_fast = 2;
+  constexpr int k_slow = 2;
+  constexpr int k_fast = 2;
 
-    std::vector<std::future<std::string>> slow_futures;
-    std::vector<std::future<std::string>> fast_futures;
+  std::vector<std::future<std::string>> slow_futures;
+  std::vector<std::future<std::string>> fast_futures;
 
-    // fire-and-forget five blocking /sleep requests
-    for (int i = 0; i < k_slow; ++i)
-        slow_futures.emplace_back(std::async(std::launch::async,
-            [this]{ return make_request("/sleep"); }));
+  // fire-and-forget five blocking /sleep requests
+  for (int i = 0; i < k_slow; ++i)
+    slow_futures.emplace_back(std::async(
+        std::launch::async, [this] { return make_request("/sleep"); }));
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(100)); // give them time to enter the queue
+  std::this_thread::sleep_for(
+      std::chrono::milliseconds(100));  // give them time to enter the queue
 
-    // launch five /health requests and assert each finishes quickly
-    for (int i = 0; i < k_fast; ++i)
-        fast_futures.emplace_back(std::async(std::launch::async, [this]{
-            auto t0 = std::chrono::steady_clock::now();
-            auto resp = make_request("/health");
-            auto t1 = std::chrono::steady_clock::now();
-            EXPECT_LT(std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count(),
-                      1000);
-            return resp;
-        }));
+  // launch five /health requests and assert each finishes quickly
+  for (int i = 0; i < k_fast; ++i)
+    fast_futures.emplace_back(std::async(std::launch::async, [this] {
+      auto t0 = std::chrono::steady_clock::now();
+      auto resp = make_request("/health");
+      auto t1 = std::chrono::steady_clock::now();
+      EXPECT_LT(std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0)
+                    .count(),
+                1000);
+      return resp;
+    }));
 
-    // verify fast responses first
-    for (auto& f : fast_futures)
-        EXPECT_NE(f.get().find("200 OK"), std::string::npos);
+  // verify fast responses first
+  for (auto& f : fast_futures)
+    EXPECT_NE(f.get().find("200 OK"), std::string::npos);
 
-    // then wait for the slow ones so the threads cleanly finish
-    for (auto& f : slow_futures)
-        EXPECT_NE(f.get().find("200 OK"), std::string::npos);
+  // then wait for the slow ones so the threads cleanly finish
+  for (auto& f : slow_futures)
+    EXPECT_NE(f.get().find("200 OK"), std::string::npos);
 }

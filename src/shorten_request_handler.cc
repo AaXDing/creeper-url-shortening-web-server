@@ -56,17 +56,18 @@ bool ShortenRequestHandler::init_db() {
 
 bool ShortenRequestHandler::store_url_mapping(const std::string& short_url,
                                               const std::string& long_url) {
-  const char* param_values[2] = {short_url.c_str(), long_url.c_str()};
-  const int param_lengths[2] = {static_cast<int>(short_url.length()),
+  const int param_count = 2;
+  const char* param_values[param_count] = {short_url.c_str(), long_url.c_str()};
+  const int param_lengths[param_count] = {static_cast<int>(short_url.length()),
                                static_cast<int>(long_url.length())};
-  const int param_formats[2] = {0, 0};  // 0 = text format
+  const int param_formats[param_count] = {0, 0};  // 0 = text format
 
   // Insert the short URL and long URL into the database
   PGresult* res = PQexecParams(
       pg_conn_,
       "INSERT INTO short_to_long_url (short_url, long_url) VALUES ($1, $2) ON "
       "CONFLICT(short_url) DO UPDATE SET long_url = $2 ",
-      2, nullptr, param_values, param_lengths, param_formats, 0);
+      param_count, nullptr, param_values, param_lengths, param_formats, 0);
 
   // If we do not want to update the long URL if the short URL already exists,
   // use the following query:
@@ -82,14 +83,15 @@ bool ShortenRequestHandler::store_url_mapping(const std::string& short_url,
 
 std::optional<std::string> ShortenRequestHandler::get_long_url(
     const std::string& short_url) {
-  const char* param_values[1] = {short_url.c_str()};
-  const int param_lengths[1] = {static_cast<int>(short_url.length())};
-  const int param_formats[1] = {0};  // 0 = text format
+  const int param_count = 1;
+  const char* param_values[param_count] = {short_url.c_str()};
+  const int param_lengths[param_count] = {static_cast<int>(short_url.length())};
+  const int param_formats[param_count] = {0};  // 0 = text format
 
   // SELECT the long URL from the database using the short URL
   PGresult* res = PQexecParams(
       pg_conn_, "SELECT long_url FROM short_to_long_url WHERE short_url = $1",
-      1, nullptr, param_values, param_lengths, param_formats, 0);
+      param_count, nullptr, param_values, param_lengths, param_formats, 0);
 
   if (PQresultStatus(res) != PGRES_TUPLES_OK) {
     LOG(error) << "Failed to get long URL: " << PQerrorMessage(pg_conn_);

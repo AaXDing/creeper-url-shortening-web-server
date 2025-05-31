@@ -41,7 +41,9 @@ class ShortenRequestHandler : public RequestHandler {
   const std::string REDIS_IP = "127.0.0.1";
   const int REDIS_PORT = 6379;
   const int SHORT_URL_LENGTH = 6;
+  // Private IP used for production (faster)
   const std::string DB_HOST = "10.90.80.3";
+  // Public IP used for testing locally
   //   const std::string DB_HOST = "34.168.12.115";
   const std::string DB_NAME = "url-mapping";
   const std::string DB_USER = "creeper-server";

@@ -77,25 +77,33 @@ Factory & Registration:
 ### Prerequisites
 
 The project requires the following dependencies besides CS130 Dev environment:
-- Boost JSON library (libboost-json-dev)
-  ```bash
-  # Install Boost JSON library
-  sudo apt-get install libboost-json-dev
-  ```
 
-- Redis Server (redis-server, hiredis)
- ```bash
- sudo apt-get install redis-server libhiredis-dev
- git clone https://github.com/sewenew/redis-plus-plus.git
- cd redis-plus-plus
- mkdir build
- cd build
- cmake ..
- make
- make install
- cd ../..
- rm -rf redis-plus-plus
- ```
+1. **Boost JSON library**
+   ```bash
+   sudo apt-get install libboost-json-dev
+   ```
+
+2. **Redis Server**
+   ```bash
+   # Install Redis server and client library
+   sudo apt-get install redis-server libhiredis-dev
+
+   # Install Redis++ (C++ client library)
+   git clone https://github.com/sewenew/redis-plus-plus.git
+   cd redis-plus-plus
+   mkdir build
+   cd build
+   cmake ..
+   make
+   make install
+   cd ../..
+   rm -rf redis-plus-plus
+   ```
+
+3. **Google Cloud SQL**
+   ```bash
+   sudo apt-get install libpq-dev postgresql-client
+   ```
 
 ### Build & Test
 
@@ -111,16 +119,15 @@ cmake ..
 make
 ```
 
-3. Start Redis
+3. Start Redis:
 ```bash
-redis-server ../redis.conf
+redis-server ../redis.conf # redis.conf is self-documented
 ```
 
 4. Testing:
 ```bash
 ctest
 ```
-
 
 ### Coverage Build
 
@@ -131,7 +138,6 @@ make coverage
 ### Build & Run
 
 1. Build:
-
 ```bash
 make build
 ```
@@ -239,6 +245,42 @@ gcloud builds submit --config docker/cloudbuild.yaml .
 docker ps
 docker exec -it <container_id> /bin/bash
 ```
+
+### Database Configuration
+#### Google Cloud SQL
+
+ShortenURL uses Google Cloud SQL (PostgreSQL) for persistent data storage. Here's how to set it up (This is needed for testing locally):
+
+1. **Access Configuration**
+   - Go to Google Cloud Console: `SQL` > `Instances` > `creeper-shortenurl-storage`
+   - Navigate to `Connections` > `Networking`
+   - Add your IP address to authorized networks
+
+2. **Connection Details**
+   - Public IP: 34.168.12.115
+   - Private IP: 10.90.80.3
+   - Database: url-mapping
+   - Username: creeper-server
+   - Password: creeper
+
+3. **Connect to Database**
+   ```bash
+   psql -h 34.168.12.115 -U creeper-server -d url-mapping
+   ```
+
+#### Redis
+
+Redis is used for caching. The server can be started in two ways:
+
+1. **Normal Mode**
+   ```bash
+   redis-server redis.conf # redis.conf is self-documented
+   ```
+
+2. **Background Mode**
+   ```bash
+   redis-server redis.conf --daemonize yes
+   ```
 
 ## Adding a New Request Handler
 

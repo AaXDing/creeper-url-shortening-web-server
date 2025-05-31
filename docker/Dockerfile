@@ -23,7 +23,7 @@ FROM ubuntu:noble AS deploy
 
 # Install Redis
 RUN apt-get update && \
-    apt-get install -y redis-server libhiredis-dev git build-essential cmake && \
+    apt-get install -y redis-server libhiredis-dev git build-essential cmake postgresql-client && \
     git clone https://github.com/sewenew/redis-plus-plus.git && \
     cd redis-plus-plus && \
     mkdir build && \

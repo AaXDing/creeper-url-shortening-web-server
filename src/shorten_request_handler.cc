@@ -6,9 +6,6 @@
 REGISTER_HANDLER("ShortenHandler", ShortenRequestHandler,
                  ShortenRequestHandlerArgs);
 
-std::unordered_map<std::string, std::string>
-    ShortenRequestHandler::short_to_long_map_;
-
 ShortenRequestHandlerArgs::ShortenRequestHandlerArgs() {}
 
 std::shared_ptr<ShortenRequestHandlerArgs>
@@ -20,7 +17,7 @@ ShortenRequestHandlerArgs::create_from_config(
 ShortenRequestHandler::ShortenRequestHandler(
     const std::string& base_uri,
     std::shared_ptr<ShortenRequestHandlerArgs> args)
-    : base_uri_(base_uri) {
+    : base_uri_(base_uri), pg_conn_(nullptr) {
   // Try to connect to Redis
   try {
     std::string redis_uri =
@@ -30,6 +27,82 @@ ShortenRequestHandler::ShortenRequestHandler(
     LOG(fatal) << "Failed to connect to Redis: " << e.what();
     exit(1);
   }
+
+  // Initialize PostgreSQL connection
+  if (!init_db()) {
+    LOG(fatal) << "Failed to initialize PostgreSQL database";
+    exit(1);
+  }
+}
+
+ShortenRequestHandler::~ShortenRequestHandler() {
+  if (pg_conn_) {
+    PQfinish(pg_conn_);
+  }
+}
+
+bool ShortenRequestHandler::init_db() {
+  std::string conninfo = "host=" + DB_HOST + " dbname=" + DB_NAME +
+                         " user=" + DB_USER + " password=" + DB_PASSWORD;
+  pg_conn_ = PQconnectdb(conninfo.c_str());
+
+  if (PQstatus(pg_conn_) != CONNECTION_OK) {
+    LOG(error) << "Connection to database failed: " << PQerrorMessage(pg_conn_);
+    return false;
+  }
+
+  return true;
+}
+
+bool ShortenRequestHandler::store_url_mapping(const std::string& short_url,
+                                              const std::string& long_url) {
+  const char* param_values[2] = {short_url.c_str(), long_url.c_str()};
+  const int param_lengths[2] = {static_cast<int>(short_url.length()),
+                               static_cast<int>(long_url.length())};
+  const int param_formats[2] = {0, 0};  // 0 = text format
+
+  // Insert the short URL and long URL into the database
+  PGresult* res = PQexecParams(
+      pg_conn_,
+      "INSERT INTO short_to_long_url (short_url, long_url) VALUES ($1, $2) ON "
+      "CONFLICT(short_url) DO UPDATE SET long_url = $2 ",
+      2, nullptr, param_values, param_lengths, param_formats, 0);
+
+  // If we do not want to update the long URL if the short URL already exists,
+  // use the following query:
+  // "INSERT INTO short_to_long_url (short_url, long_url) VALUES ($1, $2)"
+
+  bool success = (PQresultStatus(res) == PGRES_COMMAND_OK);
+  if (!success) {
+    LOG(error) << "Failed to store URL mapping: " << PQerrorMessage(pg_conn_);
+  }
+  PQclear(res);
+  return success;
+}
+
+std::optional<std::string> ShortenRequestHandler::get_long_url(
+    const std::string& short_url) {
+  const char* param_values[1] = {short_url.c_str()};
+  const int param_lengths[1] = {static_cast<int>(short_url.length())};
+  const int param_formats[1] = {0};  // 0 = text format
+
+  // SELECT the long URL from the database using the short URL
+  PGresult* res = PQexecParams(
+      pg_conn_, "SELECT long_url FROM short_to_long_url WHERE short_url = $1",
+      1, nullptr, param_values, param_lengths, param_formats, 0);
+
+  if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+    LOG(error) << "Failed to get long URL: " << PQerrorMessage(pg_conn_);
+    PQclear(res);
+    return std::nullopt;
+  }
+
+  std::optional<std::string> result;
+  if (PQntuples(res) > 0) {
+    result = PQgetvalue(res, 0, 0);
+  }
+  PQclear(res);
+  return result;
 }
 
 RequestHandler::HandlerType ShortenRequestHandler::get_type() const {
@@ -57,25 +130,14 @@ std::unique_ptr<Response> ShortenRequestHandler::handle_post_request(
   std::string long_url = request.body;
   std::string short_url = base62_encode(long_url);
 
-  // If short URL is not in DB, store the (short URL, long URL) mapping
-  if (short_to_long_map_.find(short_url) == short_to_long_map_.end()) {
-    // Store the (short URL, long URL) mapping in DB
-    short_to_long_map_[short_url] = long_url;
-    LOG(info) << "Stored in DB: " << short_url << " -> " << long_url;
-  }
-  // If long URL exists and does not match the incoming long URL, return 400
-  else if (long_url.compare(short_to_long_map_[short_url]) != 0) {
-    LOG(info) << "Long URL already exists: " << short_url << " -> "
-                 << short_to_long_map_[short_url];
-    *res = STOCK_RESPONSE.at(400);
+  // Store the mapping in PostgreSQL
+  if (!store_url_mapping(short_url, long_url)) {
+    LOG(error) << "Failed to store URL mapping: " << short_url << " -> "
+               << long_url;
+    *res = STOCK_RESPONSE.at(500);
+    res->body = "Failed to store URL mapping";
     return res;
   }
-
-  // TODO: We can do something else such as generating a new short URL
-  // Now if Long URL collides, we return an empty string and return 400
-  // Future if the long URL is changed, we can update the short URL
-  // Use Redis to delete the short URL and the long URL in cache
-  // redis_->del(encoded_url);
 
   res->status_code = 200;
   res->status_message = "OK";
@@ -93,7 +155,7 @@ std::unique_ptr<Response> ShortenRequestHandler::handle_get_request(
   // Must be /base_uri/6UQVxS
   if (request.uri.length() != base_uri_.length() + SHORT_URL_LENGTH + 1) {
     LOG(info) << "Invalid short URL: " << request.uri
-                 << " (expected short URL length: " << SHORT_URL_LENGTH << ")";
+              << " (expected short URL length: " << SHORT_URL_LENGTH << ")";
     *res = STOCK_RESPONSE.at(404);
     return res;
   }
@@ -114,25 +176,25 @@ std::unique_ptr<Response> ShortenRequestHandler::handle_get_request(
     return res;
   }
 
-  // If Short URL is not found in Redis, check if it's in the DB
-  if (short_to_long_map_.find(short_url) == short_to_long_map_.end()) {
+  // If Short URL is not found in Redis, check SQL database
+  std::optional<std::string> long_url = get_long_url(short_url);
+  if (!long_url) {
     LOG(info) << "Not Found in DB: " << short_url;
     *res = STOCK_RESPONSE.at(404);
     return res;
   }
 
-  // If Short URL is found in DB
-  LOG(info) << "Found in DB: " << short_url << " -> "
-            << short_to_long_map_[short_url];
+  // If Short URL is found in SQL database
+  LOG(info) << "Found in DB: " << short_url << " -> " << long_url.value();
 
   // Store the short URL, long URL mapping in Redis
-  redis_->set(short_url, short_to_long_map_[short_url]);
+  redis_->set(short_url, long_url.value());
 
   res->status_code = 302;
   res->status_message = "Found";
   res->version = request.version;
   // Set the location header to the long URL for redirection
-  res->headers.push_back({"Location", short_to_long_map_[short_url]});
+  res->headers.push_back({"Location", long_url.value()});
   return res;
 }
 

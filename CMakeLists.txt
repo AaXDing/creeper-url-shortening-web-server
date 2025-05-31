@@ -55,6 +55,9 @@ find_library(HIREDIS_LIB hiredis)
 find_path(REDIS_PLUS_PLUS_HEADER sw)
 find_library(REDIS_PLUS_PLUS_LIB redis++)
 
+# <------------ add postgresql dependency -------------->
+find_package(PostgreSQL REQUIRED)
+
 include_directories(include)
 
 # add libraries
@@ -91,8 +94,8 @@ target_link_libraries(blocking_request_handler_lib PUBLIC http_header_lib loggin
 
 add_library(shorten_request_handler_lib src/shorten_request_handler.cc)
 target_link_libraries(shorten_request_handler_lib PUBLIC http_header_lib logging_lib registry_lib)
-target_include_directories(shorten_request_handler_lib PUBLIC ${HIREDIS_HEADER} ${REDIS_PLUS_PLUS_HEADER})
-target_link_libraries(shorten_request_handler_lib PUBLIC ${HIREDIS_LIB} ${REDIS_PLUS_PLUS_LIB})
+target_include_directories(shorten_request_handler_lib PUBLIC ${HIREDIS_HEADER} ${REDIS_PLUS_PLUS_HEADER} ${PostgreSQL_INCLUDE_DIRS})
+target_link_libraries(shorten_request_handler_lib PUBLIC ${HIREDIS_LIB} ${REDIS_PLUS_PLUS_LIB} ${PostgreSQL_LIBRARIES})
 
 add_library(request_handler_dispatcher_lib src/request_handler_dispatcher.cc)
 target_link_libraries(request_handler_dispatcher_lib PUBLIC http_header_lib config_parser_lib registry_lib logging_lib)

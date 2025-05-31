@@ -18,6 +18,7 @@ RUN apt-get update && apt-get install -y \
     libgmock-dev \
     libgtest-dev \
     libhiredis-dev \
+    libpq-dev \
     netcat-openbsd \
     gcovr && \
     git clone https://github.com/sewenew/redis-plus-plus.git && \

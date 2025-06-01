@@ -219,7 +219,7 @@ curl -X POST localhost:80/shorten \
      -H "Content-Type: text/plain" \
      -d 'https://code.cs130.org'
 # must be a full url
-curl -X GET localhost:80/shorten/fjnuNs
+curl -X GET localhost:80/shorten/Hal9Hc
 # will get https://code.cs130.org
 ```
 

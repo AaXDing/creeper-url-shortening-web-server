@@ -1,6 +1,8 @@
 #include "shorten_request_handler.h"
 
 #include "logging.h"
+#include "real_database_client.h"
+#include "real_redis_client.h"
 #include "registry.h"
 
 REGISTER_HANDLER("ShortenHandler", ShortenRequestHandler,
@@ -59,7 +61,7 @@ bool ShortenRequestHandler::store_url_mapping(const std::string& short_url,
   const int param_count = 2;
   const char* param_values[param_count] = {short_url.c_str(), long_url.c_str()};
   const int param_lengths[param_count] = {static_cast<int>(short_url.length()),
-                               static_cast<int>(long_url.length())};
+                                          static_cast<int>(long_url.length())};
   const int param_formats[param_count] = {0, 0};  // 0 = text format
 
   // Insert the short URL and long URL into the database

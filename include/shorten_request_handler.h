@@ -5,6 +5,8 @@
 #include <sw/redis++/redis++.h>
 
 #include "config_parser.h"
+#include "idatabase_client.h"
+#include "iredis_client.h"
 #include "request_handler.h"
 
 using namespace sw::redis;

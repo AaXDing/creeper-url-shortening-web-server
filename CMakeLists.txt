@@ -92,7 +92,7 @@ target_link_libraries(health_request_handler_lib PUBLIC http_header_lib logging_
 add_library(blocking_request_handler_lib src/blocking_request_handler.cc)
 target_link_libraries(blocking_request_handler_lib PUBLIC http_header_lib logging_lib registry_lib)
 
-add_library(shorten_request_handler_lib src/shorten_request_handler.cc)
+add_library(shorten_request_handler_lib src/shorten_request_handler.cc src/real_redis_client.cc src/real_database_client.cc)
 target_link_libraries(shorten_request_handler_lib PUBLIC http_header_lib logging_lib registry_lib)
 target_include_directories(shorten_request_handler_lib PUBLIC ${HIREDIS_HEADER} ${REDIS_PLUS_PLUS_HEADER} ${PostgreSQL_INCLUDE_DIRS})
 target_link_libraries(shorten_request_handler_lib PUBLIC ${HIREDIS_LIB} ${REDIS_PLUS_PLUS_LIB} ${PostgreSQL_LIBRARIES})

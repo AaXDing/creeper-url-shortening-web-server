@@ -167,6 +167,9 @@ target_link_libraries(sim_entity_storage_test sim_entity_storage_lib gtest_main 
 add_executable(server_concurrency_test tests/server_concurrency_test.cc src/echo_request_handler.cc src/static_request_handler.cc src/not_found_request_handler.cc src/crud_request_handler.cc src/health_request_handler.cc src/blocking_request_handler.cc)
 target_link_libraries(server_concurrency_test server_lib session_lib http_header_lib request_parser_lib request_handler_dispatcher_lib config_parser_lib crud_request_handler_lib health_request_handler_lib blocking_request_handler_lib real_entity_storage_lib sim_entity_storage_lib Boost::system gtest_main)
 
+add_executable(shorten_request_handler_lib_test tests/shorten_request_handler_test.cc)
+target_link_libraries(shorten_request_handler_lib_test shorten_request_handler_lib http_header_lib registry_lib logging_lib gtest_main)
+
 gtest_discover_tests(http_header_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(request_parser_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(config_parser_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
@@ -184,6 +187,7 @@ gtest_discover_tests(sim_entity_storage_test WORKING_DIRECTORY ${CMAKE_CURRENT_S
 gtest_discover_tests(health_request_handler_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(blocking_request_handler_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(server_concurrency_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+gtest_discover_tests(shorten_request_handler_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 # --- Coverage support for unit tests only ---
 include(cmake/CodeCoverageReportConfig.cmake)
 
@@ -205,6 +209,7 @@ generate_coverage_report(
         real_entity_storage_lib
         sim_entity_storage_lib
         blocking_request_handler_lib
+        shorten_request_handler_lib
         server
     TESTS
         http_header_test
@@ -223,6 +228,7 @@ generate_coverage_report(
         real_entity_storage_test
         sim_entity_storage_test
         blocking_request_handler_lib_test
+        shorten_request_handler_lib_test
         server_concurrency_test
 )
 

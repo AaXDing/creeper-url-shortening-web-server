@@ -13,101 +13,39 @@ ShortenRequestHandlerArgs::ShortenRequestHandlerArgs() {}
 std::shared_ptr<ShortenRequestHandlerArgs>
 ShortenRequestHandlerArgs::create_from_config(
     std::shared_ptr<NginxConfigStatement> statement) {
-  return std::make_shared<ShortenRequestHandlerArgs>();
+  auto args = std::make_shared<ShortenRequestHandlerArgs>();
+
+  const std::string redis_ip = "127.0.0.1";
+  const int redis_port = 6379;
+  const std::string db_host = "10.90.80.3";  // Private
+  // const std::string db_host = "34.168.12.115";  // Public
+  const std::string db_name = "url-mapping";
+  const std::string db_user = "creeper-server";
+  const std::string db_pass = "creeper";
+
+  // Construct concrete implementations and store them in args:
+  args->redis_client = std::make_shared<RealRedisClient>(redis_ip, redis_port);
+  args->db_client =
+      std::make_shared<RealDatabaseClient>(db_host, db_name, db_user, db_pass);
+
+  return args;
 }
 
 ShortenRequestHandler::ShortenRequestHandler(
     const std::string& base_uri,
     std::shared_ptr<ShortenRequestHandlerArgs> args)
-    : base_uri_(base_uri), pg_conn_(nullptr) {
-  // Try to connect to Redis
-  try {
-    std::string redis_uri =
-        "tcp://" + REDIS_IP + ":" + std::to_string(REDIS_PORT);
-    redis_ = std::make_shared<Redis>(redis_uri);
-  } catch (const Error& e) {
-    LOG(fatal) << "Failed to connect to Redis: " << e.what();
+    : base_uri_(base_uri), redis_(args->redis_client), db_(args->db_client) {
+  if (!redis_) {
+    LOG(fatal) << "ShortenRequestHandler requires a valid IRedisClient";
     exit(1);
   }
-
-  // Initialize PostgreSQL connection
-  if (!init_db()) {
-    LOG(fatal) << "Failed to initialize PostgreSQL database";
+  if (!db_) {
+    LOG(fatal) << "ShortenRequestHandler requires a valid IDatabaseClient";
     exit(1);
   }
 }
 
-ShortenRequestHandler::~ShortenRequestHandler() {
-  if (pg_conn_) {
-    PQfinish(pg_conn_);
-  }
-}
-
-bool ShortenRequestHandler::init_db() {
-  std::string conninfo = "host=" + DB_HOST + " dbname=" + DB_NAME +
-                         " user=" + DB_USER + " password=" + DB_PASSWORD;
-  pg_conn_ = PQconnectdb(conninfo.c_str());
-
-  if (PQstatus(pg_conn_) != CONNECTION_OK) {
-    LOG(error) << "Connection to database failed: " << PQerrorMessage(pg_conn_);
-    return false;
-  }
-
-  return true;
-}
-
-bool ShortenRequestHandler::store_url_mapping(const std::string& short_url,
-                                              const std::string& long_url) {
-  const int param_count = 2;
-  const char* param_values[param_count] = {short_url.c_str(), long_url.c_str()};
-  const int param_lengths[param_count] = {static_cast<int>(short_url.length()),
-                                          static_cast<int>(long_url.length())};
-  const int param_formats[param_count] = {0, 0};  // 0 = text format
-
-  // Insert the short URL and long URL into the database
-  PGresult* res = PQexecParams(
-      pg_conn_,
-      "INSERT INTO short_to_long_url (short_url, long_url) VALUES ($1, $2) ON "
-      "CONFLICT(short_url) DO UPDATE SET long_url = $2 ",
-      param_count, nullptr, param_values, param_lengths, param_formats, 0);
-
-  // If we do not want to update the long URL if the short URL already exists,
-  // use the following query:
-  // "INSERT INTO short_to_long_url (short_url, long_url) VALUES ($1, $2)"
-
-  bool success = (PQresultStatus(res) == PGRES_COMMAND_OK);
-  if (!success) {
-    LOG(error) << "Failed to store URL mapping: " << PQerrorMessage(pg_conn_);
-  }
-  PQclear(res);
-  return success;
-}
-
-std::optional<std::string> ShortenRequestHandler::get_long_url(
-    const std::string& short_url) {
-  const int param_count = 1;
-  const char* param_values[param_count] = {short_url.c_str()};
-  const int param_lengths[param_count] = {static_cast<int>(short_url.length())};
-  const int param_formats[param_count] = {0};  // 0 = text format
-
-  // SELECT the long URL from the database using the short URL
-  PGresult* res = PQexecParams(
-      pg_conn_, "SELECT long_url FROM short_to_long_url WHERE short_url = $1",
-      param_count, nullptr, param_values, param_lengths, param_formats, 0);
-
-  if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-    LOG(error) << "Failed to get long URL: " << PQerrorMessage(pg_conn_);
-    PQclear(res);
-    return std::nullopt;
-  }
-
-  std::optional<std::string> result;
-  if (PQntuples(res) > 0) {
-    result = PQgetvalue(res, 0, 0);
-  }
-  PQclear(res);
-  return result;
-}
+ShortenRequestHandler::~ShortenRequestHandler() = default;
 
 RequestHandler::HandlerType ShortenRequestHandler::get_type() const {
   return RequestHandler::HandlerType::SHORTEN_REQUEST_HANDLER;
@@ -135,7 +73,7 @@ std::unique_ptr<Response> ShortenRequestHandler::handle_post_request(
   std::string short_url = base62_encode(long_url);
 
   // Store the mapping in PostgreSQL
-  if (!store_url_mapping(short_url, long_url)) {
+  if (!db_->store(short_url, long_url)) {
     LOG(error) << "Failed to store URL mapping: " << short_url << " -> "
                << long_url;
     *res = STOCK_RESPONSE.at(500);
@@ -181,7 +119,8 @@ std::unique_ptr<Response> ShortenRequestHandler::handle_get_request(
   }
 
   // If Short URL is not found in Redis, check SQL database
-  std::optional<std::string> long_url = get_long_url(short_url);
+  // std::optional<std::string> long_url = get_long_url(short_url);
+  std::optional<std::string> long_url = db_->lookup(short_url);
   if (!long_url) {
     LOG(info) << "Not Found in DB: " << short_url;
     *res = STOCK_RESPONSE.at(404);

@@ -16,11 +16,7 @@ RealRedisClient::RealRedisClient(const std::string& redis_ip, int redis_port)
 
 std::optional<std::string> RealRedisClient::get(const std::string& short_code) {
   try {
-    auto val = redis_.get(short_code);
-    if (val) {
-      return *val;
-    }
-    return std::nullopt;
+    return redis_.get(short_code);
   } catch (const Error& e) {
     LOG(error) << "Redis GET error for key \"" << short_code
                << "\": " << e.what();

@@ -170,6 +170,16 @@ target_link_libraries(server_concurrency_test server_lib session_lib http_header
 add_executable(shorten_request_handler_lib_test tests/shorten_request_handler_test.cc)
 target_link_libraries(shorten_request_handler_lib_test shorten_request_handler_lib http_header_lib registry_lib logging_lib gtest_main)
 
+# Add custom target for Redis setup
+add_custom_target(setup_redis
+    COMMAND redis-server ${CMAKE_CURRENT_SOURCE_DIR}/redis.conf --daemonize yes
+    COMMENT "Starting Redis server for tests..."
+)
+
+add_executable(real_redis_client_test tests/real_redis_client_test.cc)
+target_link_libraries(real_redis_client_test PUBLIC gtest gtest_main shorten_request_handler_lib)
+add_dependencies(real_redis_client_test setup_redis)
+
 gtest_discover_tests(http_header_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(request_parser_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(config_parser_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
@@ -188,6 +198,7 @@ gtest_discover_tests(health_request_handler_lib_test WORKING_DIRECTORY ${CMAKE_C
 gtest_discover_tests(blocking_request_handler_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(server_concurrency_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests PROPERTIES ENVIRONMENT "USE_FAKE_SHORTEN_CLIENTS=1")
 gtest_discover_tests(shorten_request_handler_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+gtest_discover_tests(real_redis_client_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 # --- Coverage support for unit tests only ---
 include(cmake/CodeCoverageReportConfig.cmake)
 
@@ -230,6 +241,7 @@ generate_coverage_report(
         blocking_request_handler_lib_test
         shorten_request_handler_lib_test
         server_concurrency_test
+        real_redis_client_test
 )
 
 # Integration test using Python script

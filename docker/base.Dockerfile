@@ -20,6 +20,7 @@ RUN apt-get update && apt-get install -y \
     libhiredis-dev \
     libpq-dev \
     netcat-openbsd \
+    redis-server \
     gcovr && \
     git clone https://github.com/sewenew/redis-plus-plus.git && \
     cd redis-plus-plus && \

@@ -51,11 +51,24 @@ def start_server(config_file, integration_test_folder_exists):
         config_file = os.path.join(CONFIG_FILE_BASE_PATH, config_file)
     if not os.path.isfile(server_path):
         raise FileNotFoundError("Can't find server at {server_path}")
+
+    # Set up environment variables for Redis and DB
+    env = os.environ.copy()
+    env.update({
+        "REDIS_IP": "127.0.0.1",
+        "REDIS_PORT": "6379",
+        "DB_HOST": "34.168.12.115",   # Google Cloud SQL instance
+        "DB_NAME": "url-mapping",
+        "DB_USER": "creeper-server",
+        "DB_PASSWORD": "creeper"
+    })
+
     server_proc = subprocess.Popen(
         [server_path, config_file],
         cwd=build_dir,
         stdout=log_file,
-        stderr=subprocess.STDOUT
+        stderr=subprocess.STDOUT,
+        env=env
     )
     time.sleep(0.5)  # Wait a moment for server to start
 
@@ -480,7 +493,47 @@ def define_tests():
                  }
              },
          ]
-        }
+        },
+        {"config": "url_shortener_config",
+         "integration_test_folder": True,
+         "tests": [
+             {
+                 "name": "Create Short URL",
+                 "method": b"POST /shorten HTTP/1.1\r\nHost: localhost\r\nContent-Type: text/plain\r\nContent-Length: 23\r\n\r\nhttps://example.com/foo",
+                 "expected": b"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 6\r\n\r\nzYQkNM",
+                 "use_nc": True
+             },
+             {
+                 "name": "Get Original URL - Database Fallback",
+                 "method": b"GET /shorten/zYQkNM HTTP/1.1\r\nHost: localhost\r\n\r\n",
+                 "expected": b"HTTP/1.1 302 Found\r\nLocation: https://example.com/foo\r\nContent-Length: 0\r\n\r\n",
+                 "use_nc": True
+             },
+             {
+                 "name": "Get Original URL - Redis Cache Hit",
+                 "method": b"GET /shorten/zYQkNM HTTP/1.1\r\nHost: localhost\r\n\r\n",
+                 "expected": b"HTTP/1.1 302 Found\r\nLocation: https://example.com/foo\r\nContent-Length: 0\r\n\r\n",
+                 "use_nc": True
+             },
+             {
+                 "name": "Invalid Short URL Length",
+                 "method": b"GET /shorten/ABC HTTP/1.1\r\nHost: localhost\r\n\r\n",
+                 "expected": b"HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nContent-Length: 13\r\n\r\n404 Not Found",
+                 "use_nc": True
+             },
+             {
+                 "name": "Non-existent Short URL",
+                 "method": b"GET /shorten/NOEXST HTTP/1.1\r\nHost: localhost\r\n\r\n",
+                 "expected": b"HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nContent-Length: 13\r\n\r\n404 Not Found",
+                 "use_nc": True
+             },
+             {
+                 "name": "Unsupported Method",
+                 "method": b"DELETE /shorten HTTP/1.1\r\nHost: localhost\r\n\r\n",
+                 "expected": b"HTTP/1.1 405 Method Not Allowed\r\nContent-Type: text/plain\r\nContent-Length: 22\r\n\r\n405 Method Not Allowed",
+                 "use_nc": True
+             }
+         ]}
     ]
 
 # ------------------- Main Runner -------------------

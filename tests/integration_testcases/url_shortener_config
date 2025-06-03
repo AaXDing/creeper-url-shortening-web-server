@@ -1,0 +1,14 @@
+port 80;
+
+location / NotFoundHandler {
+}
+
+location /echo EchoHandler {
+}
+
+location /static StaticHandler {
+  root ../data;
+}
+
+location /shorten ShortenHandler {
+} 

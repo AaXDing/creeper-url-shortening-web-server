@@ -19,3 +19,6 @@ location /health HealthHandler {
 
 location /sleep BlockingHandler {
 }
+
+location /shorten ShortenHandler {
+}

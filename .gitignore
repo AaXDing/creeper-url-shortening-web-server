@@ -5,3 +5,4 @@ build
 build_*
 mirror
 tests/temp/
+__pycache__/

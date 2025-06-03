@@ -15,6 +15,43 @@ ShortenRequestHandlerArgs::create_from_config(
     std::shared_ptr<NginxConfigStatement> statement) {
   auto args = std::make_shared<ShortenRequestHandlerArgs>();
 
+  // If the environment variable is set, build tiny inline fakes here:
+  if (std::getenv("USE_FAKE_SHORTEN_CLIENTS") != nullptr) {
+    // A minimal “fake” that satisfies IRedisClient:
+    struct FakeRedisLocal : IRedisClient {
+      std::unordered_map<std::string, std::string> store_;
+      std::optional<std::string> get(const std::string& short_code) override {
+        auto it = store_.find(short_code);
+        return (it == store_.end() ? std::nullopt
+                                   : std::make_optional(it->second));
+      }
+      void set(const std::string& short_code,
+               const std::string& long_url) override {
+        store_[short_code] = long_url;
+      }
+    };
+
+    // A minimal “fake” that satisfies IDatabaseClient:
+    struct FakeDbLocal : IDatabaseClient {
+      std::unordered_map<std::string, std::string> store_;
+      bool store(const std::string& short_code,
+                 const std::string& long_url) override {
+        store_[short_code] = long_url;
+        return true;
+      }
+      std::optional<std::string> lookup(
+          const std::string& short_code) override {
+        auto it = store_.find(short_code);
+        return (it == store_.end() ? std::nullopt
+                                   : std::make_optional(it->second));
+      }
+    };
+
+    args->redis_client = std::make_shared<FakeRedisLocal>();
+    args->db_client = std::make_shared<FakeDbLocal>();
+    return args;
+  }
+
   // Get configuration from environment variables with defaults
   const char* redis_ip_env = std::getenv("REDIS_IP");
   const char* redis_port_env = std::getenv("REDIS_PORT");

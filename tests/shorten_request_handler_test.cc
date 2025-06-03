@@ -1,5 +1,6 @@
 #include "shorten_request_handler.h"
 
+#include <cstdlib>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -341,4 +342,52 @@ TEST_F(ShortenHandlerTest, CreateFromConfigFailsWhenRedisIsUnavailable) {
       ::testing::ExitedWithCode(1),
       ""  // no regex on stderr
   );
+}
+
+//----------------------------------------------------------------------------‐
+// 11) create_from_config() should return “inline‐fake” clients when the env var
+// is set.
+//----------------------------------------------------------------------------‐
+TEST(ShortenHandlerArgsTest, CreateFromConfigReturnsInlineFakesWhenEnvSet) {
+  // 1) Put the process into "fake‐mode"
+  ASSERT_EQ(setenv("USE_FAKE_SHORTEN_CLIENTS", "1", /*overwrite=*/1), 0);
+
+  // 2) Call create_from_config; the argument is ignored when the fake‐mode is
+  // enabled.
+  auto args = ShortenRequestHandlerArgs::create_from_config(nullptr);
+  ASSERT_TRUE(args) << "Expected a non‐null ShortenRequestHandlerArgs";
+
+  // 3) Grab the IRedisClient and IDatabaseClient pointers
+  auto redis_ptr = args->redis_client;
+  auto db_ptr = args->db_client;
+  ASSERT_TRUE(redis_ptr) << "Expected redis_client to be set to a fake";
+  ASSERT_TRUE(db_ptr) << "Expected db_client to be set to a fake";
+
+  // 4) Verify “inline‐fake” Redis behavior:
+  const std::string short_code = "ABCDEF";
+  const std::string long_url = "https://fake.test/url";
+
+  // Initially, fake get() should be empty
+  std::optional<std::string> maybe_redis0 = redis_ptr->get(short_code);
+  EXPECT_FALSE(maybe_redis0.has_value());
+
+  // After set, get() should return what we stored
+  redis_ptr->set(short_code, long_url);
+  std::optional<std::string> maybe_redis1 = redis_ptr->get(short_code);
+  ASSERT_TRUE(maybe_redis1.has_value());
+  EXPECT_EQ(maybe_redis1.value(), long_url);
+
+  // 5) Verify “inline‐fake” DB behavior:
+  std::optional<std::string> maybe_db0 = db_ptr->lookup(short_code);
+  EXPECT_FALSE(maybe_db0.has_value());
+
+  bool ok_store = db_ptr->store(short_code, long_url);
+  EXPECT_TRUE(ok_store);
+
+  std::optional<std::string> maybe_db1 = db_ptr->lookup(short_code);
+  ASSERT_TRUE(maybe_db1.has_value());
+  EXPECT_EQ(maybe_db1.value(), long_url);
+
+  // 6) Clean up the env var so other tests are unaffected:
+  ASSERT_EQ(unsetenv("USE_FAKE_SHORTEN_CLIENTS"), 0);
 }

@@ -3,11 +3,13 @@
 
 #include <sw/redis++/redis++.h>
 
+#include <memory>
 #include <optional>
 #include <string>
 
 #include "iredis_client.h"
 #include "logging.h"
+#include "redis_connection_pool.h"
 
 using namespace sw::redis;
 
@@ -31,7 +33,7 @@ class RealRedisClient : public IRedisClient {
   void set(const std::string& short_code, const std::string& long_url) override;
 
  private:
-  Redis redis_;
+  std::shared_ptr<RedisConnectionPool> pool_;
 };
 
 #endif  // REAL_REDIS_CLIENT_H

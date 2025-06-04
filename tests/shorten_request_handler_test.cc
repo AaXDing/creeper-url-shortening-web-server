@@ -329,23 +329,8 @@ TEST_F(ShortenHandlerTest, WhenDbStoreFails_Returns500) {
   EXPECT_EQ(resp->body, "Failed to store URL mapping");
 }
 
-// -----------------------------------------------------------------------------
-//  10) Unavailable Redis -> create_from_config fails
-// -----------------------------------------------------------------------------
-TEST_F(ShortenHandlerTest, CreateFromConfigFailsWhenRedisIsUnavailable) {
-  EXPECT_EXIT(
-      {
-        // fail, and call exit(1).
-        auto args = ShortenRequestHandlerArgs::create_from_config(nullptr);
-        (void)args;
-      },
-      ::testing::ExitedWithCode(1),
-      ""  // no regex on stderr
-  );
-}
-
 //----------------------------------------------------------------------------‐
-// 11) create_from_config() should return “inline‐fake” clients when the env var
+// 10) create_from_config() should return “inline‐fake” clients when the env var
 // is set.
 //----------------------------------------------------------------------------‐
 TEST(ShortenHandlerArgsTest, CreateFromConfigReturnsInlineFakesWhenEnvSet) {

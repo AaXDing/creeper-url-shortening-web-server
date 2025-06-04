@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 port 80;
 
 location / NotFoundHandler {
@@ -12,3 +13,9 @@ location /static StaticHandler {
 
 location /shorten ShortenHandler {
 } 
+=======
+port 80; # port my server listens on
+
+location /shorten ShortenHandler {
+}
+>>>>>>> f0af577 (feat: Add connection pooling for redis and db connection)

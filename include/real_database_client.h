@@ -2,10 +2,11 @@
 #define REAL_DATABASE_CLIENT_H
 
 #include <libpq-fe.h>
-
+#include <memory>
 #include <optional>
 #include <string>
 
+#include "database_connection_pool.h"
 #include "idatabase_client.h"
 #include "logging.h"
 
@@ -22,7 +23,7 @@ class RealDatabaseClient : public IDatabaseClient {
                      const std::string& db_user,
                      const std::string& db_password);
 
-  ~RealDatabaseClient() override;
+  ~RealDatabaseClient() override = default;
 
   // Upsert (short_code -> long_url). On failure, logs and exits.
   bool store(const std::string& short_code,
@@ -33,7 +34,7 @@ class RealDatabaseClient : public IDatabaseClient {
   std::optional<std::string> lookup(const std::string& short_code) override;
 
  private:
-  PGconn* conn_{nullptr};
+  std::shared_ptr<PostgresConnectionPool> pool_;
 };
 
 #endif  // REAL_DATABASE_CLIENT_H

@@ -11,4 +11,4 @@ RUN apt-get update
 # Configure for coverage
 RUN cmake -DCMAKE_BUILD_TYPE=Coverage ..
 # Generate the summary report
-RUN make coverage   
+RUN redis-server ../redis.conf --daemonize yes && make coverage

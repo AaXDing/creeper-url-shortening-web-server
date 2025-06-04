@@ -17,7 +17,7 @@ ShortenRequestHandlerArgs::create_from_config(
 
   // If the environment variable is set, build tiny inline fakes here:
   if (std::getenv("USE_FAKE_SHORTEN_CLIENTS") != nullptr) {
-    // A minimal “fake” that satisfies IRedisClient:
+    // A minimal "fake" that satisfies IRedisClient:
     struct FakeRedisLocal : IRedisClient {
       std::unordered_map<std::string, std::string> store_;
       std::optional<std::string> get(const std::string& short_code) override {
@@ -31,7 +31,7 @@ ShortenRequestHandlerArgs::create_from_config(
       }
     };
 
-    // A minimal “fake” that satisfies IDatabaseClient:
+    // A minimal "fake" that satisfies IDatabaseClient:
     struct FakeDbLocal : IDatabaseClient {
       std::unordered_map<std::string, std::string> store_;
       bool store(const std::string& short_code,
@@ -52,26 +52,21 @@ ShortenRequestHandlerArgs::create_from_config(
     return args;
   }
 
-  // Get configuration from environment variables with defaults
-  const char* redis_ip_env = std::getenv("REDIS_IP");
-  const char* redis_port_env = std::getenv("REDIS_PORT");
-  const char* db_host_env = std::getenv("DB_HOST");
-  const char* db_name_env = std::getenv("DB_NAME");
-  const char* db_user_env = std::getenv("DB_USER");
-  const char* db_pass_env = std::getenv("DB_PASSWORD");
-
   // Default local values as server values will be set in the base.Dockerfile
-  const std::string redis_ip = redis_ip_env ? redis_ip_env : "127.0.0.1";
-  const int redis_port = redis_port_env ? std::stoi(redis_port_env) : 6379;
-  const std::string db_host = db_host_env ? db_host_env : "127.0.0.1";
-  const std::string db_name = db_name_env ? db_name_env : "url-mapping";
-  const std::string db_user = db_user_env ? db_user_env : "creeper-server";
-  const std::string db_pass = db_pass_env ? db_pass_env : "creeper";
+  const std::string redis_ip = "127.0.0.1";
+  const int redis_port = 6379;
+  // const std::string db_host = "34.168.12.115";
+  const std::string db_host = "10.90.80.3";
+  const std::string db_name = "url-mapping";
+  const std::string db_user = "creeper-server";
+  const std::string db_pass = "creeper";
 
   // Construct concrete implementations and store them in args:
   args->redis_client = std::make_shared<RealRedisClient>(redis_ip, redis_port);
   args->db_client =
       std::make_shared<RealDatabaseClient>(db_host, db_name, db_user, db_pass);
+
+  LOG(info) << "Finished creating shorten request handler args";
 
   return args;
 }

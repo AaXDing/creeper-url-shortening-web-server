@@ -14,10 +14,7 @@ RUN apt-get update
 # Build and test
 RUN cmake ..
 RUN make
-
-# Start Redis in background before running tests
-RUN redis-server ../redis.conf --daemonize yes
-RUN ctest --output-on-failure
+RUN redis-server ../redis.conf --daemonize yes && ctest --output-on-failure
 
 
 ### Deploy container ###

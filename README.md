@@ -80,6 +80,7 @@ The project requires the following dependencies besides CS130 Dev environment:
 
 1. **Boost JSON library**
    ```bash
+   sudo apt-get update
    sudo apt-get install libboost-json-dev
    ```
 
@@ -95,7 +96,7 @@ The project requires the following dependencies besides CS130 Dev environment:
    cd build
    cmake ..
    make
-   make install
+   sudo make install
    cd ../..
    rm -rf redis-plus-plus
    ```

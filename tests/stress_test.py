@@ -6,7 +6,7 @@ This script uses locust to perform load testing on the URL shortening service.
 It tests both the shortening (POST) and redirection (GET) endpoints under load.
 
 Usage:
-    locust -f stress_test.py --host=http://34.105.32.190
+    locust -f stress_test.py --host=http://34.105.32.190/
 
 Then open http://localhost:8089 in your browser to start the test.
 """
@@ -23,7 +23,7 @@ class URLShortenerUser(HttpUser):
     shortened_urls = []
     
     # Target host for the stress test
-    host = "http://34.105.32.190"
+    host = "http://34.105.32.190/"
     
     def generate_random_url(self):
         """Generate a random URL for testing"""
@@ -53,8 +53,17 @@ class URLShortenerUser(HttpUser):
         if not self.shortened_urls:
             return
             
-        # Pick a random shortened URL from our list
-        short_url = random.choice(self.shortened_urls)
+        # # Pick a random shortened URL from our list
+        # short_url = random.choice(self.shortened_urls)
+        # Implement 80/20 rule for URL selection
+        if random.random() < 0.8:  # 80% of the time
+            # Select from the top 20% of URLs
+            top_urls = self.shortened_urls[:max(1, len(self.shortened_urls) // 5)]
+            short_url = random.choice(top_urls)
+        else:  # 20% of the time
+            # Select from the remaining 80% of URLs
+            remaining_urls = self.shortened_urls[max(1, len(self.shortened_urls) // 5):]
+            short_url = random.choice(remaining_urls)
         
         with self.client.get(
             f"shorten/{short_url}",

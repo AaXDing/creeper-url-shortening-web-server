@@ -11,6 +11,27 @@ REGISTER_HANDLER("ShortenHandler", ShortenRequestHandler,
 
 ShortenRequestHandlerArgs::ShortenRequestHandlerArgs() {}
 
+bool validate_config_structure(
+    std::shared_ptr<NginxConfigStatement> statement) {
+  if (statement->child_block_->statements_.size() != 7) {
+    return false;
+  }
+
+  const std::vector<std::string> expected_tokens = {
+      "redis_ip", "redis_port", "db_host",  "db_name",
+      "db_user",  "db_pass",    "pool_size"};
+
+  for (size_t i = 0; i < expected_tokens.size(); i++) {
+    if (statement->child_block_->statements_[i]->tokens_.size() != 2 ||
+        statement->child_block_->statements_[i]->tokens_[0] !=
+            expected_tokens[i]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 std::shared_ptr<ShortenRequestHandlerArgs>
 ShortenRequestHandlerArgs::create_from_config(
     std::shared_ptr<NginxConfigStatement> statement) {
@@ -53,23 +74,29 @@ ShortenRequestHandlerArgs::create_from_config(
     return args;
   }
 
-  // Default local values as server values will be set in the base.Dockerfile
-  const std::string redis_ip = "127.0.0.1";
-  const int redis_port = 6379;
-  // const std::string db_host = "34.168.12.115";
-  const std::string db_host = "10.90.80.3";
-  const std::string db_name = "url-mapping";
-  const std::string db_user = "creeper-server";
-  const std::string db_pass = "creeper";
+  if (validate_config_structure(statement)) {
+    std::string redis_ip = statement->child_block_->statements_[0]->tokens_[1];
+    int redis_port =
+        std::stoi(statement->child_block_->statements_[1]->tokens_[1]);
+    std::string db_host = statement->child_block_->statements_[2]->tokens_[1];
+    std::string db_name = statement->child_block_->statements_[3]->tokens_[1];
+    std::string db_user = statement->child_block_->statements_[4]->tokens_[1];
+    std::string db_pass = statement->child_block_->statements_[5]->tokens_[1];
+    int pool_size =
+        std::stoi(statement->child_block_->statements_[6]->tokens_[1]);
 
-  // Construct concrete implementations and store them in args:
-  args->redis_client = std::make_shared<RealRedisClient>(redis_ip, redis_port);
-  args->db_client =
-      std::make_shared<RealDatabaseClient>(db_host, db_name, db_user, db_pass);
+    // Construct concrete implementations and store them in args:
+    args->redis_client =
+        std::make_shared<RealRedisClient>(redis_ip, redis_port, pool_size);
+    args->db_client = std::make_shared<RealDatabaseClient>(
+        db_host, db_name, db_user, db_pass, pool_size);
 
-  LOG(info) << "Finished creating shorten request handler args";
+    LOG(info) << "Finished creating shorten request handler args";
 
-  return args;
+    return args;
+  }
+
+  return nullptr;
 }
 
 ShortenRequestHandler::ShortenRequestHandler(

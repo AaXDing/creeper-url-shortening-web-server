@@ -2,6 +2,7 @@
 #define REAL_DATABASE_CLIENT_H
 
 #include <libpq-fe.h>
+
 #include <memory>
 #include <optional>
 #include <string>
@@ -20,8 +21,8 @@ class RealDatabaseClient : public IDatabaseClient {
   // Constructor: takes host, dbname, user, and password. On failure, logs and
   // exits.
   RealDatabaseClient(const std::string& db_host, const std::string& db_name,
-                     const std::string& db_user,
-                     const std::string& db_password);
+                     const std::string& db_user, const std::string& db_password,
+                     int pool_size);
 
   ~RealDatabaseClient() override = default;
 

@@ -22,7 +22,7 @@ class RealRedisClient : public IRedisClient {
  public:
   // Constructor: takes Redis IP (e.g. "127.0.0.1") and port (e.g. 6379).
   // Attempts a ping immediately; on failure, logs and exits.
-  RealRedisClient(const std::string& redis_ip, int redis_port);
+  RealRedisClient(const std::string& redis_ip, int redis_port, int pool_size);
 
   ~RealRedisClient() override = default;
 

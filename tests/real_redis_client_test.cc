@@ -8,7 +8,7 @@ class RealRedisClientTest : public ::testing::Test {
  protected:
   void SetUp() override {
     // Use default local Redis configuration
-    client = std::make_unique<RealRedisClient>("127.0.0.1", 6379);
+    client = std::make_unique<RealRedisClient>("127.0.0.1", 6379, 12);
   }
 
   void TearDown() override {
@@ -92,7 +92,7 @@ TEST_F(RealRedisClientTest, ConnectionFailureExits) {
   EXPECT_EXIT(
       {
         // Try to connect to non-existent Redis server
-        RealRedisClient bad_client("127.0.0.1", 9999);
+        RealRedisClient bad_client("127.0.0.1", 9999, 12);
       },
       ::testing::ExitedWithCode(1),
       ""  // no regex on stderr

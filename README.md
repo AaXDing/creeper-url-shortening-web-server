@@ -162,13 +162,13 @@ All modes output ERROR+ logs to console.
 
 ```bash
 # Normal run
-bin/server ../my_config
+bin/server ../dev_config
 
 # Trace run
-CREEPER_LOG_DEBUG=trace bin/server ../my_config
+CREEPER_LOG_DEBUG=trace bin/server ../dev_config
 
 # Debug run
-CREEPER_LOG_DEBUG=debug bin/server ../my_config
+CREEPER_LOG_DEBUG=debug bin/server ../dev_config
 ```
 
 ### Code Formatting
@@ -220,7 +220,7 @@ curl -X POST localhost:80/shorten \
      -H "Content-Type: text/plain" \
      -d 'https://code.cs130.org'
 # must be a full url
-curl -X GET localhost:80/shorten/Hal9Hc
+printf "GET /shorten/Hal9Hc HTTP/1.1\r\nHost: host:port\r\nConnection: close\r\n\r\n" | nc localhost 80
 # will get https://code.cs130.org
 ```
 

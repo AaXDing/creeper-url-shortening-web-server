@@ -3,8 +3,9 @@
 RealDatabaseClient::RealDatabaseClient(const std::string& db_host,
                                        const std::string& db_name,
                                        const std::string& db_user,
-                                       const std::string& db_password)
-    : pool_(std::make_shared<PostgresConnectionPool>(db_host, db_name, db_user, db_password)) {
+                                       const std::string& db_password,
+                                       int pool_size)   
+    : pool_(std::make_shared<PostgresConnectionPool>(db_host, db_name, db_user, db_password, pool_size)) {
     // The connection pool constructor will verify connections are working
 }
 

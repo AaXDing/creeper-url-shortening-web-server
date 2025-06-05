@@ -48,7 +48,7 @@ RUN mkdir -p /mnt/storage/crud && \
 # Copy server output binary to "/app"
 COPY --from=builder /usr/src/projects/creeper/build/bin/server /app/
 # Copy config file as well
-COPY --from=builder /usr/src/projects/creeper/my_config /app/
+COPY --from=builder /usr/src/projects/creeper/server_config /app/
 COPY --from=builder /usr/src/projects/creeper/redis.conf /app/
 # Copy static files to "."
 COPY --from=builder /usr/src/projects/creeper/data /data
@@ -66,4 +66,4 @@ EXPOSE 80
 ENTRYPOINT ["./start.sh"]
 
 # Use CMD to specify arguments to ENTRYPOINT
-CMD ["my_config"]
+CMD ["server_config"]

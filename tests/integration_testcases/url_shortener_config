@@ -1,21 +1,11 @@
-<<<<<<< HEAD
-port 80;
-
-location / NotFoundHandler {
-}
-
-location /echo EchoHandler {
-}
-
-location /static StaticHandler {
-  root ../data;
-}
-
-location /shorten ShortenHandler {
-} 
-=======
 port 80; # port my server listens on
 
 location /shorten ShortenHandler {
+  redis_ip 127.0.0.1;
+  redis_port 6379;
+  db_host 10.90.80.3;
+  db_name url-mapping;
+  db_user creeper-server;
+  db_pass creeper;
+  pool_size 12; # number of connection pools
 }
->>>>>>> f0af577 (feat: Add connection pooling for redis and db connection)

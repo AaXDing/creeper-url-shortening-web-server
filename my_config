@@ -22,3 +22,7 @@ location /sleep BlockingHandler {
 
 location /shorten ShortenHandler {
 }
+
+location /shorten_url StaticHandler {
+  root ../data/web;
+}

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creeper URL Shortener</title>
+    <link rel="stylesheet" href="/shorten_url/shorten.css">
+</head>
+<body>
+    <div class="container">
+        <img src="/shorten_url/creeper_logo.png" alt="Creeper Logo" class="logo">
+        <h1>Creeper URL Shortener</h1>
+        <p class="description">Transform your long URLs into short, manageable links with Creeper</p>
+        <div class="input-group">
+            <input type="url" id="long_url" placeholder="Enter your long URL here" required>
+            <button onclick="shorten_url()">Shorten URL</button>
+        </div>
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+        </div>
+        <div class="error" id="error"></div>
+        <div class="result" id="result">
+            <p>Your shortened URL:</p>
+            <p class="short-url" id="short_url"></p>
+            <button class="copy-btn" onclick="copy_to_clipboard()">Copy to Clipboard</button>
+        </div>
+    </div>
+    <script src="/shorten_url/shorten.js"></script>
+</body>
+</html> 

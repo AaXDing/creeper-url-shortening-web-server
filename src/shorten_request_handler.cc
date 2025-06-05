@@ -1,5 +1,6 @@
 #include "shorten_request_handler.h"
 
+#include <fstream>
 #include "logging.h"
 #include "real_database_client.h"
 #include "real_redis_client.h"
@@ -133,6 +134,28 @@ std::unique_ptr<Response> ShortenRequestHandler::handle_post_request(
 std::unique_ptr<Response> ShortenRequestHandler::handle_get_request(
     const Request& request) {
   auto res = std::make_unique<Response>();
+
+  // If the request is for the base /shorten path, serve the UI directly
+  if (request.uri == base_uri_) {
+    res->status_code = 200;
+    res->status_message = "OK";
+    res->version = request.version;
+    res->headers.push_back({"Content-Type", "text/html"});
+    
+    // Read and serve the HTML file
+    // std::ifstream file("/usr/src/projects/creeper/data/web/shorten.html"); // for local testing
+    std::ifstream file("/data/web/shorten.html");  // Docker path
+    if (file.is_open()) {
+      std::string content((std::istreambuf_iterator<char>(file)),
+                         std::istreambuf_iterator<char>());
+      res->body = content;
+      file.close();
+    } else {
+      LOG(error) << "Failed to open shorten.html";
+      *res = STOCK_RESPONSE.at(404);
+    }
+    return res;
+  }
 
   // Must be /base_uri/6UQVxS
   if (request.uri.length() != base_uri_.length() + SHORT_URL_LENGTH + 1) {

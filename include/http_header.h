@@ -12,6 +12,7 @@ const std::unordered_map<std::string, std::string> CONTENT_TYPE = {
     {"html", "text/html"},      {"txt", "text/plain"},
     {"pdf", "application/pdf"}, {"zip", "application/zip"},
     {"jpeg", "image/jpeg"},     {"jpg", "image/jpeg"},
+    {"css", "text/css"},        {"js", "application/javascript"},
 };
 
 struct Header {

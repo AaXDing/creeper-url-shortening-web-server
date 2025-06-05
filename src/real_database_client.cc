@@ -23,19 +23,54 @@ bool RealDatabaseClient::store(const std::string& short_code,
         "VALUES ($1, $2) "
         "ON CONFLICT (short_url) DO UPDATE SET long_url = EXCLUDED.long_url";
 
-    PGresult* res = PQexecParams(conn, query, nParams,
-                               nullptr,  // let libpq infer parameter types
-                               paramValues, paramLengths, paramFormats,
-                               0  // request text results
+    // Send query asynchronously
+    int sendStatus = PQsendQueryParams(conn, query, nParams,
+                                     nullptr,  // let libpq infer parameter types
+                                     paramValues, paramLengths, paramFormats,
+                                     0  // request text results
     );
 
-    bool success = (PQresultStatus(res) == PGRES_COMMAND_OK);
-    if (!success) {
+    if (sendStatus != 1) {
         std::string err = PQerrorMessage(conn);
         LOG(fatal) << "Postgres STORE error (key=" << short_code << "): " << err;
+        pool_->release(conn);
+        return false;
     }
 
-    PQclear(res);
+    // Wait for and process the result
+    bool success = false;
+    while (true) {
+        // Consume any available input
+        if (PQconsumeInput(conn) == 0) {
+            std::string err = PQerrorMessage(conn);
+            LOG(fatal) << "Postgres STORE error (key=" << short_code << "): " << err;
+            break;
+        }
+
+        // Check if we need to wait for more data
+        if (PQisBusy(conn)) {
+            // In a real application, you would use select/epoll here
+            // For simplicity, we'll just continue the loop
+            continue;
+        }
+
+        // Get the result
+        PGresult* res = PQgetResult(conn);
+        if (res == nullptr) {
+            // No more results
+            break;
+        }
+
+        if (PQresultStatus(res) == PGRES_COMMAND_OK) {
+            success = true;
+        } else {
+            std::string err = PQerrorMessage(conn);
+            LOG(fatal) << "Postgres STORE error (key=" << short_code << "): " << err;
+        }
+
+        PQclear(res);
+    }
+
     pool_->release(conn);
     return success;
 }
@@ -52,20 +87,55 @@ std::optional<std::string> RealDatabaseClient::lookup(
     const char* query =
         "SELECT long_url FROM short_to_long_url WHERE short_url = $1";
 
-    PGresult* res = PQexecParams(conn, query, nParams, nullptr, paramValues,
-                               paramLengths, paramFormats,
-                               0  // request text results
-    );
-
-    std::optional<std::string> result;
-    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+    // Send query asynchronously
+    int sendStatus = PQsendQueryParams(conn, query, nParams, nullptr, paramValues,
+                                     paramLengths, paramFormats, 0);
+    
+    if (sendStatus != 1) {
         std::string err = PQerrorMessage(conn);
         LOG(fatal) << "Postgres LOOKUP error (key=" << short_code << "): " << err;
-    } else if (PQntuples(res) > 0) {
-        result = PQgetvalue(res, 0, 0);
+        pool_->release(conn);
+        return std::nullopt;
     }
 
-    PQclear(res);
+    // Wait for and process the result
+    std::optional<std::string> result;
+    while (true) {
+        // Consume any available input
+        if (PQconsumeInput(conn) == 0) {
+            std::string err = PQerrorMessage(conn);
+            LOG(fatal) << "Postgres LOOKUP error (key=" << short_code << "): " << err;
+            break;
+        }
+
+        // Check if we need to wait for more data
+        if (PQisBusy(conn)) {
+            // In a real application, you would use select/epoll here
+            // For simplicity, we'll just continue the loop
+            continue;
+        }
+
+        // Get the result
+        PGresult* res = PQgetResult(conn);
+        if (res == nullptr) {
+            // No more results
+            break;
+        }
+
+        if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+            std::string err = PQerrorMessage(conn);
+            LOG(fatal) << "Postgres LOOKUP error (key=" << short_code << "): " << err;
+            PQclear(res);
+            break;
+        }
+
+        if (PQntuples(res) > 0) {
+            result = PQgetvalue(res, 0, 0);
+        }
+
+        PQclear(res);
+    }
+
     pool_->release(conn);
     return result;
 }

@@ -2,6 +2,9 @@
 
 A simple asynchronous TCP server built with Boost.Asio.
 
+### Live demo
+Visit the running instance: [http://130.211.192.68/shorten](http://130.211.192.68/shorten)
+
 ## Project Structure
 
 The project follows a modular architecture with clear separation of concerns:
@@ -258,15 +261,15 @@ ShortenURL uses Google Cloud SQL (PostgreSQL) for persistent data storage. Here'
    - Add your IP address to authorized networks
 
 2. **Connection Details**
-   - Public IP: 34.168.12.115
-   - Private IP: 10.90.80.3
+   - Public IP: 34.29.56.63
+   - Private IP: 10.83.144.3
    - Database: url-mapping
    - Username: creeper-server
-   - Password: creeper
+   - Password: (Check Google Cloud Console > SQL > Instances > url-mapping > Users)
 
 3. **Connect to Database**
    ```bash
-   psql -h 34.168.12.115 -U creeper-server -d url-mapping
+   psql -h 34.29.56.63 -U creeper-server -d url-mapping
    ```
 
 #### Redis

@@ -20,7 +20,7 @@
 #include "registry.h"
 #include "server.h"
 
-#define NUM_THREADS 5
+#define NUM_THREADS 4
 
 int main(int argc, char* argv[]) {
   logging::init_logging();

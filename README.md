@@ -2,6 +2,9 @@
 
 A simple asynchronous TCP server built with Boost.Asio.
 
+### Live demo
+Visit the running instance: [http://130.211.192.68/shorten](http://130.211.192.68/shorten)
+
 ## Project Structure
 
 The project follows a modular architecture with clear separation of concerns:

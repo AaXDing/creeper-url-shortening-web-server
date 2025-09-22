@@ -20,6 +20,16 @@ location /health HealthHandler {
 location /sleep BlockingHandler {
 }
 
+location /shorten ShortenHandler {
+  redis_ip 127.0.0.1;
+  redis_port 6379;
+  db_host 10.83.144.3;
+  db_name url-mapping;
+  db_user creeper-server;
+  db_pass 7"jSplh+RHJoAD~;
+  pool_size 12; # number of connection pools
+}
+
 location /shorten_url StaticHandler {
   root ../data/web;
 }

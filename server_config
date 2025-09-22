@@ -27,7 +27,7 @@ location /shorten ShortenHandler {
   db_name url-mapping;
   db_user creeper-server;
   db_pass 7"jSplh+RHJoAD~;
-  pool_size 12; # number of connection pools
+  pool_size 6; # number of connection pools
 }
 
 location /shorten_url StaticHandler {

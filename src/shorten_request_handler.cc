@@ -138,22 +138,52 @@ std::unique_ptr<Response> ShortenRequestHandler::handle_post_request(
   auto res = std::make_unique<Response>();
 
   std::string long_url = request.body;
-  std::string short_url = base62_encode(long_url);
 
-  // Store the mapping in PostgreSQL
-  if (!db_->store(short_url, long_url)) {
-    LOG(error) << "Failed to store URL mapping: " << short_url << " -> "
-               << long_url;
-    *res = STOCK_RESPONSE.at(500);
-    res->body = "Failed to store URL mapping";
+  // Try to create a short code; on collision, compare and if needed, rehash with salt
+  const int kMaxAttempts = 5;
+  for (int attempt = 0; attempt < kMaxAttempts; ++attempt) {
+    std::string salted_input = (attempt == 0)
+                                   ? long_url
+                                   : (long_url + "#" + std::to_string(attempt));
+    std::string candidate_short = base62_encode(salted_input);
+
+    // Check existing mapping for this candidate short code
+    std::optional<std::string> existing = db_->lookup(candidate_short);
+    if (existing.has_value()) {
+      // If mapping already exists and matches the requested long URL, reuse it
+      if (existing.value() == long_url) {
+        res->status_code = 200;
+        res->status_message = "OK";
+        res->version = request.version;
+        res->headers.push_back({"Content-Type", "text/plain"});
+        res->body = candidate_short;
+        return res;
+      }
+      // Collision with different long URL, try next salt
+      continue;
+    }
+
+    // No existing mapping; store the original long URL under this short code
+    if (!db_->store(candidate_short, long_url)) {
+      LOG(error) << "Failed to store URL mapping: " << candidate_short << " -> "
+                 << long_url;
+      *res = STOCK_RESPONSE.at(500);
+      res->body = "Failed to store URL mapping";
+      return res;
+    }
+
+    res->status_code = 200;
+    res->status_message = "OK";
+    res->version = request.version;
+    res->headers.push_back({"Content-Type", "text/plain"});
+    res->body = candidate_short;
     return res;
   }
 
-  res->status_code = 200;
-  res->status_message = "OK";
-  res->version = request.version;
-  res->headers.push_back({"Content-Type", "text/plain"});
-  res->body = short_url;
+  // Exceeded max attempts to resolve collision
+  LOG(error) << "Exceeded maximum attempts to resolve short URL collision";
+  *res = STOCK_RESPONSE.at(500);
+  res->body = "Could not generate unique short URL";
   return res;
 }
 
